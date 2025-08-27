@@ -86,7 +86,11 @@ class SileroTTS:
                 raise FileNotFoundError(f"Silero model (.pt) not found in {self.model_dir}")
             model_path = pt_files[0]
             model = torch.package.PackageImporter(str(model_path)).load_pickle("tts_models", "model")
-            SileroTTS._model = model.to("cpu")
+            model.to("cpu")
+            model.eval()
+            SileroTTS._model = model
+        if SileroTTS._model is None:
+            raise RuntimeError("Failed to load Silero TTS model")
         return SileroTTS._model
 
     def tts(self, text: str, speaker: str, sr: int = 48000) -> np.ndarray:

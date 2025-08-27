@@ -11,7 +11,7 @@ import numpy as np
 import soundfile as sf
 from tqdm import tqdm
 from num2words import num2words
-from .tts_adapters import BeepTTS, CoquiXTTS, KokoroTTS
+from .tts_adapters import BeepTTS, CoquiXTTS, KokoroTTS, SileroTTS
 
 # ===================== Глобальные =====================
 FWHISPER = None
@@ -193,20 +193,22 @@ def synth_chunk(ffmpeg: str, text: str, sr: int, speaker: str,
     text = normalize_text(text, read_numbers=read_numbers, spell_latin=spell_latin)
     engine = (tts_engine or "beep").lower()
 
-    # Используем простейший встроенный BeepTTS по умолчанию.
-    if engine not in {"coqui_xtts", "kokoro"}:
+    if engine == "beep":
         tts = BeepTTS()
         return tts.tts(text, speaker, sr=sr)
-
-    # Coqui XTTS и Kokoro требуют ресемплинга через ffmpeg
-    if engine == "coqui_xtts":
+    elif engine == "silero":
+        tts = SileroTTS(Path(__file__).resolve().parent.parent)
+        return tts.tts(text, speaker, sr=sr)
+    elif engine == "coqui_xtts":
         tts = CoquiXTTS(Path(__file__).resolve().parent.parent)
         wav = tts.tts(text, speaker, sr=24000)
         model_sr = 24000
-    else:  # kokoro
+    elif engine == "kokoro":
         tts = KokoroTTS(Path(__file__).resolve().parent.parent)
         wav = tts.tts(text, speaker, sr=24000)
         model_sr = 24000
+    else:
+        raise ValueError(f"Unsupported TTS engine: {engine}")
 
     raw = tmpdir / "tts_raw.wav"
     sf.write(raw, wav, model_sr)

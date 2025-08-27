@@ -5,7 +5,7 @@ from pathlib import Path
 import numpy as np
 import soundfile as sf
 
-__all__ = ["CoquiXTTS", "KokoroTTS", "BeepTTS"]
+__all__ = ["CoquiXTTS", "KokoroTTS", "SileroTTS", "BeepTTS"]
 
 # --- XTTS v2 (Coqui) ---
 class CoquiXTTS:
@@ -69,6 +69,34 @@ class KokoroTTS:
         if not isinstance(wav, np.ndarray):
             wav = np.array(wav, dtype=np.float32)
         return wav.astype(np.float32)
+
+# --- Silero TTS ---
+class SileroTTS:
+    _model = None
+
+    def __init__(self, root: Path):
+        self.root = Path(root)
+        self.model_dir = self.root / "models" / "tts" / "silero"
+
+    def _ensure_model(self):
+        if SileroTTS._model is None:
+            import torch
+            pt_files = sorted(self.model_dir.glob("*.pt"))
+            if not pt_files:
+                raise FileNotFoundError(f"Silero model (.pt) not found in {self.model_dir}")
+            model_path = pt_files[0]
+            model = torch.package.PackageImporter(str(model_path)).load_pickle("tts_models", "model")
+            SileroTTS._model = model.to("cpu")
+        return SileroTTS._model
+
+    def tts(self, text: str, speaker: str, sr: int = 48000) -> np.ndarray:
+        model = self._ensure_model()
+        wav = model.apply_tts(text=text or "", speaker=speaker or "baya", sample_rate=sr)
+        if isinstance(wav, np.ndarray):
+            arr = wav
+        else:
+            arr = wav.cpu().numpy() if hasattr(wav, "cpu") else np.array(wav)
+        return arr.astype(np.float32)
 
 
 # --- Простейший TTS на синусоидах ---

@@ -5,6 +5,8 @@ from pathlib import Path
 import numpy as np
 import soundfile as sf
 
+__all__ = ["CoquiXTTS", "KokoroTTS", "BeepTTS"]
+
 # --- XTTS v2 (Coqui) ---
 class CoquiXTTS:
     _model = None
@@ -67,3 +69,48 @@ class KokoroTTS:
         if not isinstance(wav, np.ndarray):
             wav = np.array(wav, dtype=np.float32)
         return wav.astype(np.float32)
+
+
+# --- Простейший TTS на синусоидах ---
+class BeepTTS:
+    """Очень простая реализация TTS.
+
+    Генерирует синусоиду для гласных и шум для согласных. Конечно, это не
+    человеческая речь, но в тестах важно лишь наличие несущего аудио, а не
+    качество синтеза.
+    """
+
+    _vowel_freqs = {
+        "a": 440.0,
+        "e": 660.0,
+        "i": 880.0,
+        "o": 550.0,
+        "u": 770.0,
+        "y": 720.0,
+        "а": 440.0,
+        "е": 660.0,
+        "и": 880.0,
+        "о": 550.0,
+        "у": 770.0,
+        "ы": 720.0,
+        "э": 600.0,
+        "ю": 840.0,
+        "я": 620.0,
+    }
+
+    def tts(self, text: str, speaker: str, sr: int = 48000) -> np.ndarray:
+        dur = 0.15  # длина одного "звука" в секундах
+        base_t = np.linspace(0, dur, int(sr * dur), False)
+        pieces: list[np.ndarray] = []
+        for ch in text.lower():
+            if ch in self._vowel_freqs:
+                freq = self._vowel_freqs[ch]
+                pieces.append(0.2 * np.sin(2 * np.pi * freq * base_t))
+            elif ch.isspace():
+                pieces.append(np.zeros(int(sr * 0.1)))
+            else:
+                # Согласные – белый шум
+                pieces.append(0.05 * np.random.randn(len(base_t)))
+        if not pieces:
+            return np.zeros(int(sr * 0.3), dtype=np.float32)
+        return np.concatenate(pieces).astype(np.float32)

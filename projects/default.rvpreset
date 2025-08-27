@@ -1,0 +1,10 @@
+{
+  "name": "Default RU",
+  "speed": 1.0,
+  "min_pause_ms": [
+    350,
+    450
+  ],
+  "speed_jitter": 0.04,
+  "style": "neutral"
+}

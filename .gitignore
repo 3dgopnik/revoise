@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+.uv/
+*.egg-info/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project
+logs/
+projects/*.rvproj.bak
+models/**
+!models/README.md
+bin/**
+sfx/**

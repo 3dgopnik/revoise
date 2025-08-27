@@ -10,6 +10,8 @@ from itertools import zip_longest
 import numpy as np
 import soundfile as sf
 from tqdm import tqdm
+from num2words import num2words
+from .tts_adapters import BeepTTS, CoquiXTTS, KokoroTTS
 
 # ===================== Глобальные =====================
 FWHISPER = None
@@ -163,6 +165,22 @@ def _setup(wav: Path, whisper_size: str, device: str,
 
     return phrases
 
+
+def normalize_text(text: str, *, read_numbers: bool = False, spell_latin: bool = False) -> str:
+    """Рудиментарная нормализация текста для TTS."""
+
+    def _num(match: re.Match[str]) -> str:
+        try:
+            return num2words(int(match.group(0)), lang="ru")
+        except Exception:
+            return match.group(0)
+
+    if read_numbers:
+        text = re.sub(r"\d+", _num, text)
+    if spell_latin:
+        text = re.sub(r"[A-Za-z]+", lambda m: " ".join(list(m.group())), text)
+    return text
+
 # ===================== TTS-заглушки =====================
 # Здесь остаются твои текущие реализации synth_natural и synth_chunk.
 # Если используется Silero/Yandex/XTTS — они будут вызывать normalize_text с read_numbers/spell_latin.
@@ -170,12 +188,33 @@ def _setup(wav: Path, whisper_size: str, device: str,
 def synth_chunk(ffmpeg: str, text: str, sr: int, speaker: str,
                 tmpdir: Path, tts_engine: str,
                 read_numbers: bool = False, spell_latin: bool = False) -> np.ndarray:
-    """
-    Заглушка TTS — тут должна быть твоя реальная логика Silero/XTTS/Kokoro.
-    Для краткости пример: генерируем тишину нужной длительности.
-    """
-    dur = max(0.3, len(text.split()) * 0.3)
-    return np.zeros(int(sr * dur), dtype=np.float32)
+    """Синтезирует аудиофрагмент для отдельной фразы."""
+
+    text = normalize_text(text, read_numbers=read_numbers, spell_latin=spell_latin)
+    engine = (tts_engine or "beep").lower()
+
+    # Используем простейший встроенный BeepTTS по умолчанию.
+    if engine not in {"coqui_xtts", "kokoro"}:
+        tts = BeepTTS()
+        return tts.tts(text, speaker, sr=sr)
+
+    # Coqui XTTS и Kokoro требуют ресемплинга через ffmpeg
+    if engine == "coqui_xtts":
+        tts = CoquiXTTS(Path(__file__).resolve().parent.parent)
+        wav = tts.tts(text, speaker, sr=24000)
+        model_sr = 24000
+    else:  # kokoro
+        tts = KokoroTTS(Path(__file__).resolve().parent.parent)
+        wav = tts.tts(text, speaker, sr=24000)
+        model_sr = 24000
+
+    raw = tmpdir / "tts_raw.wav"
+    sf.write(raw, wav, model_sr)
+    out = tmpdir / "tts.wav"
+    run([ffmpeg, "-y", "-i", str(raw), "-ac", "1", "-ar", str(sr),
+         "-c:a", "pcm_s16le", str(out)])
+    wav_out, _ = sf.read(out, dtype=np.float32)
+    return wav_out
 
 def synth_natural(ffmpeg: str, phrases: List[Tuple[float,float,str]], sr: int,
                   speaker: str, tmpdir: Path, tts_engine: str,

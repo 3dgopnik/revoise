@@ -5,6 +5,7 @@ import subprocess
 import tempfile
 from pathlib import Path
 from typing import List, Tuple, Optional
+from itertools import zip_longest
 
 import numpy as np
 import soundfile as sf
@@ -105,33 +106,42 @@ def apply_edited_text(phrases: List[Tuple[float, float, str]], edited_text: str,
     edited_text:
         User edited text. Each line corresponds to a phrase.
     use_markers:
-        Whether [[#i]] markers are present in the text.
+        Whether ``[[#i]]`` markers are present in the text.
+
+    Notes
+    -----
+    If ``edited_text`` contains fewer lines than there are phrases, the
+    remaining phrases keep their original text. Extra lines in
+    ``edited_text`` are ignored.
 
     Returns
     -------
     List[Tuple[float, float, str]]
         Phrases with updated text.
-
-    Raises
-    ------
-    ValueError
-        If number of lines doesn't match number of phrases.
     """
 
     lines = [ln.strip() for ln in edited_text.strip().splitlines() if ln.strip()]
-    if len(lines) != len(phrases):
-        raise ValueError("Количество строк не совпадает с числом фраз")
 
     updated: List[Tuple[float, float, str]] = []
     if use_markers:
         marker_re = re.compile(r"\s*\[\[#\d+\]\]\s*(.*)")
-        for (start, end, _), line in zip(phrases, lines):
-            m = marker_re.fullmatch(line)
-            text = m.group(1).strip() if m else line
+        for phrase, line in zip_longest(phrases, lines):
+            if phrase is None:
+                break
+            start, end, original = phrase
+            if line is None:
+                text = original
+            else:
+                m = marker_re.fullmatch(line)
+                text = m.group(1).strip() if m else line
             updated.append((start, end, text))
     else:
-        for (start, end, _), line in zip(phrases, lines):
-            updated.append((start, end, line))
+        for phrase, line in zip_longest(phrases, lines):
+            if phrase is None:
+                break
+            start, end, original = phrase
+            text = original if line is None else line
+            updated.append((start, end, text))
     return updated
 
 

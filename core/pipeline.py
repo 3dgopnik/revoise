@@ -1,5 +1,4 @@
 ﻿# -*- coding: utf-8 -*-
-import os
 import re
 import shutil
 import subprocess
@@ -52,7 +51,8 @@ def transcribe_whisper(audio_wav: Path, language="ru", model_size="large-v3", de
 # ===================== Фразы =====================
 def merge_into_phrases(segments: List[Tuple[float,float,str]], max_gap=0.35, min_len=0.8):
     phrases=[]
-    if not segments: return phrases
+    if not segments:
+        return phrases
     cs, ce, ct = segments[0]
     for s,e,t in segments[1:]:
         gap = s - ce
@@ -69,6 +69,66 @@ def phrases_to_marked_text(phrases: List[Tuple[float,float,str]]) -> str:
     for i,(_,_,t) in enumerate(phrases, start=1):
         lines.append(f"[[#{i}]] {t}")
     return "\n".join(lines)
+
+
+def apply_edited_text(phrases: List[Tuple[float, float, str]], edited_text: str,
+                      *, use_markers: bool = True) -> List[Tuple[float, float, str]]:
+    """Apply user edits to phrases.
+
+    Parameters
+    ----------
+    phrases:
+        Original phrases with timings.
+    edited_text:
+        User edited text. Each line corresponds to a phrase.
+    use_markers:
+        Whether [[#i]] markers are present in the text.
+
+    Returns
+    -------
+    List[Tuple[float, float, str]]
+        Phrases with updated text.
+
+    Raises
+    ------
+    ValueError
+        If number of lines doesn't match number of phrases.
+    """
+
+    lines = [ln.strip() for ln in edited_text.strip().splitlines() if ln.strip()]
+    if len(lines) != len(phrases):
+        raise ValueError("Количество строк не совпадает с числом фраз")
+
+    updated: List[Tuple[float, float, str]] = []
+    if use_markers:
+        marker_re = re.compile(r"\s*\[\[#\d+\]\]\s*(.*)")
+        for (start, end, _), line in zip(phrases, lines):
+            m = marker_re.fullmatch(line)
+            text = m.group(1).strip() if m else line
+            updated.append((start, end, text))
+    else:
+        for (start, end, _), line in zip(phrases, lines):
+            updated.append((start, end, line))
+    return updated
+
+
+def _setup(wav: Path, whisper_size: str, device: str,
+           phrases_cache: Optional[List[Tuple[float, float, str]]],
+           edited_text: Optional[str], *, use_markers: bool) -> List[Tuple[float, float, str]]:
+    """Prepare phrases: transcribe if needed and apply edited text."""
+
+    if phrases_cache is None:
+        segs = transcribe_whisper(wav, language="ru", model_size=whisper_size, device=device)
+        if not segs:
+            raise RuntimeError("Речь не обнаружена.")
+        phrases = merge_into_phrases(segs, max_gap=0.35, min_len=0.8)
+    else:
+        phrases = phrases_cache
+
+    if edited_text:
+        phrases = apply_edited_text(phrases, edited_text, use_markers=use_markers)
+
+    return phrases
 
 # ===================== TTS-заглушки =====================
 # Здесь остаются твои текущие реализации synth_natural и synth_chunk.
@@ -136,13 +196,11 @@ def revoice_video(video: str, outdir: str, speaker: str, whisper_size: str, devi
         run([ffmpeg, "-y", "-i", str(in_video), "-vn", "-ac", "1", "-ar", str(sr),
              "-acodec", "pcm_s16le", str(wav)])
 
-        if phrases_cache is None:
-            segs = transcribe_whisper(wav, language="ru", model_size=whisper_size, device=device)
-            if not segs: 
-                raise RuntimeError("Речь не обнаружена.")
-            phrases = merge_into_phrases(segs, max_gap=0.35, min_len=0.8)
-        else:
-            phrases = phrases_cache
+        try:
+            phrases = _setup(wav, whisper_size, device, phrases_cache, edited_text,
+                             use_markers=use_markers)
+        except ValueError as e:
+            raise ValueError(f"Invalid edited_text: {e}") from e
 
         voice_wav = synth_natural(
             ffmpeg, phrases, sr, speaker, tmp, tts_engine,

@@ -49,12 +49,35 @@ def transcribe_whisper(audio_wav: Path, language="ru", model_size="large-v3", de
     return [(s.start, s.end, s.text.strip()) for s in segments]
 
 # ===================== Фразы =====================
-def merge_into_phrases(segments: List[Tuple[float,float,str]], max_gap=0.35, min_len=0.8):
-    phrases=[]
+def merge_into_phrases(segments: List[Tuple[float, float, str]], max_gap=0.35, min_len=0.8):
+    """Merge short segments into longer phrases.
+
+    Segments are sorted by their start time to ensure chronological processing.
+
+    Parameters
+    ----------
+    segments : List[Tuple[float, float, str]]
+        Input segments as (start, end, text) tuples.
+    max_gap : float, optional
+        Maximum allowed pause between segments to merge them.
+    min_len : float, optional
+        Minimum phrase length before a gap can split phrases.
+
+    Returns
+    -------
+    List[Tuple[float, float, str]]
+        Merged phrases sorted by start time.
+    """
+
+    phrases = []
     if not segments:
         return phrases
+
+    # Sort segments by start time to handle unsorted input
+    segments = sorted(segments, key=lambda s: s[0])
+
     cs, ce, ct = segments[0]
-    for s,e,t in segments[1:]:
+    for s, e, t in segments[1:]:
         gap = s - ce
         if gap <= max_gap or (ce - cs) < min_len:
             ce, ct = e, (ct + " " + t).strip()

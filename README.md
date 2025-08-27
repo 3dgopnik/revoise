@@ -75,9 +75,11 @@ uv run python -m ui.main_window
 ---
 
 ## TTS-движки (офлайн/онлайн)
-**Офлайн (приоритет):** Silero, Coqui XTTS-v2, Dia, Kokoro, MARS5, Orpheus  
-**Онлайн/гибрид:** Hume, Gemini, OpenAI TTS, Minimax, Chatterbox, VibeVoice  
+**Офлайн (приоритет):** Silero, Coqui XTTS-v2, Dia, Kokoro, MARS5, Orpheus
+**Онлайн/гибрид:** Hume, Gemini, OpenAI TTS, Minimax, Chatterbox, VibeVoice
 Сравнение: https://huggingface.co/spaces/TTS-AGI/TTS-Arena
+
+> Silero модели ищутся в папке `models/tts/silero/` (файл `.pt`).
 
 ---
 

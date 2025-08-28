@@ -16,3 +16,5 @@ models/**
 !models/README.md
 bin/**
 sfx/**
+config.json
+config.key

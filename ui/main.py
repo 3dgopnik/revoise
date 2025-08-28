@@ -1,19 +1,25 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 # PySide6 UI — RevoicePortable alpha3
 # Автоопределение голосов Kokoro из models/tts/kokoro/voices/*.pt
-# Логи: D:\RevoicePortable\logs\log_version_alpha3.txt
+# Logs: BASE_DIR / logs / log_version_alpha3.txt
 
 from PySide6 import QtWidgets, QtGui, QtCore
 from pathlib import Path
 import os, subprocess, tempfile, traceback, logging
 from datetime import datetime
 
-# Версия и лог-файл
+# Version and log file
 APP_VER = "alpha3"
-BASE_DIR = Path("D:/RevoicePortable")
+BASE_DIR = Path(__file__).resolve().parent.parent
 LOG_DIR = BASE_DIR / "logs"
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 LOG_FILE = LOG_DIR / f"log_version_{APP_VER}.txt"
+
+# Default input/output directories
+INPUT_DIR = BASE_DIR / "input"
+OUTPUT_DIR = BASE_DIR / "output"
+INPUT_DIR.mkdir(exist_ok=True)
+OUTPUT_DIR.mkdir(exist_ok=True)
 
 logging.basicConfig(
     filename=str(LOG_FILE),
@@ -23,7 +29,7 @@ logging.basicConfig(
 )
 log = logging.getLogger("ui")
 
-# Пути к папкам моделей
+# Model directories
 KOKORO_DIR = BASE_DIR / "models" / "tts" / "kokoro"
 KOKORO_VOICES_DIR = KOKORO_DIR / "voices"
 
@@ -45,7 +51,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Состояние
         self.video_path = ""
-        self.out_dir = str(Path.cwd())
+        self.out_dir = str(OUTPUT_DIR)
         self.whisper_model = "large-v3"
         self.tts_engine = "silero"
         self.voice_id = "baya"
@@ -208,11 +214,11 @@ class MainWindow(QtWidgets.QMainWindow):
         log.info(msg)
 
     def pick_video(self):
-        p, _ = QtWidgets.QFileDialog.getOpenFileName(self, "Выбрать видео", "", "Video (*.mp4 *.mkv *.mov)")
+        p, _ = QtWidgets.QFileDialog.getOpenFileName(self, "Выбрать видео", str(INPUT_DIR), "Video (*.mp4 *.mkv *.mov)")
         if p: self.video_path = p; self.inp_video.setText(p); self.reset_state(); self.log_print(f"Выбрано видео: {p}")
 
     def pick_outdir(self):
-        p = QtWidgets.QFileDialog.getExistingDirectory(self, "Папка вывода", self.inp_out.text() or str(Path.cwd()))
+        p = QtWidgets.QFileDialog.getExistingDirectory(self, "Папка вывода", self.inp_out.text() or str(OUTPUT_DIR))
         if p: self.out_dir = p; self.inp_out.setText(p); self.log_print(f"Папка вывода: {p}")
 
     def pick_music(self):

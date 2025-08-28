@@ -79,11 +79,13 @@ uv run python -m ui.main_window
 
 ## TTS-движки (офлайн/онлайн)
 **Офлайн (приоритет):** Silero, Coqui XTTS-v2, Dia, MARS5, Orpheus
-**Онлайн/гибрид:** Hume, Gemini, OpenAI TTS, Minimax, Chatterbox, VibeVoice
+**Онлайн/гибрид:** Hume, gTTS, Gemini, OpenAI TTS, Minimax, Chatterbox, VibeVoice
 Сравнение: https://huggingface.co/spaces/TTS-AGI/TTS-Arena
 
 > Silero модели ищутся в папке `models/tts/silero/` (файл `.pt`).
 > Референсы спикеров для Coqui XTTS кладите в `models/speakers/<имя>`.
+
+- gTTS: выберите движок `gtts` в UI. Сервис не предлагает голоса и требует интернет.
 
 ---
 

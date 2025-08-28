@@ -4,11 +4,13 @@ from pathlib import Path
 import logging
 import base64
 import json
+from io import BytesIO
 import numpy as np
 import soundfile as sf
 import requests
+from pydub import AudioSegment
 
-__all__ = ["CoquiXTTS", "SileroTTS", "BeepTTS", "YandexTTS"]
+__all__ = ["CoquiXTTS", "SileroTTS", "BeepTTS", "YandexTTS", "GTTSTTS"]
 
 # --- XTTS v2 (Coqui) ---
 class CoquiXTTS:
@@ -130,6 +132,27 @@ class YandexTTS:
         if not pieces:
             return np.array([], dtype=np.float32)
         return np.concatenate(pieces)
+
+
+# --- gTTS (Google Text-to-Speech) ---
+class GTTSTTS:
+    """Use gTTS to generate speech and return it as a NumPy array."""
+
+    def tts(self, text: str, speaker: str, sr: int = 48000) -> np.ndarray:
+        """Synthesize speech via gTTS and resample to the desired rate."""
+        from gtts import gTTS
+        buf = BytesIO()
+        gTTS(text=text or "", lang="ru").write_to_fp(buf)
+        buf.seek(0)
+        seg = AudioSegment.from_file(buf, format="mp3")
+        seg = seg.set_frame_rate(sr).set_channels(1)
+        wav_buf = BytesIO()
+        seg.export(wav_buf, format="wav")
+        wav_buf.seek(0)
+        data, _ = sf.read(wav_buf, dtype="float32")
+        if data.ndim > 1:
+            data = data.mean(axis=1)
+        return data.astype(np.float32)
 
 
 # --- Простейший TTS на синусоидах ---

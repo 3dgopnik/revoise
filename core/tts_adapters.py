@@ -74,7 +74,17 @@ class KokoroTTS:
 
     def tts(self, text: str, speaker: str, sr: int = 48000) -> np.ndarray:
         model = self._ensure_model()
-        wav = model.tts(text or "", language="ru")  # use Russian; switch to en/ja if needed
+        # Path to the voice checkpoint
+        voice_path = self.model_dir / "voices" / f"{speaker}.pt"
+        # Ensure the voice file exists and the model can load it
+        if voice_path.exists() and hasattr(model, "load_voice"):
+            model.load_voice(str(voice_path))
+        else:
+            raise FileNotFoundError(
+                f"Voice file missing or load_voice not available: {voice_path}"
+            )
+        # Generate audio with the selected voice
+        wav = model.tts(text or "", voice=speaker, language="ru")  # use Russian; switch to en/ja if needed
         if not isinstance(wav, np.ndarray):
             wav = np.array(wav, dtype=np.float32)
         return wav.astype(np.float32)

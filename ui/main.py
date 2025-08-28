@@ -8,6 +8,8 @@ from pathlib import Path
 import os, subprocess, tempfile, traceback, logging, sys
 from datetime import datetime
 
+from .settings import SettingsDialog
+
 # Version and log file
 APP_VER = "alpha3"
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -73,6 +75,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.last_phrases = []
         self.edited_text = None
         self.use_markers = True
+
+        # API keys for external services
+        self.yandex_key = ""
+        self.chatgpt_key = ""
 
         log.info("UI start. Version=%s", APP_VER)
         self._build_ui()

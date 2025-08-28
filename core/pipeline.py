@@ -13,7 +13,7 @@ import numpy as np
 import soundfile as sf
 from tqdm import tqdm
 from num2words import num2words
-from .tts_adapters import BeepTTS, CoquiXTTS, SileroTTS
+from .tts_adapters import BeepTTS, CoquiXTTS, SileroTTS, YandexTTS
 
 logger = logging.getLogger(__name__)
 
@@ -218,7 +218,8 @@ def normalize_text(text: str, *, read_numbers: bool = False, spell_latin: bool =
 
 def synth_chunk(ffmpeg: str, text: str, sr: int, speaker: str,
                 tmpdir: Path, tts_engine: str,
-                read_numbers: bool = False, spell_latin: bool = False) -> np.ndarray:
+                read_numbers: bool = False, spell_latin: bool = False,
+                yandex_key: Optional[str] = None, yandex_voice: Optional[str] = None) -> np.ndarray:
     """Generate an audio fragment for a single phrase."""
 
     text = normalize_text(text, read_numbers=read_numbers, spell_latin=spell_latin)
@@ -237,6 +238,13 @@ def synth_chunk(ffmpeg: str, text: str, sr: int, speaker: str,
             tts = CoquiXTTS(Path(__file__).resolve().parent.parent)
             wav = tts.tts(text, speaker, sr=24000)
             model_sr = 24000
+        elif engine == "yandex":
+            if not yandex_key or not (yandex_voice or speaker):
+                raise ValueError("Yandex TTS requires yandex_key and yandex_voice")
+            tts = YandexTTS()  # Use Yandex Cloud API
+            voice = yandex_voice or speaker
+            wav = tts.tts(text, voice, sr=sr, key=yandex_key)
+            model_sr = sr
         else:
             raise ValueError(f"Unsupported TTS engine: {engine}")
 
@@ -254,6 +262,7 @@ def synth_chunk(ffmpeg: str, text: str, sr: int, speaker: str,
 
 def synth_natural(ffmpeg: str, phrases: List[Tuple[float,float,str]], sr: int,
                   speaker: str, tmpdir: Path, tts_engine: str,
+                  yandex_key: Optional[str] = None, yandex_voice: Optional[str] = None,
                   min_gap_sec: float = 0.30, overall_speed: float = 1.0,
                   read_numbers: bool = False, spell_latin: bool = False,
                   speed_jitter: float = 0.03) -> Path:
@@ -269,7 +278,8 @@ def synth_natural(ffmpeg: str, phrases: List[Tuple[float,float,str]], sr: int,
             logger.debug("Synthesizing phrase %d", i)
             try:
                 wav = synth_chunk(ffmpeg, txt, sr, speaker, tmpdir, tts_engine,
-                                  read_numbers=read_numbers, spell_latin=spell_latin)
+                                  read_numbers=read_numbers, spell_latin=spell_latin,
+                                  yandex_key=yandex_key, yandex_voice=yandex_voice)
             except Exception:
                 logger.exception("synth_chunk failed for phrase %d", i)
                 raise
@@ -333,6 +343,7 @@ def revoice_video(video: str, outdir: str, speaker: str, whisper_size: str, devi
         try:
             voice_wav = synth_natural(
                 ffmpeg, phrases, sr, speaker, tmp, tts_engine,
+                yandex_key=yandex_key, yandex_voice=yandex_voice,
                 min_gap_sec=max(0, min_gap_ms)/1000.0,
                 overall_speed=np.clip(speed_pct/100.0, 0.8, 1.2),
                 read_numbers=read_numbers, spell_latin=spell_latin,

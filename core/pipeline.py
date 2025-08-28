@@ -1,4 +1,5 @@
 ﻿# -*- coding: utf-8 -*-
+import logging
 import re
 import shutil
 import subprocess
@@ -13,6 +14,8 @@ from tqdm import tqdm
 from num2words import num2words
 from .tts_adapters import BeepTTS, CoquiXTTS, KokoroTTS, SileroTTS
 
+logger = logging.getLogger(__name__)
+
 # ===================== Глобальные =====================
 FWHISPER = None
 TTS_MODEL = None
@@ -22,10 +25,19 @@ PAUSE_TAG = re.compile(r"\[\[\s*PAUSE\s*=\s*(\d+)\s*\]\]", re.IGNORECASE)
 
 # ===================== Утилиты =====================
 def run(cmd: List[str]):
-    r = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-    if r.returncode != 0:
-        raise RuntimeError(f"Command failed: {' '.join(cmd)}\nSTDOUT:\n{r.stdout}\nSTDERR:\n{r.stderr}")
-    return r
+    logger.debug("Run: %s", " ".join(cmd))
+    try:
+        r = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        logger.debug("STDOUT: %s", r.stdout)   # capture normal output
+        logger.debug("STDERR: %s", r.stderr)   # capture warnings/errors
+        if r.returncode != 0:
+            raise RuntimeError(
+                f"Command failed: {' '.join(cmd)}\nSTDOUT:\n{r.stdout}\nSTDERR:\n{r.stderr}"
+            )
+        return r
+    except Exception:
+        logger.exception("Run failed")
+        raise
 
 def ensure_ffmpeg() -> str:
     exe = shutil.which("ffmpeg")

@@ -2,10 +2,13 @@
 from __future__ import annotations
 from pathlib import Path
 import logging
+import base64
+import json
 import numpy as np
 import soundfile as sf
+import requests
 
-__all__ = ["CoquiXTTS", "SileroTTS", "BeepTTS"]
+__all__ = ["CoquiXTTS", "SileroTTS", "BeepTTS", "YandexTTS"]
 
 # --- XTTS v2 (Coqui) ---
 class CoquiXTTS:
@@ -81,6 +84,52 @@ class SileroTTS:
         else:
             arr = wav.cpu().numpy() if hasattr(wav, "cpu") else np.array(wav)
         return arr.astype(np.float32)
+
+
+# --- Yandex Cloud TTS ---
+class YandexTTS:
+    _url = "https://tts.api.cloud.yandex.net/tts/v3/utteranceSynthesis"
+
+    def tts(self, text: str, speaker: str, sr: int = 48000, *, key: str, folder_id: str | None = None) -> np.ndarray:
+        """Synthesize speech using Yandex Cloud TTS v3."""
+        headers = {"Content-Type": "application/json"}
+        # Choose auth scheme depending on whether folder_id was supplied
+        if folder_id:
+            headers["Authorization"] = f"Bearer {key}"
+            headers["x-folder-id"] = folder_id
+        else:
+            headers["Authorization"] = f"Api-Key {key}"
+        payload = {
+            "text": text or "",
+            "voice": speaker,
+            "lang": "ru-RU",
+            "format": "lpcm",  # 16-bit LPCM
+            "sampleRateHertz": sr,
+        }
+        resp = requests.post(self._url, headers=headers, json=payload, stream=True)
+        resp.raise_for_status()
+        pieces: list[np.ndarray] = []
+        for line in resp.iter_lines():
+            if not line:
+                continue
+            try:
+                obj = json.loads(line)
+            except Exception:
+                continue
+            chunk = obj.get("audioChunk")
+            if not chunk:
+                continue
+            data = chunk.get("data")
+            if not data:
+                continue
+            raw = base64.b64decode(data)
+            # Convert 16-bit PCM to float32 in -1..1 range
+            pcm = np.frombuffer(raw, dtype="<i2").astype(np.float32) / 32768.0
+            pieces.append(pcm)
+        resp.close()
+        if not pieces:
+            return np.array([], dtype=np.float32)
+        return np.concatenate(pieces)
 
 
 # --- Простейший TTS на синусоидах ---

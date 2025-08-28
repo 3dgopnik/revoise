@@ -2,8 +2,10 @@
 from __future__ import annotations
 import os
 from pathlib import Path
+import logging
 import numpy as np
 import soundfile as sf
+from kokoro import KPipeline
 
 __all__ = ["CoquiXTTS", "KokoroTTS", "SileroTTS", "BeepTTS"]
 
@@ -58,36 +60,39 @@ class KokoroTTS:
         self.model_dir = self.root / "models" / "tts" / "kokoro"
 
     def _ensure_model(self):
+        """Create pipeline once and reuse it."""
         if KokoroTTS._model is None:
-            import kokoro  # import once to inspect available API versions
-            # Select the appropriate loading function based on the available API
-            if hasattr(kokoro, "TTS") and hasattr(kokoro.TTS, "load"):
-                KokoroTTS._model = kokoro.TTS.load(self.model_dir)
-            elif hasattr(kokoro, "load_model"):
-                KokoroTTS._model = kokoro.load_model(self.model_dir)
-            elif hasattr(kokoro, "load"):
-                KokoroTTS._model = kokoro.load(self.model_dir)
-            else:
-                # Raise an explicit error for unsupported versions
-                raise AttributeError("Unsupported Kokoro version: missing load method")
+            KokoroTTS._model = KPipeline(self.model_dir)
         return KokoroTTS._model
 
-    def tts(self, text: str, speaker: str, sr: int = 48000) -> np.ndarray:
-        model = self._ensure_model()
-        # Path to the voice checkpoint
+    def _prepare_voice(self, speaker: str):
+        """Load voice checkpoint or return plain name."""
         voice_path = self.model_dir / "voices" / f"{speaker}.pt"
-        # Ensure the voice file exists and the model can load it
-        if voice_path.exists() and hasattr(model, "load_voice"):
-            model.load_voice(str(voice_path))
-        else:
-            raise FileNotFoundError(
-                f"Voice file missing or load_voice not available: {voice_path}"
-            )
-        # Generate audio with the selected voice
-        wav = model.tts(text or "", voice=speaker, language="ru")  # use Russian; switch to en/ja if needed
-        if not isinstance(wav, np.ndarray):
-            wav = np.array(wav, dtype=np.float32)
-        return wav.astype(np.float32)
+        if voice_path.exists():
+            import torch
+            return torch.load(voice_path, weights_only=True)
+        return speaker
+
+    def tts(self, text: str, speaker: str, sr: int = 48000) -> np.ndarray:
+        pipeline = self._ensure_model()
+        languages = getattr(pipeline, "languages", [])
+        lang = "ru"
+        if "ru" not in languages:
+            if languages:
+                logging.warning("Russian language is unavailable; using %s", languages[0])
+                lang = languages[0]
+            else:
+                logging.warning("No language information; defaulting to Russian")
+        voice = self._prepare_voice(speaker)
+        pieces: list[np.ndarray] = []
+        kwargs = {"voice": voice, "speed": 1.0, "split_pattern": r"\n+"}
+        if lang:
+            kwargs["language"] = lang
+        for chunk, _ in pipeline(text or "", **kwargs):
+            pieces.append(np.array(chunk, dtype=np.float32))
+        if not pieces:
+            return np.zeros(1, dtype=np.float32)
+        return np.concatenate(pieces).astype(np.float32)
 
 # --- Silero TTS ---
 class SileroTTS:

@@ -8,6 +8,8 @@ from pathlib import Path
 import os, subprocess, tempfile, traceback, logging, sys
 from datetime import datetime
 
+from .settings import SettingsDialog
+
 # Version and log file
 APP_VER = "alpha3"
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -73,6 +75,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.last_phrases = []
         self.edited_text = None
         self.use_markers = True
+
+        # API keys for external services
+        self.yandex_key = ""
+        self.chatgpt_key = ""
 
         log.info("UI start. Version=%s", APP_VER)
         self._build_ui()
@@ -149,8 +155,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.btn_run = QtWidgets.QPushButton("3) Озвучить")
         self.btn_reset = QtWidgets.QPushButton("Сброс")
         self.btn_open = QtWidgets.QPushButton("Открыть выход…")
+        self.btn_help = QtWidgets.QPushButton("Помощь")
+        self.btn_settings = QtWidgets.QPushButton("Настройки")
         hb.addWidget(self.btn_rec); hb.addWidget(self.btn_edit); hb.addWidget(self.btn_run)
-        hb.addStretch(1); hb.addWidget(self.btn_reset); hb.addWidget(self.btn_open)
+        hb.addStretch(1); hb.addWidget(self.btn_help); hb.addWidget(self.btn_settings); hb.addWidget(self.btn_reset); hb.addWidget(self.btn_open)
         layout.addLayout(hb)
 
         # Лог
@@ -163,6 +171,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.btn_run.clicked.connect(self.start_render)
         self.btn_reset.clicked.connect(self.reset_state)
         self.btn_open.clicked.connect(self.open_outdir)
+        self.btn_help.clicked.connect(self.show_help)
+        self.btn_settings.clicked.connect(self.open_settings)
 
         # Горячие клавиши
         for key in ("Ctrl+O","Ctrl+S","Ctrl+E","Ctrl+Z","Ctrl+Y","Space","Ctrl+Enter"):
@@ -220,6 +230,32 @@ class MainWindow(QtWidgets.QMainWindow):
         self.log_print("Состояние сброшено. Готово к новому видео.")
 
     # ---------- Действия ----------
+    def show_help(self):
+        """Show instructions for connecting Yandex API with clickable links."""
+        text = (
+            "<ol>"
+            "<li><a href='https://cloud.yandex.ru'>Register in Yandex Cloud</a></li>"
+            "<li>Create a catalog and enable the SpeechKit service.</li>"
+            "<li>Open 'Service Accounts' and create an account.</li>"
+            "<li>In 'Access keys' tab generate an API key.</li>"
+            "<li>Insert the key in the 'Settings' window.</li>"
+            "</ol>"
+            "<p>Documentation: <a href='https://cloud.yandex.ru/docs/speechkit/tts/quickstart'>Yandex SpeechKit</a></p>"
+        )
+        msg = QtWidgets.QMessageBox(self)
+        msg.setWindowTitle("Помощь")
+        msg.setTextFormat(QtCore.Qt.RichText)
+        msg.setTextInteractionFlags(QtCore.Qt.TextBrowserInteraction)
+        msg.setText(text)
+        msg.exec()
+
+    def open_settings(self):
+        """Open settings dialog to edit API keys."""
+        dlg = SettingsDialog(self, self.yandex_key, self.chatgpt_key)
+        if dlg.exec():
+            self.yandex_key, self.chatgpt_key = dlg.get_keys()
+            self.log_print("API settings updated.")
+
     def recognize_only(self):
         try:
             if not self.inp_video.text().strip():
@@ -271,7 +307,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 spell_latin=self.chk_latin.isChecked(), music_path=(self.ed_music.text().strip() or None),
                 music_db=float(self.ed_music_db.text() or "-18"), duck_ratio=float(self.ed_duck_ratio.text() or "8.0"),
                 duck_thresh=float(self.ed_duck_thresh.text() or "0.05"), tts_engine=engine,
-                yandex_key="", yandex_voice="", speed_jitter=float(self.ed_jitter.text() or "0.03")
+                yandex_key=self.yandex_key, yandex_voice=voice,
+                speed_jitter=float(self.ed_jitter.text() or "0.03")
             )
             self.log_print("Готово:", out); QtWidgets.QMessageBox.information(self,"Готово",f"Сохранено:\n{out}")
         except Exception as e:

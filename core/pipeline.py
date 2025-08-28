@@ -13,7 +13,7 @@ import numpy as np
 import soundfile as sf
 from tqdm import tqdm
 from num2words import num2words
-from .tts_adapters import BeepTTS, CoquiXTTS, SileroTTS, YandexTTS
+from .tts_adapters import BeepTTS, CoquiXTTS, SileroTTS, YandexTTS, GTTSTTS
 
 logger = logging.getLogger(__name__)
 
@@ -238,6 +238,10 @@ def synth_chunk(ffmpeg: str, text: str, sr: int, speaker: str,
             tts = CoquiXTTS(Path(__file__).resolve().parent.parent)
             wav = tts.tts(text, speaker, sr=24000)
             model_sr = 24000
+        elif engine == "gtts":
+            tts = GTTSTTS()
+            wav = tts.tts(text, speaker, sr=sr)
+            model_sr = sr
         elif engine == "yandex":
             if not yandex_key or not (yandex_voice or speaker):
                 raise ValueError("Yandex TTS requires yandex_key and yandex_voice")

@@ -9,6 +9,7 @@ dependencies = [
     "numpy>=1.26",
     "pydub>=0.25",
     "soundfile>=0.12",
+    "gtts>=2.5",
     "tqdm>=4.66",
     "num2words>=0.5",
     "faster-whisper>=1.0",

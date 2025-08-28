@@ -108,8 +108,8 @@ class MainWindow(QtWidgets.QMainWindow):
         row = 0
 
         self.cmb_engine = QtWidgets.QComboBox()
-        # Include Coqui XTTS alongside existing engines
-        self.cmb_engine.addItems(["silero", "yandex", "coqui_xtts"])
+        # Include gTTS among available engines
+        self.cmb_engine.addItems(["silero", "yandex", "coqui_xtts", "gtts"])
         self.cmb_engine.currentTextChanged.connect(self._on_engine_change)
         grid.addWidget(QtWidgets.QLabel("Движок TTS:"), row, 0); grid.addWidget(self.cmb_engine, row, 1)
 
@@ -190,6 +190,8 @@ class MainWindow(QtWidgets.QMainWindow):
     def _refresh_voices(self, engine: str):
         self.cmb_voice.blockSignals(True)
         self.cmb_voice.clear()
+        self.lbl_voice.show()
+        self.cmb_voice.show()
         if engine == "silero":
             self.lbl_voice.setText("Silero голос:")
             self.cmb_voice.setEditable(False)
@@ -202,6 +204,10 @@ class MainWindow(QtWidgets.QMainWindow):
             self.lbl_voice.setText("Coqui speaker:")
             # Allow manual entry of speaker reference folder
             self.cmb_voice.setEditable(True)
+        elif engine == "gtts":
+            # gTTS has no preset voices, so hide the selector
+            self.lbl_voice.hide()
+            self.cmb_voice.hide()
         else:
             self.lbl_voice.setText("Голос:")
             self.cmb_voice.setEditable(True)

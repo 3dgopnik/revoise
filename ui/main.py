@@ -238,15 +238,27 @@ class MainWindow(QtWidgets.QMainWindow):
     # ---------- Действия ----------
     def show_help(self):
         """Show instructions for connecting Yandex API."""
+        # Build HTML text with clickable links
         text = (
-            "1. Зарегистрируйтесь в Yandex Cloud: https://cloud.yandex.ru\n"
-            "2. В консоли создайте каталог и включите сервис SpeechKit.\n"
-            "3. Откройте меню 'Сервисные аккаунты' и создайте аккаунт.\n"
-            "4. На вкладке 'Ключи доступа' сформируйте API-ключ.\n"
-            "5. Вставьте ключ в поле 'Yandex key' на главном экране.\n"
-            "Документация: https://cloud.yandex.ru/docs/speechkit/tts/quickstart"
+            "1. Зарегистрируйтесь в Yandex Cloud: "
+            '<a href="https://cloud.yandex.ru">https://cloud.yandex.ru</a><br>'
+            "2. В консоли создайте каталог и включите сервис SpeechKit.<br>"
+            "3. Откройте меню 'Сервисные аккаунты' и создайте аккаунт.<br>"
+            "4. На вкладке 'Ключи доступа' сформируйте API-ключ.<br>"
+            "5. Вставьте ключ в поле 'Yandex key' на главном экране.<br>"
+            "Документация: "
+            '<a href="https://cloud.yandex.ru/docs/speechkit/tts/quickstart">'
+            "https://cloud.yandex.ru/docs/speechkit/tts/quickstart</a>"
         )
-        QtWidgets.QMessageBox.information(self, "Помощь", text)
+
+        # Configure message box to render HTML and allow external links
+        msg = QtWidgets.QMessageBox(self)
+        msg.setWindowTitle("Помощь")
+        msg.setText(text)
+        msg.setTextFormat(QtCore.Qt.RichText)
+        msg.setTextInteractionFlags(QtCore.Qt.TextBrowserInteraction)
+        msg.setOpenExternalLinks(True)
+        msg.exec()
 
     def recognize_only(self):
         try:

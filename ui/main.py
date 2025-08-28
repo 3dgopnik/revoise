@@ -257,7 +257,9 @@ class MainWindow(QtWidgets.QMainWindow):
         msg.setText(text)
         msg.setTextFormat(QtCore.Qt.RichText)
         msg.setTextInteractionFlags(QtCore.Qt.TextBrowserInteraction)
-        msg.setOpenExternalLinks(True)
+        label = msg.findChild(QtWidgets.QLabel, "qt_msgbox_label")
+        if label:
+            label.setOpenExternalLinks(True)  # enable clickable links
         msg.exec()
 
     def recognize_only(self):

@@ -34,7 +34,7 @@
   /bin/ffmpeg.exe
   /models/
     /whisper/
-    /tts/ (silero, coqui_xtts, dia, kokoro, mars5, vibevoice, chatterbox)
+    /tts/ (silero, coqui_xtts, dia, mars5, vibevoice, chatterbox)
     /lipsync/
   /sfx/
   /input/
@@ -78,7 +78,7 @@ uv run python -m ui.main_window
 ---
 
 ## TTS-движки (офлайн/онлайн)
-**Офлайн (приоритет):** Silero, Coqui XTTS-v2, Dia, Kokoro, MARS5, Orpheus
+**Офлайн (приоритет):** Silero, Coqui XTTS-v2, Dia, MARS5, Orpheus
 **Онлайн/гибрид:** Hume, Gemini, OpenAI TTS, Minimax, Chatterbox, VibeVoice
 Сравнение: https://huggingface.co/spaces/TTS-AGI/TTS-Arena
 
@@ -122,7 +122,7 @@ uv run python -m ui.main_window
 ## Дорожная карта по спринтам
 - Спринт A — Qt-MVP (UI, редактор с diff, ducking, .rvproj)
 - Спринт B — Ритм/стабильность (якоря, постпроцесс, экспорт SRT/CSV)
-- Спринт C — TTS-пул (Dia/Kokoro/MARS5), предпрослушка
+- Спринт C — TTS-пул (Dia/MARS5), предпрослушка
 - Спринт D — Таймлайн (NLE-лайт)
 - Спринт E — Live режим (talk-llama-fast)
 - Спринт F — Облако (Hume, Gemini, OpenAI TTS), SFX-генерация

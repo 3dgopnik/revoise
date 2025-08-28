@@ -2,7 +2,6 @@
 """
 Скачивает TTS-модели в portable-кэш и раскладывает в D:\RevoicePortable\models\tts\...
 - Coqui XTTS v2 (мульти-язык)
-- Kokoro (лёгкая)
 """
 
 import os
@@ -11,9 +10,6 @@ from pathlib import Path
 HF_REPOS = {
     # XTTS v2 — офлайн чекпоинт (Coqui)
     "coqui_xtts": "coqui/XTTS-v2",  # можно заменить на альтернативный форк при желании
-
-    # Kokoro — компактная модель
-    "kokoro": "hexgrad/Kokoro-82M"  # типичный компактный чекпоинт
 }
 
 def main():

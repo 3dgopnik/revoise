@@ -6,7 +6,7 @@
 - Поместите модели в `models/whisper` (ggml/gguf для whisper.cpp или файлы для faster-whisper).
 
 ## TTS
-- Silero, Coqui XTTS-v2, Dia, Kokoro, MARS5, Orpheus — каждая в своей подпапке (`models/tts/<engine>`).
+- Silero, Coqui XTTS-v2, Dia, MARS5, Orpheus — каждая в своей подпапке (`models/tts/<engine>`).
 - Некоторые модели требуют GPU и значительную VRAM.
 
 ## LipSync

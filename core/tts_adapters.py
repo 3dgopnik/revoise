@@ -1,13 +1,11 @@
 # -*- coding: utf-8 -*-
 from __future__ import annotations
-import os
 from pathlib import Path
 import logging
 import numpy as np
 import soundfile as sf
-from kokoro import KPipeline
 
-__all__ = ["CoquiXTTS", "KokoroTTS", "SileroTTS", "BeepTTS"]
+__all__ = ["CoquiXTTS", "SileroTTS", "BeepTTS"]
 
 # --- XTTS v2 (Coqui) ---
 class CoquiXTTS:
@@ -50,49 +48,6 @@ class CoquiXTTS:
             # тут оставим как есть, ресемплинг у тебя уже есть в synth_natural.
             pass
         return wav.astype(np.float32)
-
-# --- Kokoro (очень лёгкая) ---
-class KokoroTTS:
-    _model = None
-
-    def __init__(self, root: Path):
-        self.root = Path(root)
-        self.model_dir = self.root / "models" / "tts" / "kokoro"
-
-    def _ensure_model(self):
-        """Create pipeline once and reuse it."""
-        if KokoroTTS._model is None:
-            KokoroTTS._model = KPipeline(self.model_dir)
-        return KokoroTTS._model
-
-    def _prepare_voice(self, speaker: str):
-        """Load voice checkpoint or return plain name."""
-        voice_path = self.model_dir / "voices" / f"{speaker}.pt"
-        if voice_path.exists():
-            import torch
-            return torch.load(voice_path, weights_only=True)
-        return speaker
-
-    def tts(self, text: str, speaker: str, sr: int = 48000) -> np.ndarray:
-        pipeline = self._ensure_model()
-        languages = getattr(pipeline, "languages", [])
-        lang = "ru"
-        if "ru" not in languages:
-            if languages:
-                logging.warning("Russian language is unavailable; using %s", languages[0])
-                lang = languages[0]
-            else:
-                logging.warning("No language information; defaulting to Russian")
-        voice = self._prepare_voice(speaker)
-        pieces: list[np.ndarray] = []
-        kwargs = {"voice": voice, "speed": 1.0, "split_pattern": r"\n+"}
-        if lang:
-            kwargs["language"] = lang
-        for chunk, _ in pipeline(text or "", **kwargs):
-            pieces.append(np.array(chunk, dtype=np.float32))
-        if not pieces:
-            return np.zeros(1, dtype=np.float32)
-        return np.concatenate(pieces).astype(np.float32)
 
 # --- Silero TTS ---
 class SileroTTS:

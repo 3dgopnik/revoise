@@ -13,7 +13,7 @@ import numpy as np
 import soundfile as sf
 from tqdm import tqdm
 from num2words import num2words
-from .tts_adapters import BeepTTS, CoquiXTTS, KokoroTTS, SileroTTS
+from .tts_adapters import BeepTTS, CoquiXTTS, SileroTTS
 
 logger = logging.getLogger(__name__)
 
@@ -235,10 +235,6 @@ def synth_chunk(ffmpeg: str, text: str, sr: int, speaker: str,
             model_sr = sr
         elif engine == "coqui_xtts":
             tts = CoquiXTTS(Path(__file__).resolve().parent.parent)
-            wav = tts.tts(text, speaker, sr=24000)
-            model_sr = 24000
-        elif engine == "kokoro":
-            tts = KokoroTTS(Path(__file__).resolve().parent.parent)
             wav = tts.tts(text, speaker, sr=24000)
             model_sr = 24000
         else:

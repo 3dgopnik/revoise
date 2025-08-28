@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # PySide6 UI — RevoicePortable alpha3
-# Автоопределение голосов Kokoro из models/tts/kokoro/voices/*.pt
+# Voice auto-detection removed
 # Logs: BASE_DIR / logs / log_version_alpha3.txt
 
 from PySide6 import QtWidgets, QtGui, QtCore
@@ -35,10 +35,6 @@ def handle_exception(exc_type, exc, tb):
 
 # Register global exception hook
 sys.excepthook = handle_exception
-
-# Model directories
-KOKORO_DIR = BASE_DIR / "models" / "tts" / "kokoro"
-KOKORO_VOICES_DIR = KOKORO_DIR / "voices"
 
 # Импорт пайплайна
 from core.pipeline import (
@@ -105,7 +101,7 @@ class MainWindow(QtWidgets.QMainWindow):
         grid = QtWidgets.QGridLayout()
         row = 0
 
-        self.cmb_engine = QtWidgets.QComboBox(); self.cmb_engine.addItems(["silero","yandex","kokoro"])
+        self.cmb_engine = QtWidgets.QComboBox(); self.cmb_engine.addItems(["silero","yandex"])
         self.cmb_engine.currentTextChanged.connect(self._on_engine_change)
         grid.addWidget(QtWidgets.QLabel("Движок TTS:"), row, 0); grid.addWidget(self.cmb_engine, row, 1)
 
@@ -179,16 +175,6 @@ class MainWindow(QtWidgets.QMainWindow):
     def _on_engine_change(self, engine: str):
         self._refresh_voices(engine)
 
-    def _detect_kokoro_voices(self):
-        """Сканирует voices/*.pt и возвращает список имен файлов без расширения."""
-        try:
-            if KOKORO_VOICES_DIR.exists():
-                return sorted([p.stem for p in KOKORO_VOICES_DIR.glob("*.pt")])
-            return []
-        except Exception as e:
-            self.log_print("Kokoro detect error:", e)
-            return []
-
     def _refresh_voices(self, engine: str):
         self.cmb_voice.blockSignals(True)
         self.cmb_voice.clear()
@@ -200,13 +186,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self.lbl_voice.setText("Yandex голос:")
             self.cmb_voice.setEditable(False)
             self.cmb_voice.addItems(YANDEX_VOICES)
-        elif engine == "kokoro":
-            self.lbl_voice.setText("Kokoro голос:")
-            self.cmb_voice.setEditable(True)
-            voices = self._detect_kokoro_voices()
-            if not voices:
-                voices = ["<нет .pt файлов>"]
-            self.cmb_voice.addItems(voices)
         else:
             self.lbl_voice.setText("Голос:")
             self.cmb_voice.setEditable(True)

@@ -9,6 +9,7 @@ import os, subprocess, tempfile, traceback, logging, sys
 from datetime import datetime
 
 from .settings import SettingsDialog
+from .config import load_config, save_config
 
 # Version and log file
 APP_VER = "alpha3"
@@ -79,6 +80,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # API keys for external services
         self.yandex_key = ""
         self.chatgpt_key = ""
+        self.yandex_key, self.chatgpt_key = load_config()  # load stored keys
 
         log.info("UI start. Version=%s", APP_VER)
         self._build_ui()
@@ -243,10 +245,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
     # ---------- Действия ----------
     def open_settings(self):
-        """Open dialog to configure API keys."""
+        """Open dialog to configure API keys and persist them."""
         dlg = SettingsDialog(self, self.yandex_key, self.chatgpt_key)
         if dlg.exec() == QtWidgets.QDialog.Accepted:
             self.yandex_key, self.chatgpt_key = dlg.get_keys()
+            save_config(self.yandex_key, self.chatgpt_key)
 
     def show_help(self):
         """Show instructions for connecting Yandex API."""

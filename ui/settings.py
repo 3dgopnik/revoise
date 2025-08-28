@@ -8,10 +8,10 @@ class SettingsDialog(QtWidgets.QDialog):
         self.setWindowTitle("Настройки API")
 
         form = QtWidgets.QFormLayout(self)
-        # Yandex API key input
+        # Yandex API key input with preloaded default
         self.ed_yandex = QtWidgets.QLineEdit(yandex_key)
         form.addRow("Yandex key:", self.ed_yandex)
-        # ChatGPT API key input placeholder
+        # ChatGPT API key input with preloaded default
         self.ed_chatgpt = QtWidgets.QLineEdit(chatgpt_key)
         form.addRow("ChatGPT key:", self.ed_chatgpt)
 

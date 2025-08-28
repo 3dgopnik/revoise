@@ -37,6 +37,8 @@
     /tts/ (silero, coqui_xtts, dia, kokoro, mars5, vibevoice, chatterbox)
     /lipsync/
   /sfx/
+  /input/
+  /output/
   /ui/
   /core/
   /projects/
@@ -45,6 +47,7 @@
   pyproject.toml
 ```
 Папка `models/` может быть пустой; см. `models/README.md` для загрузки весов.
+Видео для обработки кладите в папку `input`, готовые ролики появляются в `output` (например, `D:\revoise\input` и `D:\revoise\output`).
 
 ---
 

@@ -2,6 +2,13 @@ from PySide6 import QtCore, QtGui, QtWidgets
 from PySide6.QtWidgets import QMainWindow, QFileDialog, QMessageBox, QTableWidgetItem
 import json, sys, pathlib
 
+# Default project directories
+BASE_DIR = pathlib.Path(__file__).resolve().parent.parent
+INPUT_DIR = BASE_DIR / "input"
+OUTPUT_DIR = BASE_DIR / "output"
+INPUT_DIR.mkdir(exist_ok=True)
+OUTPUT_DIR.mkdir(exist_ok=True)
+
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -66,7 +73,7 @@ class MainWindow(QMainWindow):
 
     # --- basic ops ---
     def open_video(self):
-        path, _ = QFileDialog.getOpenFileName(self, "Выберите видео", "", "Video (*.mp4 *.mov *.mkv)")
+        path, _ = QFileDialog.getOpenFileName(self, "Выберите видео", str(INPUT_DIR), "Video (*.mp4 *.mov *.mkv)")
         if not path:
             return
         self.status.showMessage(f"Видео выбрано: {path}")
@@ -89,8 +96,11 @@ class MainWindow(QMainWindow):
             QMessageBox.critical(self, "Ошибка сохранения", str(e))
 
     def export_media(self):
-        # TODO: call core.pipeline to render with ffmpeg mux
-        QMessageBox.information(self, "Экспорт", "Экспорт будет реализован в core.pipeline.render()")
+        """Placeholder export using default output directory."""
+        path, _ = QFileDialog.getSaveFileName(self, "Экспорт", str(OUTPUT_DIR / "output.mp4"), "Video (*.mp4 *.mov *.mkv)")
+        if not path:
+            return
+        QMessageBox.information(self, "Экспорт", f"Видео будет сохранено: {path}")
 
     def undo(self): pass
     def redo(self): pass

@@ -1,10 +1,15 @@
 # ui/revoice/controller.py
-class Controller:
-    def __init__(self):
-        """Initialize the controller"""
-        pass
+"""Basic controller for coordinating UI actions."""
 
-    def run(self):
-        """Execute controller logic"""
-        pass
+
+class Controller:
+    def __init__(self) -> None:
+        """Prepare controller state."""
+        # Flag to show controller is ready for work
+        self._initialized = True
+
+    def run(self) -> None:
+        """Execute controller logic."""
+        # Placeholder for actual controller operations
+        raise NotImplementedError("Controller run logic is not implemented")
 

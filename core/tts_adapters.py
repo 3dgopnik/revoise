@@ -60,12 +60,12 @@ class KokoroTTS:
     def _ensure_model(self):
         if KokoroTTS._model is None:
             import kokoro
-            KokoroTTS._model = kokoro.load(self.model_dir)  # модель из локальной папки
+            KokoroTTS._model = kokoro.load_model(self.model_dir)  # model from the local directory
         return KokoroTTS._model
 
     def tts(self, text: str, speaker: str, sr: int = 48000) -> np.ndarray:
         model = self._ensure_model()
-        wav = model.tts(text or "", language="ru")  # укажем ru; при необходимости выберем en/ja
+        wav = model.tts(text or "", language="ru")  # use Russian; switch to en/ja if needed
         if not isinstance(wav, np.ndarray):
             wav = np.array(wav, dtype=np.float32)
         return wav.astype(np.float32)

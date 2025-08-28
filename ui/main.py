@@ -110,6 +110,11 @@ class MainWindow(QtWidgets.QMainWindow):
         grid.addWidget(self.lbl_voice, row, 2); grid.addWidget(self.cmb_voice, row, 3)
 
         row += 1
+        self.lbl_key = QtWidgets.QLabel("Yandex key:")
+        self.ed_key = QtWidgets.QLineEdit()  # Yandex Cloud API key
+        grid.addWidget(self.lbl_key, row, 0); grid.addWidget(self.ed_key, row, 1, 1, 3)
+
+        row += 1
         self.cmb_whisper = QtWidgets.QComboBox(); self.cmb_whisper.addItems(["large-v3","medium","small"])
         grid.addWidget(QtWidgets.QLabel("Whisper:"), row, 0); grid.addWidget(self.cmb_whisper, row, 1)
         self.ed_speed = QtWidgets.QLineEdit(str(self.speed_pct))
@@ -149,8 +154,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.btn_run = QtWidgets.QPushButton("3) Озвучить")
         self.btn_reset = QtWidgets.QPushButton("Сброс")
         self.btn_open = QtWidgets.QPushButton("Открыть выход…")
+        self.btn_help = QtWidgets.QPushButton("Помощь")
         hb.addWidget(self.btn_rec); hb.addWidget(self.btn_edit); hb.addWidget(self.btn_run)
-        hb.addStretch(1); hb.addWidget(self.btn_reset); hb.addWidget(self.btn_open)
+        hb.addStretch(1); hb.addWidget(self.btn_help); hb.addWidget(self.btn_reset); hb.addWidget(self.btn_open)
         layout.addLayout(hb)
 
         # Лог
@@ -163,6 +169,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.btn_run.clicked.connect(self.start_render)
         self.btn_reset.clicked.connect(self.reset_state)
         self.btn_open.clicked.connect(self.open_outdir)
+        self.btn_help.clicked.connect(self.show_help)
 
         # Горячие клавиши
         for key in ("Ctrl+O","Ctrl+S","Ctrl+E","Ctrl+Z","Ctrl+Y","Space","Ctrl+Enter"):
@@ -182,13 +189,16 @@ class MainWindow(QtWidgets.QMainWindow):
             self.lbl_voice.setText("Silero голос:")
             self.cmb_voice.setEditable(False)
             self.cmb_voice.addItems(SILERO_PRESETS)
+            self.lbl_key.hide(); self.ed_key.hide()  # Hide API key for non-Yandex engines
         elif engine == "yandex":
             self.lbl_voice.setText("Yandex голос:")
             self.cmb_voice.setEditable(False)
             self.cmb_voice.addItems(YANDEX_VOICES)
+            self.lbl_key.show(); self.ed_key.show()  # Show API key when using Yandex
         else:
             self.lbl_voice.setText("Голос:")
             self.cmb_voice.setEditable(True)
+            self.lbl_key.hide(); self.ed_key.hide()  # Hide API key for unknown engines
         self.cmb_voice.blockSignals(False)
 
     # ---------- Хелперы ----------
@@ -220,6 +230,18 @@ class MainWindow(QtWidgets.QMainWindow):
         self.log_print("Состояние сброшено. Готово к новому видео.")
 
     # ---------- Действия ----------
+    def show_help(self):
+        """Show instructions for connecting Yandex API."""
+        text = (
+            "1. Зарегистрируйтесь в Yandex Cloud: https://cloud.yandex.ru\n"
+            "2. В консоли создайте каталог и включите сервис SpeechKit.\n"
+            "3. Откройте меню 'Сервисные аккаунты' и создайте аккаунт.\n"
+            "4. На вкладке 'Ключи доступа' сформируйте API-ключ.\n"
+            "5. Вставьте ключ в поле 'Yandex key' на главном экране.\n"
+            "Документация: https://cloud.yandex.ru/docs/speechkit/tts/quickstart"
+        )
+        QtWidgets.QMessageBox.information(self, "Помощь", text)
+
     def recognize_only(self):
         try:
             if not self.inp_video.text().strip():
@@ -271,7 +293,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 spell_latin=self.chk_latin.isChecked(), music_path=(self.ed_music.text().strip() or None),
                 music_db=float(self.ed_music_db.text() or "-18"), duck_ratio=float(self.ed_duck_ratio.text() or "8.0"),
                 duck_thresh=float(self.ed_duck_thresh.text() or "0.05"), tts_engine=engine,
-                yandex_key="", yandex_voice="", speed_jitter=float(self.ed_jitter.text() or "0.03")
+                yandex_key=self.ed_key.text().strip(), yandex_voice=voice,
+                speed_jitter=float(self.ed_jitter.text() or "0.03")
             )
             self.log_print("Готово:", out); QtWidgets.QMessageBox.information(self,"Готово",f"Сохранено:\n{out}")
         except Exception as e:

@@ -59,9 +59,14 @@ class KokoroTTS:
 
     def _ensure_model(self):
         if KokoroTTS._model is None:
-            from kokoro import TTS  # new API for loading models
-            # Load model from the local directory using the updated Kokoro interface
-            KokoroTTS._model = TTS.load(self.model_dir)
+            try:
+                from kokoro import TTS  # prefer the new high-level API
+                # Load model via the new TTS API
+                KokoroTTS._model = TTS.load(self.model_dir)
+            except ImportError:
+                import kokoro  # fallback to the legacy module import
+                # Load model using the legacy interface
+                KokoroTTS._model = kokoro.load_model(self.model_dir)
         return KokoroTTS._model
 
     def tts(self, text: str, speaker: str, sr: int = 48000) -> np.ndarray:

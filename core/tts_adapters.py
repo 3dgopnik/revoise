@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import annotations
 import os
+import logging
 from pathlib import Path
 import numpy as np
 import soundfile as sf
@@ -71,7 +72,15 @@ class KokoroTTS:
 
     def tts(self, text: str, speaker: str, sr: int = 48000) -> np.ndarray:
         model = self._ensure_model()
-        wav = model.tts(text or "", language="ru")  # use Russian; switch to en/ja if needed
+        # Check supported languages before synthesis
+        langs = getattr(model, "languages", [])
+        language = "ru"
+        if langs and language not in langs:
+            logging.warning(
+                "Russian is not supported; using '%s' instead.", langs[0]
+            )
+            language = langs[0]
+        wav = model.tts(text or "", language=language)  # default to Russian
         if not isinstance(wav, np.ndarray):
             wav = np.array(wav, dtype=np.float32)
         return wav.astype(np.float32)

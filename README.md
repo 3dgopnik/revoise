@@ -83,6 +83,7 @@ uv run python -m ui.main_window
 Сравнение: https://huggingface.co/spaces/TTS-AGI/TTS-Arena
 
 > Silero модели ищутся в папке `models/tts/silero/` (файл `.pt`).
+> Референсы спикеров для Coqui XTTS кладите в `models/speakers/<имя>`.
 
 ---
 

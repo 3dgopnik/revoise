@@ -8,6 +8,7 @@
 ## TTS
 - Silero, Coqui XTTS-v2, Dia, MARS5, Orpheus — каждая в своей подпапке (`models/tts/<engine>`).
 - Некоторые модели требуют GPU и значительную VRAM.
+- Референсы спикеров для Coqui XTTS кладите в `models/speakers/<имя_спикера>/` (wav-файлы).
 
 ## LipSync
 - Позже: wav2lip в `models/lipsync`.

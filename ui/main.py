@@ -107,7 +107,9 @@ class MainWindow(QtWidgets.QMainWindow):
         grid = QtWidgets.QGridLayout()
         row = 0
 
-        self.cmb_engine = QtWidgets.QComboBox(); self.cmb_engine.addItems(["silero","yandex"])
+        self.cmb_engine = QtWidgets.QComboBox()
+        # Include Coqui XTTS alongside existing engines
+        self.cmb_engine.addItems(["silero", "yandex", "coqui_xtts"])
         self.cmb_engine.currentTextChanged.connect(self._on_engine_change)
         grid.addWidget(QtWidgets.QLabel("Движок TTS:"), row, 0); grid.addWidget(self.cmb_engine, row, 1)
 
@@ -196,6 +198,10 @@ class MainWindow(QtWidgets.QMainWindow):
             self.lbl_voice.setText("Yandex голос:")
             self.cmb_voice.setEditable(False)
             self.cmb_voice.addItems(YANDEX_VOICES)
+        elif engine == "coqui_xtts":
+            self.lbl_voice.setText("Coqui speaker:")
+            # Allow manual entry of speaker reference folder
+            self.cmb_voice.setEditable(True)
         else:
             self.lbl_voice.setText("Голос:")
             self.cmb_voice.setEditable(True)
@@ -303,6 +309,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 QtWidgets.QMessageBox.warning(self,"Нет видео","Укажи путь к видео."); return
             engine = self.cmb_engine.currentText(); voice = self.cmb_voice.currentText()
             self.log_print(f"Озвучиваю… (engine={engine}, voice={voice})")
+            # Forward engine choice (incl. coqui_xtts) to the synthesis pipeline
             out = revoice_video(
                 self.inp_video.text(), self.inp_out.text(),
                 speaker=voice, whisper_size=self.cmb_whisper.currentText(), device="cuda",

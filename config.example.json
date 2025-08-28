@@ -7,7 +7,6 @@
       "silero_path": "models/tts/silero",
       "coqui_xtts_path": "models/tts/coqui_xtts",
       "dia_path": "models/tts/dia",
-      "kokoro_path": "models/tts/kokoro",
       "mars5_path": "models/tts/mars5",
       "vibevoice_path": "models/tts/vibevoice",
       "chatterbox_path": "models/tts/chatterbox"

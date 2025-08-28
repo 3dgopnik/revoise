@@ -5,7 +5,7 @@
 
 from PySide6 import QtWidgets, QtGui, QtCore
 from pathlib import Path
-import os, subprocess, tempfile, traceback, logging
+import os, subprocess, tempfile, traceback, logging, sys
 from datetime import datetime
 
 # Version and log file
@@ -28,6 +28,13 @@ logging.basicConfig(
     encoding="utf-8"
 )
 log = logging.getLogger("ui")
+
+def handle_exception(exc_type, exc, tb):
+    """Log uncaught exceptions before the application exits."""
+    log.critical("Unhandled exception", exc_info=(exc_type, exc, tb))
+
+# Register global exception hook
+sys.excepthook = handle_exception
 
 # Model directories
 KOKORO_DIR = BASE_DIR / "models" / "tts" / "kokoro"
@@ -293,7 +300,13 @@ class MainWindow(QtWidgets.QMainWindow):
             QtWidgets.QMessageBox.critical(self,"Ошибка",str(e))
 
 def main():
-    app = QtWidgets.QApplication([]); w = MainWindow(); w.show(); app.exec()
+    """Run application and ensure logs are flushed on exit."""
+    app = QtWidgets.QApplication([])
+    w = MainWindow()
+    w.show()
+    exit_code = app.exec()
+    logging.shutdown()
+    return exit_code
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

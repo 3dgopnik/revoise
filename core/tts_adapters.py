@@ -59,14 +59,17 @@ class KokoroTTS:
 
     def _ensure_model(self):
         if KokoroTTS._model is None:
-            try:
-                from kokoro import TTS  # prefer the new high-level API
-                # Load model via the new TTS API
-                KokoroTTS._model = TTS.load(self.model_dir)
-            except ImportError:
-                import kokoro  # fallback to the legacy module import
-                # Load model using the legacy interface
+            import kokoro  # import once to inspect available API versions
+            # Select the appropriate loading function based on the available API
+            if hasattr(kokoro, "TTS") and hasattr(kokoro.TTS, "load"):
+                KokoroTTS._model = kokoro.TTS.load(self.model_dir)
+            elif hasattr(kokoro, "load_model"):
                 KokoroTTS._model = kokoro.load_model(self.model_dir)
+            elif hasattr(kokoro, "load"):
+                KokoroTTS._model = kokoro.load(self.model_dir)
+            else:
+                # Raise an explicit error for unsupported versions
+                raise AttributeError("Unsupported Kokoro version: missing load method")
         return KokoroTTS._model
 
     def tts(self, text: str, speaker: str, sr: int = 48000) -> np.ndarray:

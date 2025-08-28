@@ -87,7 +87,8 @@ class SileroTTS:
             model_path = pt_files[0]
             model = torch.package.PackageImporter(str(model_path)).load_pickle("tts_models", "model")
             model.to("cpu")
-            model.eval()
+            if hasattr(model, "eval"):
+                model.eval()  # Some model versions do not provide eval()
             SileroTTS._model = model
         if SileroTTS._model is None:
             raise RuntimeError("Failed to load Silero TTS model")

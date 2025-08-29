@@ -4,7 +4,7 @@
       "https://huggingface.co/coqui/XTTS-v2/resolve/main/model.zip"
     ],
     "silero": [
-      "https://github.com/snakers4/silero-models/releases/download/v0.4/silero_tts_ru_v3.pt"
+      "https://models.silero.ai/models/tts/ru/v4_ru.pt"
     ]
   },
   "stt": {

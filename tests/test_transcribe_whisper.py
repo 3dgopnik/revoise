@@ -1,8 +1,10 @@
 import sys
 import types
+
 import pytest
 
 from core import pipeline
+from core.model_manager import DownloadError
 
 
 def test_transcribe_whisper_download_refused(tmp_path, monkeypatch):
@@ -10,7 +12,10 @@ def test_transcribe_whisper_download_refused(tmp_path, monkeypatch):
     fake_module.WhisperModel = object
     monkeypatch.setitem(sys.modules, "faster_whisper", fake_module)
 
-    def fake_ensure_model(name, category, *, parent=None):
+    captured: dict[str, bool] = {}
+
+    def fake_ensure_model(name, category, *, parent=None, auto_download=False):
+        captured["auto_download"] = auto_download
         raise FileNotFoundError("missing")
 
     monkeypatch.setattr(pipeline, "ensure_model", fake_ensure_model)
@@ -19,6 +24,8 @@ def test_transcribe_whisper_download_refused(tmp_path, monkeypatch):
 
     with pytest.raises(RuntimeError, match="download was declined"):
         pipeline.transcribe_whisper(tmp_path / "dummy.wav")
+
+    assert captured["auto_download"] is True
 
 
 def test_transcribe_whisper_loads_existing_model(tmp_path, monkeypatch):
@@ -76,3 +83,25 @@ def test_transcribe_whisper_uses_model_cache(tmp_path, monkeypatch):
     pipeline.transcribe_whisper(tmp_path / "second.wav")
 
     assert calls["count"] == 1
+
+
+def test_transcribe_whisper_download_failure(tmp_path, monkeypatch):
+    fake_module = types.ModuleType("faster_whisper")
+    fake_module.WhisperModel = object
+    monkeypatch.setitem(sys.modules, "faster_whisper", fake_module)
+
+    captured: dict[str, bool] = {}
+
+    def fake_ensure_model(name, category, *, parent=None, auto_download=False):
+        captured["auto_download"] = auto_download
+        raise DownloadError("failed")
+
+    monkeypatch.setattr(pipeline, "ensure_model", fake_ensure_model)
+    monkeypatch.setattr(pipeline, "FWHISPER", None)
+    monkeypatch.setattr(pipeline, "MODEL_PATH_CACHE", {})
+
+    with pytest.raises(RuntimeError, match="download failed"):
+        pipeline.transcribe_whisper(tmp_path / "dummy.wav")
+
+    assert captured["auto_download"] is True
+

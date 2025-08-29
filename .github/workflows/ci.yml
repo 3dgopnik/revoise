@@ -32,6 +32,9 @@ jobs:
       - name: Sync dependencies
         run: uv sync --all-extras --dev
 
+      - name: Validate model URLs
+        run: uv run python tools/validate_model_urls.py
+
       - name: Ruff
         run: uv run ruff check .
 

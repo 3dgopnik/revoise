@@ -3,6 +3,7 @@ from pathlib import Path
 
 import pytest
 
+from core import model_manager
 from core.model_manager import DownloadError, ensure_model, download_model
 
 
@@ -28,8 +29,28 @@ def test_ensure_model_download(tmp_path, monkeypatch):
     source = tmp_path / "source.bin"
     source.write_text("payload")
     url = source.as_uri()
-    inputs = iter(["y", url])
-    monkeypatch.setattr("builtins.input", lambda _: next(inputs))
+    monkeypatch.setattr(
+        model_manager,
+        "MODEL_SOURCES",
+        {"tts": {"downloaded.bin": url}},
+    )
+
+    class MsgBox:
+        Yes = 1
+        No = 0
+        Retry = 2
+        Cancel = 3
+
+        @staticmethod
+        def question(*args, **kwargs):
+            return MsgBox.Yes
+
+        @staticmethod
+        def warning(*args, **kwargs):
+            return MsgBox.Cancel
+
+    monkeypatch.setattr(model_manager, "QMessageBox", MsgBox)
+
     model_path = ensure_model("downloaded.bin", "tts")
     assert model_path.exists()
     stored = json.loads(Path("config.json").read_text())
@@ -38,8 +59,31 @@ def test_ensure_model_download(tmp_path, monkeypatch):
 
 def test_user_declines_download(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
-    inputs = iter(["n"])
-    monkeypatch.setattr("builtins.input", lambda _: next(inputs))
+    source = tmp_path / "source.bin"
+    source.write_text("payload")
+    url = source.as_uri()
+    monkeypatch.setattr(
+        model_manager,
+        "MODEL_SOURCES",
+        {"tts": {"missing.bin": url}},
+    )
+
+    class MsgBox:
+        Yes = 1
+        No = 0
+        Retry = 2
+        Cancel = 3
+
+        @staticmethod
+        def question(*args, **kwargs):
+            return MsgBox.No
+
+        @staticmethod
+        def warning(*args, **kwargs):
+            return MsgBox.Cancel
+
+    monkeypatch.setattr(model_manager, "QMessageBox", MsgBox)
+
     with pytest.raises(FileNotFoundError):
         ensure_model("missing.bin", "tts")
 

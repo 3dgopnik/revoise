@@ -10,7 +10,7 @@ def test_transcribe_whisper_download_refused(tmp_path, monkeypatch):
     fake_module.WhisperModel = object
     monkeypatch.setitem(sys.modules, "faster_whisper", fake_module)
 
-    def fake_ensure_model(name, category):
+    def fake_ensure_model(name, category, *, parent=None):
         raise FileNotFoundError("missing")
 
     monkeypatch.setattr(pipeline, "ensure_model", fake_ensure_model)
@@ -35,7 +35,7 @@ def test_transcribe_whisper_loads_existing_model(tmp_path, monkeypatch):
     fake_module.WhisperModel = DummyWhisperModel
     monkeypatch.setitem(sys.modules, "faster_whisper", fake_module)
 
-    monkeypatch.setattr(pipeline, "ensure_model", lambda name, category: dummy_path)
+    monkeypatch.setattr(pipeline, "ensure_model", lambda name, category, **kwargs: dummy_path)
     monkeypatch.setattr(pipeline, "FWHISPER", None)
     monkeypatch.setattr(pipeline, "MODEL_PATH_CACHE", {})
 
@@ -62,7 +62,7 @@ def test_transcribe_whisper_uses_model_cache(tmp_path, monkeypatch):
 
     calls = {"count": 0}
 
-    def fake_ensure_model(name, category):
+    def fake_ensure_model(name, category, **kwargs):
         calls["count"] += 1
         return dummy_path
 

@@ -57,12 +57,13 @@ def ensure_model(name: str, category: str) -> Path:
     models_dir = Path("models") / category
     model_path = models_dir / name
     if model_path.exists():
+        logging.info("Model '%s' found locally at %s", name, model_path)
         return model_path
 
     config_path = Path("config.json")
     config: dict = {}
     if config_path.exists():
-        with open(config_path, "r", encoding="utf-8") as file:
+        with open(config_path, encoding="utf-8") as file:
             config = json.load(file)
 
     cached = (
@@ -73,6 +74,7 @@ def ensure_model(name: str, category: str) -> Path:
     if cached:
         cached_path = Path(cached)
         if cached_path.exists():
+            logging.info("Model '%s' found locally at %s", name, cached_path)
             return cached_path
 
     while True:
@@ -83,6 +85,7 @@ def ensure_model(name: str, category: str) -> Path:
             raise FileNotFoundError(f"Model '{name}' is missing.")
 
         url = input("Enter download URL: ").strip()
+        logging.info("Download of model '%s' started", name)
         try:
             download_model(url, model_path)
         except DownloadError as exc:
@@ -92,6 +95,7 @@ def ensure_model(name: str, category: str) -> Path:
                 continue
             raise
         else:
+            logging.info("Download of model '%s' completed", name)
             config.setdefault("models", {}).setdefault(category, {})[name] = str(model_path)
             with open(config_path, "w", encoding="utf-8") as file:
                 json.dump(config, file, indent=2)

@@ -1,13 +1,16 @@
-# -*- coding: utf-8 -*-
 from __future__ import annotations
-from pathlib import Path
+
 import base64
 import json
 from io import BytesIO
+from pathlib import Path
+
 import numpy as np
-import soundfile as sf
 import requests
+import soundfile as sf
 from pydub import AudioSegment
+
+from .model_manager import ensure_model
 
 __all__ = ["CoquiXTTS", "SileroTTS", "BeepTTS", "YandexTTS", "GTTSTTS"]
 
@@ -18,14 +21,14 @@ class CoquiXTTS:
 
     def __init__(self, root: Path):
         self.root = Path(root)
-        self.model_dir = self.root / "models" / "tts" / "coqui_xtts"
 
     def _ensure_model(self):
         if CoquiXTTS._model is None:
             from TTS.api import TTS
 
-            # Загружаем локально (без интернета)
-            CoquiXTTS._model = TTS(model_path=str(self.model_dir))
+            model_dir = ensure_model("coqui_xtts", "tts")
+            # Load locally (offline)
+            CoquiXTTS._model = TTS(model_path=str(model_dir))
         return CoquiXTTS._model
 
     def _load_refs(self, speaker_name: str) -> list[str]:
@@ -62,16 +65,13 @@ class SileroTTS:
 
     def __init__(self, root: Path):
         self.root = Path(root)
-        self.model_dir = self.root / "models" / "tts" / "silero"
 
     def _ensure_model(self):
         if SileroTTS._model is None:
             import torch
 
-            pt_files = sorted(self.model_dir.glob("*.pt"))
-            if not pt_files:
-                raise FileNotFoundError(f"Silero model (.pt) not found in {self.model_dir}")
-            model_path = pt_files[0]
+            model_dir = ensure_model("silero", "tts")
+            model_path = next(model_dir.glob("*.pt"))
             model = torch.package.PackageImporter(str(model_path)).load_pickle(
                 "tts_models", "model"
             )

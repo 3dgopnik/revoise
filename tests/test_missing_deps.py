@@ -1,5 +1,6 @@
-import builtins
+import importlib
 import importlib.util as imp_util
+import subprocess
 import sys
 from pathlib import Path
 
@@ -13,14 +14,15 @@ from core.tts_adapters import BeepTTS, CoquiXTTS, SileroTTS
 
 def test_silero_ensure_model_missing_torch(monkeypatch):
     monkeypatch.delitem(sys.modules, "torch", raising=False)
-    original_import = builtins.__import__
+    original_import = importlib.import_module
 
     def fake_import(name, *args, **kwargs):
         if name == "torch":
             raise ModuleNotFoundError("No module named 'torch'")
         return original_import(name, *args, **kwargs)
 
-    monkeypatch.setattr(builtins, "__import__", fake_import)
+    monkeypatch.setattr(importlib, "import_module", fake_import)
+    calls: list[list[str]] = []
 
     with pytest.raises(RuntimeError) as excinfo:
         SileroTTS(Path("."))._ensure_model()
@@ -32,17 +34,25 @@ def test_silero_ensure_model_missing_torch(monkeypatch):
 def test_coqui_ensure_model_missing_tts(monkeypatch):
     monkeypatch.delitem(sys.modules, "TTS", raising=False)
     monkeypatch.delitem(sys.modules, "TTS.api", raising=False)
-    original_import = builtins.__import__
+    original_import = importlib.import_module
 
     def fake_import(name, *args, **kwargs):
         if name.startswith("TTS"):
             raise ModuleNotFoundError("No module named 'TTS'")
         return original_import(name, *args, **kwargs)
 
-    monkeypatch.setattr(builtins, "__import__", fake_import)
+    monkeypatch.setattr(importlib, "import_module", fake_import)
+    calls: list[list[str]] = []
 
-    with pytest.raises(RuntimeError, match="TTS"):
+    def fake_run(cmd, *args, **kwargs):
+        calls.append(cmd)
+        raise subprocess.CalledProcessError(1, cmd)
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    with pytest.raises(RuntimeError, match="pip install TTS"):
         CoquiXTTS(Path("."))._ensure_model()
+    assert calls and "TTS" in calls[0]
 
 
 def _setup_synth(monkeypatch, fallback_array: np.ndarray):

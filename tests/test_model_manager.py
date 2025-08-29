@@ -343,11 +343,11 @@ def test_whispermodel_loads_from_directory(tmp_path, monkeypatch):
 
     monkeypatch.setattr(model_manager, "QMessageBox", MsgBox)
 
-    from core import pipeline
+    from core import model_service, pipeline
 
-    monkeypatch.setattr(pipeline, "ensure_model", model_manager.ensure_model)
+    monkeypatch.setattr(model_service, "get_model_path", model_manager.ensure_model)
+    monkeypatch.setattr(model_service, "_MODEL_PATH_CACHE", {})
     monkeypatch.setattr(pipeline, "FWHISPER", None)
-    monkeypatch.setattr(pipeline, "MODEL_PATH_CACHE", {})
 
     class DummyWhisperModel:
         def __init__(self, model_dir, *args, **kwargs):

@@ -11,7 +11,7 @@ import requests
 import soundfile as sf
 from pydub import AudioSegment
 
-from .model_manager import ensure_model
+from . import model_service
 
 __all__ = ["CoquiXTTS", "SileroTTS", "BeepTTS", "YandexTTS", "GTTSTTS"]
 
@@ -32,7 +32,9 @@ class CoquiXTTS:
                     "CoquiXTTS requires the 'TTS' package with its 'torch' dependency."
                 ) from exc
 
-            model_dir = ensure_model("coqui_xtts", "tts", parent=parent, auto_download=True)
+            model_dir = model_service.get_model_path(
+                "coqui_xtts", "tts", parent=parent, auto_download=True
+            )
             # Load locally (offline)
             CoquiXTTS._model = TTS(model_path=str(model_dir))
         return CoquiXTTS._model
@@ -81,7 +83,9 @@ class SileroTTS:
             except ModuleNotFoundError as exc:
                 raise RuntimeError("SileroTTS requires the 'torch' package.") from exc
 
-            model_dir = ensure_model("silero", "tts", parent=parent, auto_download=True)
+            model_dir = model_service.get_model_path(
+                "silero", "tts", parent=parent, auto_download=True
+            )
             model_path = next(model_dir.glob("*.pt"))
             model = torch.package.PackageImporter(str(model_path)).load_pickle(
                 "tts_models", "model"

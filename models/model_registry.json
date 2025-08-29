@@ -13,8 +13,7 @@
                 "model.bin",
                 "config.json",
                 "tokenizer.json",
-                "vocabulary.json",
-                "special_tokens_map.json"
+                "vocabulary.txt"
             ],
             "optional_files": ["preprocessor_config.json", "tokenizer_config.json"],
             "description": "Fastest, lowest accuracy",
@@ -28,12 +27,10 @@
             "files": [
                 "model.bin",
                 "config.json",
-                "preprocessor_config.json",
                 "tokenizer.json",
-                "vocabulary.json",
-                "special_tokens_map.json"
+                "vocabulary.txt"
             ],
-            "optional_files": ["tokenizer_config.json"],
+            "optional_files": ["preprocessor_config.json", "tokenizer_config.json"],
             "description": "Balanced speed and accuracy",
             "size_mb": 1460
         },
@@ -45,12 +42,10 @@
             "files": [
                 "model.bin",
                 "config.json",
-                "preprocessor_config.json",
                 "tokenizer.json",
-                "vocabulary.json",
-                "special_tokens_map.json"
+                "vocabulary.txt"
             ],
-            "optional_files": ["tokenizer_config.json"],
+            "optional_files": ["preprocessor_config.json", "tokenizer_config.json"],
             "description": "High accuracy, slower",
             "size_mb": 2890
         },
@@ -62,12 +57,10 @@
             "files": [
                 "model.bin",
                 "config.json",
-                "preprocessor_config.json",
                 "tokenizer.json",
-                "vocabulary.json",
-                "special_tokens_map.json"
+                "vocabulary.txt"
             ],
-            "optional_files": ["tokenizer_config.json"],
+            "optional_files": ["preprocessor_config.json", "tokenizer_config.json"],
             "description": "Latest model with highest accuracy, slowest",
             "size_mb": 2920
         }

@@ -61,8 +61,9 @@ uv run python -m ui.main_window
 - Проверки качества:
 ```bash
 uv run ruff check .
+uv run ruff format --check .
 uv run mypy .
-uv run pytest
+uv run pytest -q
 ```
 - Windows: запустить `revoice_portable.bat`, Linux/macOS: `./revoice_portable.sh`.
 

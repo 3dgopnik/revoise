@@ -75,8 +75,13 @@ class SileroTTS:
 
     def _ensure_model(self, parent: Any | None = None):
         if SileroTTS._model is None:
-            ensure_tts_dependencies("silero")
-            import torch
+            try:
+                import torch
+            except ModuleNotFoundError as exc:
+                raise RuntimeError(
+                    "SileroTTS requires the 'torch' package. "
+                    "Install it via `pip install torch --index-url https://download.pytorch.org/whl/cpu`"
+                ) from exc
 
             model_dir = model_service.get_model_path(
                 "silero", "tts", parent=parent, auto_download=True

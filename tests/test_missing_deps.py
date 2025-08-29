@@ -24,17 +24,11 @@ def test_silero_ensure_model_missing_torch(monkeypatch):
     monkeypatch.setattr(importlib, "import_module", fake_import)
     calls: list[list[str]] = []
 
-    def fake_run(cmd, *args, **kwargs):
-        calls.append(cmd)
-        raise subprocess.CalledProcessError(1, cmd)
-
-    monkeypatch.setattr(subprocess, "run", fake_run)
-
     with pytest.raises(RuntimeError) as excinfo:
         SileroTTS(Path("."))._ensure_model()
-    msg = "pip install torch --index-url https://download.pytorch.org/whl/cpu"
-    assert msg in str(excinfo.value)
-    assert calls and "torch" in calls[0]
+    assert "pip install torch --index-url https://download.pytorch.org/whl/cpu" in str(
+        excinfo.value
+    )
 
 
 def test_coqui_ensure_model_missing_tts(monkeypatch):

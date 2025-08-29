@@ -9,6 +9,8 @@ categories:
     labels: ["chore", "refactor"]
   - title: "📝 Docs"
     labels: ["docs"]
+  - title: "⚙️ CI"
+    labels: ["ci"]
 change-template: "- $TITLE (#$NUMBER) by @$AUTHOR"
 no-changes-template: "No notable changes."
 template: |

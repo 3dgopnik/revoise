@@ -162,7 +162,7 @@ def test_ensure_model_downloads_stt_repo(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     repo = tmp_path / "repo"
     repo.mkdir()
-    files = ["model.bin", "config.json", "tokenizer.json"]
+    files = ["model.bin", "config.json", "tokenizer.json", "vocabulary.txt"]
     for fn in files:
         (repo / fn).write_text("data")
     base_url = repo.as_uri() + "/"
@@ -202,9 +202,11 @@ def test_ensure_model_converts_file_to_directory(tmp_path, monkeypatch):
 
     repo = tmp_path / "repo"
     repo.mkdir()
-    files = ["model.bin", "config.json"]
+    files = ["model.bin", "config.json", "tokenizer.json", "vocabulary.txt"]
     (repo / "model.bin").write_text("new")
     (repo / "config.json").write_text("cfg")
+    (repo / "tokenizer.json").write_text("tok")
+    (repo / "vocabulary.txt").write_text("vocab")
     base_url = repo.as_uri() + "/"
     monkeypatch.setattr(
         model_manager,
@@ -231,20 +233,22 @@ def test_ensure_model_converts_file_to_directory(tmp_path, monkeypatch):
     model_dir = ensure_model("dummy", "stt")
     assert (model_dir / "model.bin").read_text() == "old"
     assert (model_dir / "config.json").read_text() == "cfg"
+    assert (model_dir / "tokenizer.json").read_text() == "tok"
+    assert (model_dir / "vocabulary.txt").read_text() == "vocab"
 
 
 def test_ensure_model_skips_missing_optional_files(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     repo = tmp_path / "repo"
     repo.mkdir()
-    files = ["model.bin", "config.json"]
+    files = ["model.bin", "config.json", "tokenizer.json", "vocabulary.txt"]
     for fn in files:
         (repo / fn).write_text("data")
     base_url = repo.as_uri() + "/"
     entry = {
         "base_urls": [base_url],
         "files": files,
-        "optional_files": ["extra.json"],
+        "optional_files": ["preprocessor_config.json"],
     }
     monkeypatch.setattr(model_manager, "MODEL_REGISTRY", {"stt": {"dummy": entry}})
 
@@ -268,14 +272,14 @@ def test_ensure_model_skips_missing_optional_files(tmp_path, monkeypatch):
     assert model_dir.is_dir()
     for fn in files:
         assert (model_dir / fn).exists()
-    assert not (model_dir / "extra.json").exists()
+    assert not (model_dir / "preprocessor_config.json").exists()
 
 
 def test_ensure_model_missing_tokenizer_config(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     repo = tmp_path / "repo"
     repo.mkdir()
-    files = ["model.bin", "config.json", "tokenizer.json"]
+    files = ["model.bin", "config.json", "tokenizer.json", "vocabulary.txt"]
     for fn in files:
         (repo / fn).write_text("data")
     base_url = repo.as_uri() + "/"
@@ -313,7 +317,7 @@ def test_whispermodel_loads_from_directory(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     repo = tmp_path / "repo"
     repo.mkdir()
-    files = ["model.bin", "config.json", "tokenizer.json"]
+    files = ["model.bin", "config.json", "tokenizer.json", "vocabulary.txt"]
     for fn in files:
         (repo / fn).write_text("data")
     base_url = repo.as_uri() + "/"

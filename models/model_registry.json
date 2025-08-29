@@ -1,0 +1,20 @@
+{
+  "tts": {
+    "coqui_xtts": [
+      "https://huggingface.co/coqui/XTTS-v2/resolve/main/model.zip"
+    ],
+    "silero": [
+      "https://github.com/snakers4/silero-models/releases/download/v0.4/silero_tts_ru_v3.pt"
+    ]
+  },
+  "stt": {
+    "large-v3": [
+      "https://huggingface.co/guillaumekln/faster-whisper-large-v3/resolve/main/model.bin"
+    ]
+  },
+  "llm": {
+    "qwen2.5": [
+      "https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct/resolve/main/Qwen2.5-0.5B-Instruct-q4_k_m.gguf"
+    ]
+  }
+}

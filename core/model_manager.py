@@ -3,31 +3,57 @@ from __future__ import annotations
 import json
 import logging
 from pathlib import Path
+from typing import TYPE_CHECKING, Any
 from urllib.request import urlopen
 
-try:  # pragma: no cover - GUI import guard
-    from PySide6.QtWidgets import QMessageBox, QWidget
-except Exception:  # pragma: no cover - fallback for headless environments
+if TYPE_CHECKING:  # pragma: no cover - typing-only definitions
 
-    class QMessageBox:  # type: ignore[override]
-        Yes = 1
-        No = 0
-        Retry = 2
-        Cancel = 3
+    class QMessageBox:
+        Yes: int
+        No: int
+        Retry: int
+        Cancel: int
 
         @staticmethod
-        def question(*args, **kwargs):  # pragma: no cover - fallback behaviour
-            raise RuntimeError("Qt is not available")
+        def question(*args: Any, **kwargs: Any) -> int: ...
 
         @staticmethod
-        def warning(*args, **kwargs):  # pragma: no cover - fallback behaviour
-            raise RuntimeError("Qt is not available")
+        def warning(*args: Any, **kwargs: Any) -> int: ...
 
-    class QWidget:  # type: ignore[override]
-        pass
+    class QWidget: ...
+else:  # pragma: no cover - GUI import guard
+    try:
+        from PySide6.QtWidgets import QMessageBox, QWidget
+    except Exception:  # pragma: no cover - fallback for headless environments
+
+        class QMessageBox:
+            Yes = 1
+            No = 0
+            Retry = 2
+            Cancel = 3
+
+            @staticmethod
+            def question(*args, **kwargs):  # pragma: no cover - fallback behaviour
+                raise RuntimeError("Qt is not available")
+
+            @staticmethod
+            def warning(*args, **kwargs):  # pragma: no cover - fallback behaviour
+                raise RuntimeError("Qt is not available")
+
+        class QWidget:
+            pass
 
 
-from .model_sources import MODEL_SOURCES
+MODEL_REGISTRY_PATH = Path("models") / "model_registry.json"
+
+
+def load_model_registry() -> dict[str, dict[str, list[str]]]:
+    """Load model registry mapping categories to model URLs."""
+    with open(MODEL_REGISTRY_PATH, encoding="utf-8") as file:
+        return json.load(file)
+
+
+MODEL_REGISTRY = load_model_registry()
 
 
 class DownloadError(Exception):
@@ -97,39 +123,39 @@ def ensure_model(name: str, category: str, *, parent: QWidget | None = None) -> 
             logging.info("Model '%s' found locally at %s", name, cached_path)
             return cached_path
 
-    url = MODEL_SOURCES.get(category, {}).get(name)
-    if url is None:
-        raise FileNotFoundError(f"No source URL for model '{name}' in category '{category}'")
+    urls = MODEL_REGISTRY.get(category, {}).get(name)
+    if not urls:
+        raise FileNotFoundError(f"No source URLs for model '{name}' in category '{category}'")
 
-    while True:
-        consent = QMessageBox.question(
-            parent,
-            "Download model",
-            f"Model '{name}' is missing. Download it?",
-            QMessageBox.Yes | QMessageBox.No,
-            QMessageBox.No,
-        )
-        if consent != QMessageBox.Yes:
-            raise FileNotFoundError(f"Model '{name}' is missing.")
+    consent = QMessageBox.question(
+        parent,
+        "Download model",
+        f"Model '{name}' is missing. Download it?",
+        QMessageBox.Yes | QMessageBox.No,
+        QMessageBox.No,
+    )
+    if consent != QMessageBox.Yes:
+        raise FileNotFoundError(f"Model '{name}' is missing.")
 
-        logging.info("Download of model '%s' started", name)
+    for url in urls:
+        logging.info("Download of model '%s' from %s started", name, url)
         try:
             download_model(url, model_path)
         except DownloadError as exc:
             logging.info("Download failed: %s", exc)
-            retry = QMessageBox.warning(
+            QMessageBox.warning(
                 parent,
                 "Download failed",
-                f"Failed to download model '{name}': {exc}",
-                QMessageBox.Retry | QMessageBox.Cancel,
+                f"Failed to download model '{name}' from {url}: {exc}",
+                QMessageBox.Retry,
                 QMessageBox.Retry,
             )
-            if retry == QMessageBox.Retry:
-                continue
-            raise
+            continue
         else:
             logging.info("Download of model '%s' completed", name)
             config.setdefault("models", {}).setdefault(category, {})[name] = str(model_path)
             with open(config_path, "w", encoding="utf-8") as file:
                 json.dump(config, file, indent=2)
             return model_path
+
+    raise DownloadError(f"Failed to download model '{name}' from all registered sources")

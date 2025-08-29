@@ -1,4 +1,6 @@
-def test_smoke():
-    import core.pipeline
+from core.pipeline import merge_into_phrases
 
-    assert core.pipeline is not None
+
+def test_smoke_merge():
+    segments = [(0.0, 0.1, "hello"), (0.2, 0.3, "world")]
+    assert merge_into_phrases(segments) == [(0.0, 0.3, "hello world")]

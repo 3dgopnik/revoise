@@ -5,7 +5,7 @@ import shutil
 import subprocess
 import tempfile
 from pathlib import Path
-from typing import List, Tuple, Optional
+from typing import Any, List, Optional, Tuple
 from itertools import zip_longest
 
 import numpy as np
@@ -16,8 +16,8 @@ from .tts_adapters import BeepTTS, CoquiXTTS, SileroTTS, YandexTTS, GTTSTTS
 
 logger = logging.getLogger(__name__)
 
-# ===================== Глобальные =====================
-FWHISPER = None
+# ===================== Global =====================
+FWHISPER: Any | None = None
 TTS_MODEL = None
 
 MULTISPACE = re.compile(r"\s+")
@@ -64,10 +64,9 @@ def transcribe_whisper(audio_wav: Path, language="ru", model_size="large-v3", de
             compute_type = "int8_float16" if device == "cuda" else "int8"
             FWHISPER = WhisperModel(model_size, device=device, compute_type=compute_type)
             FWHISPER._name = model_size
+        assert FWHISPER is not None
         segments, _ = FWHISPER.transcribe(
-            str(audio_wav),
-            language=language,
-            vad_filter=True,
+            str(audio_wav), language=language, vad_filter=True,
             vad_parameters={"min_silence_duration_ms": 300},
         )
         result = [(s.start, s.end, s.text.strip()) for s in segments]
@@ -500,15 +499,8 @@ def revoice_video(
             f"[1:a]volume={music_db}dB[bg];",
             f"[bg][0:a]sidechaincompress=threshold={duck_thresh}:ratio={duck_ratio}:attack=20:release=300[mduck];",
             "[mduck][0:a]amix=inputs=2:duration=first:dropout_transition=200,volume=1.0[out]",
-            "-map",
-            "[out]",
-            "-ar",
-            str(sr),
-            "-ac",
-            "1",
-            "-c:a",
-            "pcm_s16le",
-            str(out_audio),
+            "-map", "[out]",
+            "-ar", str(sr), "-ac", "1", "-c:a", "pcm_s16le", str(out_audio)
         ]
         try:
             run(cmd)

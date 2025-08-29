@@ -24,4 +24,6 @@ jobs:
         run: uv run mypy .
 
       - name: Pytest
-        run: uv run pytest -q
+
+        run: uv run pytest
+

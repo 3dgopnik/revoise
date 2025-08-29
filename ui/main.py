@@ -44,6 +44,7 @@ from core.pipeline import (
     revoice_video, phrases_to_marked_text,
     transcribe_whisper, merge_into_phrases, ensure_ffmpeg
 )
+from core.model_manager import list_models
 
 # Предустановленные голоса
 SILERO_PRESETS = ["baya", "kseniya", "aidar", "eugene", "random"]
@@ -58,7 +59,6 @@ class MainWindow(QtWidgets.QMainWindow):
         # Состояние
         self.video_path = ""
         self.out_dir = str(OUTPUT_DIR)
-        self.whisper_model = "large-v3"
         self.tts_engine = "silero"
         self.voice_id = "baya"
 
@@ -120,7 +120,8 @@ class MainWindow(QtWidgets.QMainWindow):
         grid.addWidget(self.lbl_voice, row, 2); grid.addWidget(self.cmb_voice, row, 3)
 
         row += 1
-        self.cmb_whisper = QtWidgets.QComboBox(); self.cmb_whisper.addItems(["large-v3","medium","small"])
+        self.cmb_whisper = QtWidgets.QComboBox()
+        self._populate_whisper_models()
         grid.addWidget(QtWidgets.QLabel("Whisper:"), row, 0); grid.addWidget(self.cmb_whisper, row, 1)
         self.ed_speed = QtWidgets.QLineEdit(str(self.speed_pct))
         grid.addWidget(QtWidgets.QLabel("Скорость, %:"), row, 2); grid.addWidget(self.ed_speed, row, 3)
@@ -186,6 +187,15 @@ class MainWindow(QtWidgets.QMainWindow):
         self.log_print(f"Лог пишется в: {LOG_FILE}")
 
     # --- Логика переключения движков и загрузки голосов ---
+    def _populate_whisper_models(self) -> None:
+        models = list_models("stt")
+        self.cmb_whisper.clear()
+        for name, info in models.items():
+            size = info.get("size_mb")
+            desc = info.get("description", "")
+            label = f"{name} ({size} MB - {desc})" if size else f"{name} - {desc}"
+            self.cmb_whisper.addItem(label, userData=name)
+
     def _on_engine_change(self, engine: str):
         self._refresh_voices(engine)
 
@@ -287,7 +297,9 @@ class MainWindow(QtWidgets.QMainWindow):
                 cmd = [ffmpeg,"-y","-i",self.inp_video.text(),"-vn","-ac","1","-ar","48000","-acodec","pcm_s16le",str(wav)]
                 log.debug("Extract WAV cmd: %s"," ".join(map(str,cmd)))
                 subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-                segs = transcribe_whisper(wav, language="ru", model_size=self.cmb_whisper.currentText(), device="cuda")
+                segs = transcribe_whisper(
+                    wav, language="ru", model_size=self.cmb_whisper.currentData(), device="cuda"
+                )
                 self.last_phrases = merge_into_phrases(segs)
             txt = " ".join(t for _,_,t in self.last_phrases)
             self.log_print("Текст:", txt[:700]+"..." if len(txt)>700 else txt); self.log_print("ГОТОВО. Правка (txt).")
@@ -321,7 +333,7 @@ class MainWindow(QtWidgets.QMainWindow):
             # Forward engine choice (incl. coqui_xtts) to the synthesis pipeline
             out = revoice_video(
                 self.inp_video.text(), self.inp_out.text(),
-                speaker=voice, whisper_size=self.cmb_whisper.currentText(), device="cuda",
+                speaker=voice, whisper_size=self.cmb_whisper.currentData(), device="cuda",
                 sr=48000, min_gap_ms=int(self.ed_mingap.text() or "350"),
                 speed_pct=max(50,min(200,int(self.ed_speed.text() or "100"))),
                 edited_text=self.edited_text, phrases_cache=self.last_phrases if self.last_phrases else None,

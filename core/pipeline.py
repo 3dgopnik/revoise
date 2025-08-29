@@ -14,7 +14,7 @@ import soundfile as sf
 from num2words import num2words
 from tqdm import tqdm
 
-from .model_manager import ensure_model
+from .model_manager import ensure_model, DownloadError
 from .tts_adapters import BeepTTS, CoquiXTTS, SileroTTS, YandexTTS, GTTSTTS
 
 logger = logging.getLogger(__name__)
@@ -76,11 +76,19 @@ def transcribe_whisper(
                 cache_key = (model_size, "stt")
                 model_dir = MODEL_PATH_CACHE.get(cache_key)
                 if model_dir is None:
-                    model_dir = ensure_model(model_size, "stt", parent=parent)
+                    model_dir = ensure_model(
+                        model_size,
+                        "stt",
+                        parent=parent,
+                        auto_download=True,
+                    )
                     MODEL_PATH_CACHE[cache_key] = model_dir
             except FileNotFoundError as exc:
                 logger.error("Model download declined: %s", exc)
                 raise RuntimeError("Whisper model download was declined") from exc
+            except DownloadError as exc:
+                logger.error("Model download failed: %s", exc)
+                raise RuntimeError("Whisper model download failed") from exc
             logger.info("Loading Whisper model %s from %s on %s", model_size, model_dir, device)
             compute_type = "int8_float16" if device == "cuda" else "int8"
             FWHISPER = WhisperModel(str(model_dir), device=device, compute_type=compute_type)

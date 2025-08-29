@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 
 from core import model_manager
-from core.model_manager import DownloadError, ensure_model, download_model
+from core.model_manager import DownloadError, download_model, ensure_model
 
 
 def test_ensure_model_existing(tmp_path, monkeypatch):
@@ -31,8 +31,8 @@ def test_ensure_model_download(tmp_path, monkeypatch):
     url = source.as_uri()
     monkeypatch.setattr(
         model_manager,
-        "MODEL_SOURCES",
-        {"tts": {"downloaded.bin": url}},
+        "MODEL_REGISTRY",
+        {"tts": {"downloaded.bin": [url]}},
     )
 
     class MsgBox:
@@ -64,8 +64,8 @@ def test_user_declines_download(tmp_path, monkeypatch):
     url = source.as_uri()
     monkeypatch.setattr(
         model_manager,
-        "MODEL_SOURCES",
-        {"tts": {"missing.bin": url}},
+        "MODEL_REGISTRY",
+        {"tts": {"missing.bin": [url]}},
     )
 
     class MsgBox:
@@ -86,6 +86,38 @@ def test_user_declines_download(tmp_path, monkeypatch):
 
     with pytest.raises(FileNotFoundError):
         ensure_model("missing.bin", "tts")
+
+
+def test_ensure_model_fallback_url(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    good_source = tmp_path / "good.bin"
+    good_source.write_text("payload")
+    bad_url = (tmp_path / "missing.bin").as_uri()
+    good_url = good_source.as_uri()
+    monkeypatch.setattr(
+        model_manager,
+        "MODEL_REGISTRY",
+        {"tts": {"combo.bin": [bad_url, good_url]}},
+    )
+
+    class MsgBox:
+        Yes = 1
+        No = 0
+        Retry = 2
+        Cancel = 3
+
+        @staticmethod
+        def question(*args, **kwargs):
+            return MsgBox.Yes
+
+        @staticmethod
+        def warning(*args, **kwargs):
+            return MsgBox.Retry
+
+    monkeypatch.setattr(model_manager, "QMessageBox", MsgBox)
+
+    model_path = ensure_model("combo.bin", "tts")
+    assert model_path.exists()
 
 
 def test_download_failure(tmp_path):

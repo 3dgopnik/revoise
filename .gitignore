@@ -14,6 +14,7 @@ logs/
 projects/*.rvproj.bak
 models/**
 !models/README.md
+!models/model_registry.json
 bin/**
 sfx/**
 config.json

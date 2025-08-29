@@ -2,6 +2,24 @@
 
 Папка может быть пустой. Положите веса сюда (или укажите пути в `config.example.json`).
 
+## Реестр моделей
+
+Официальные ссылки на веса перечислены в `model_registry.json`.
+Файл содержит категории (`tts`, `stt`, `llm`) и для каждой
+модели — массив URL-ов по приоритету (основной, зеркала).
+
+```json
+{
+  "tts": {
+    "coqui_xtts": [
+      "https://huggingface.co/coqui/XTTS-v2/resolve/main/model.zip"
+    ]
+  }
+}
+```
+
+Дополнить реестр можно, добавив новую модель или зеркало в нужный раздел.
+
 ## Whisper / faster-whisper
 - Поместите модели в `models/whisper` (ggml/gguf для whisper.cpp или файлы для faster-whisper).
 

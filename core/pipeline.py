@@ -19,6 +19,7 @@ from .tts_adapters import BeepTTS, CoquiXTTS, SileroTTS, YandexTTS, GTTSTTS
 logger = logging.getLogger(__name__)
 
 # ===================== Global =====================
+MODEL_PATH_CACHE: dict[tuple[str, str], Path] = {}
 FWHISPER: Any | None = None
 TTS_MODEL = None
 
@@ -64,7 +65,11 @@ def transcribe_whisper(audio_wav: Path, language="ru", model_size="large-v3", de
         if need_load:
             logger.info("Ensuring Whisper model %s is available", model_size)
             try:
-                model_path = ensure_model(model_size, "stt")
+                cache_key = (model_size, "stt")
+                model_path = MODEL_PATH_CACHE.get(cache_key)
+                if model_path is None:
+                    model_path = ensure_model(model_size, "stt")
+                    MODEL_PATH_CACHE[cache_key] = model_path
             except FileNotFoundError as exc:
                 logger.error("Model download declined: %s", exc)
                 raise RuntimeError("Whisper model download was declined") from exc

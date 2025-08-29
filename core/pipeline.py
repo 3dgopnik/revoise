@@ -8,6 +8,7 @@ from itertools import zip_longest
 from pathlib import Path
 from typing import Any, List, Optional, Tuple
 
+import importlib.util
 import numpy as np
 import soundfile as sf
 from num2words import num2words
@@ -283,11 +284,21 @@ def synth_chunk(
             wav = BeepTTS().tts(text, speaker, sr=sr)
             model_sr = sr
         elif engine == "silero":
-            wav = SileroTTS(Path(__file__).resolve().parent.parent).tts(text, speaker, sr=sr)
-            model_sr = sr
+            if importlib.util.find_spec("torch") is None:
+                logger.warning("torch not found, falling back to BeepTTS")
+                wav = BeepTTS().tts(text, speaker, sr=sr)
+                model_sr = sr
+            else:
+                wav = SileroTTS(Path(__file__).resolve().parent.parent).tts(text, speaker, sr=sr)
+                model_sr = sr
         elif engine == "coqui_xtts":
-            wav = CoquiXTTS(Path(__file__).resolve().parent.parent).tts(text, speaker, sr=24000)
-            model_sr = 24000
+            if importlib.util.find_spec("TTS") is None or importlib.util.find_spec("torch") is None:
+                logger.warning("TTS or torch not found, falling back to BeepTTS")
+                wav = BeepTTS().tts(text, speaker, sr=sr)
+                model_sr = sr
+            else:
+                wav = CoquiXTTS(Path(__file__).resolve().parent.parent).tts(text, speaker, sr=24000)
+                model_sr = 24000
         elif engine == "gtts":
             wav = GTTSTTS().tts(text, speaker, sr=sr)
             model_sr = sr

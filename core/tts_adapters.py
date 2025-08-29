@@ -25,7 +25,12 @@ class CoquiXTTS:
 
     def _ensure_model(self, parent: Any | None = None):
         if CoquiXTTS._model is None:
-            from TTS.api import TTS
+            try:
+                from TTS.api import TTS
+            except ModuleNotFoundError as exc:
+                raise RuntimeError(
+                    "CoquiXTTS requires the 'TTS' package with its 'torch' dependency."
+                ) from exc
 
             model_dir = ensure_model("coqui_xtts", "tts", parent=parent)
             # Load locally (offline)
@@ -71,7 +76,10 @@ class SileroTTS:
 
     def _ensure_model(self, parent: Any | None = None):
         if SileroTTS._model is None:
-            import torch
+            try:
+                import torch
+            except ModuleNotFoundError as exc:
+                raise RuntimeError("SileroTTS requires the 'torch' package.") from exc
 
             model_dir = ensure_model("silero", "tts", parent=parent)
             model_path = next(model_dir.glob("*.pt"))

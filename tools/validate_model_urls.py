@@ -1,4 +1,5 @@
 """Validate model URLs by performing HTTP HEAD requests."""
+
 from __future__ import annotations
 
 import json
@@ -19,7 +20,14 @@ def validate_registry(registry_path: Path | None = None) -> None:
 
     for category, models in registry.items():
         for name, data in models.items():
-            urls = data.get("urls") if isinstance(data, dict) else data
+            if not isinstance(data, dict):
+                urls = data
+            elif "urls" in data:
+                urls = data["urls"]
+            else:
+                base_urls = data.get("base_urls", [])
+                files = data.get("files", [])
+                urls = [base + file for base in base_urls for file in files]
 
             for url in urls:
                 try:

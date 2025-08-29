@@ -1,0 +1,11 @@
+target-version = "py310"
+line-length = 100
+
+lint.select = ["E","F","I","UP","B","SIM"]
+lint.ignore = ["E203", "E501"]
+lint.unfixable = ["F401"]
+
+[format]
+quote-style = "preserve"
+indent-style = "space"
+skip-magic-trailing-comma = false

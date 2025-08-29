@@ -4,6 +4,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+import logging
 import numpy as np
 import pytest
 
@@ -84,6 +85,23 @@ def test_synth_chunk_fallback_silero(monkeypatch, tmp_path):
     _setup_synth(monkeypatch, expected)
     wav = synth_chunk("ffmpeg", "hi", 16000, "spk", tmp_path, "silero")
     np.testing.assert_array_equal(wav, expected)
+
+
+def test_synth_chunk_fallback_silero_warns(monkeypatch, tmp_path, caplog):
+    original_find_spec = imp_util.find_spec
+
+    def fake_find_spec(name, *args, **kwargs):
+        if name == "torch":
+            return None
+        return original_find_spec(name, *args, **kwargs)
+
+    monkeypatch.setattr(imp_util, "find_spec", fake_find_spec)
+    _setup_synth(monkeypatch, np.array([0.1, -0.1], dtype=np.float32))
+    with caplog.at_level(logging.WARNING):
+        synth_chunk("ffmpeg", "hi", 16000, "spk", tmp_path, "silero")
+    assert (
+        "Falling back to BeepTTS: install torch for Silero support" in caplog.text
+    )
 
 
 def test_synth_chunk_fallback_coqui(monkeypatch, tmp_path):

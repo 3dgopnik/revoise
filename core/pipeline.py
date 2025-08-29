@@ -289,7 +289,9 @@ def synth_chunk(
             model_sr = sr
         elif engine == "silero":
             if importlib.util.find_spec("torch") is None:
-                logger.warning("torch not found, falling back to BeepTTS")
+                logger.warning(
+                    "Falling back to BeepTTS: install torch for Silero support"
+                )
                 wav = BeepTTS().tts(text, speaker, sr=sr)
                 model_sr = sr
             else:

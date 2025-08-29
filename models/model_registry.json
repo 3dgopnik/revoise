@@ -1,88 +1,80 @@
 {
-  "tts": {
-    "coqui_xtts": [
-      "https://huggingface.co/coqui/XTTS-v2/resolve/main/model.zip"
-    ],
-    "silero": [
-      "https://models.silero.ai/models/tts/ru/v4_ru.pt"
-    ]
-  },
-  "stt": {
-    "small": {
-      "base_urls": [
-        "https://huggingface.co/Systran/faster-whisper-small/resolve/main/",
-        "https://huggingface.co/guillaumekln/faster-whisper-small/resolve/main/"
-      ],
-      "files": [
-        "model.bin",
-        "config.json",
-        "tokenizer.json",
-        "tokenizer_config.json",
-        "vocabulary.json",
-        "special_tokens_map.json"
-      ],
-      "optional_files": [
-        "preprocessor_config.json"
-      ],
-      "description": "Fastest, lowest accuracy",
-      "size_mb": 462
+    "tts": {
+        "coqui_xtts": ["https://huggingface.co/coqui/XTTS-v2/resolve/main/model.zip"],
+        "silero": ["https://models.silero.ai/models/tts/ru/v4_ru.pt"]
     },
-    "medium": {
-      "base_urls": [
-        "https://huggingface.co/Systran/faster-whisper-medium/resolve/main/",
-        "https://huggingface.co/guillaumekln/faster-whisper-medium/resolve/main/"
-      ],
-      "files": [
-        "model.bin",
-        "config.json",
-        "preprocessor_config.json",
-        "tokenizer.json",
-        "tokenizer_config.json",
-        "vocabulary.json",
-        "special_tokens_map.json"
-      ],
-      "description": "Balanced speed and accuracy",
-      "size_mb": 1460
+    "stt": {
+        "small": {
+            "base_urls": [
+                "https://huggingface.co/Systran/faster-whisper-small/resolve/main/",
+                "https://huggingface.co/guillaumekln/faster-whisper-small/resolve/main/"
+            ],
+            "files": [
+                "model.bin",
+                "config.json",
+                "tokenizer.json",
+                "vocabulary.json",
+                "special_tokens_map.json"
+            ],
+            "optional_files": ["preprocessor_config.json", "tokenizer_config.json"],
+            "description": "Fastest, lowest accuracy",
+            "size_mb": 462
+        },
+        "medium": {
+            "base_urls": [
+                "https://huggingface.co/Systran/faster-whisper-medium/resolve/main/",
+                "https://huggingface.co/guillaumekln/faster-whisper-medium/resolve/main/"
+            ],
+            "files": [
+                "model.bin",
+                "config.json",
+                "preprocessor_config.json",
+                "tokenizer.json",
+                "vocabulary.json",
+                "special_tokens_map.json"
+            ],
+            "optional_files": ["tokenizer_config.json"],
+            "description": "Balanced speed and accuracy",
+            "size_mb": 1460
+        },
+        "large-v2": {
+            "base_urls": [
+                "https://huggingface.co/Systran/faster-whisper-large-v2/resolve/main/",
+                "https://huggingface.co/guillaumekln/faster-whisper-large-v2/resolve/main/"
+            ],
+            "files": [
+                "model.bin",
+                "config.json",
+                "preprocessor_config.json",
+                "tokenizer.json",
+                "vocabulary.json",
+                "special_tokens_map.json"
+            ],
+            "optional_files": ["tokenizer_config.json"],
+            "description": "High accuracy, slower",
+            "size_mb": 2890
+        },
+        "large-v3": {
+            "base_urls": [
+                "https://huggingface.co/Systran/faster-whisper-large-v3/resolve/main/",
+                "https://huggingface.co/guillaumekln/faster-whisper-large-v3/resolve/main/"
+            ],
+            "files": [
+                "model.bin",
+                "config.json",
+                "preprocessor_config.json",
+                "tokenizer.json",
+                "vocabulary.json",
+                "special_tokens_map.json"
+            ],
+            "optional_files": ["tokenizer_config.json"],
+            "description": "Latest model with highest accuracy, slowest",
+            "size_mb": 2920
+        }
     },
-    "large-v2": {
-      "base_urls": [
-        "https://huggingface.co/Systran/faster-whisper-large-v2/resolve/main/",
-        "https://huggingface.co/guillaumekln/faster-whisper-large-v2/resolve/main/"
-      ],
-      "files": [
-        "model.bin",
-        "config.json",
-        "preprocessor_config.json",
-        "tokenizer.json",
-        "tokenizer_config.json",
-        "vocabulary.json",
-        "special_tokens_map.json"
-      ],
-      "description": "High accuracy, slower",
-      "size_mb": 2890
-    },
-    "large-v3": {
-      "base_urls": [
-        "https://huggingface.co/Systran/faster-whisper-large-v3/resolve/main/",
-        "https://huggingface.co/guillaumekln/faster-whisper-large-v3/resolve/main/"
-      ],
-      "files": [
-        "model.bin",
-        "config.json",
-        "preprocessor_config.json",
-        "tokenizer.json",
-        "tokenizer_config.json",
-        "vocabulary.json",
-        "special_tokens_map.json"
-      ],
-      "description": "Latest model with highest accuracy, slowest",
-      "size_mb": 2920
+    "llm": {
+        "qwen2.5": [
+            "https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct/resolve/main/Qwen2.5-0.5B-Instruct-q4_k_m.gguf"
+        ]
     }
-  },
-  "llm": {
-    "qwen2.5": [
-      "https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct/resolve/main/Qwen2.5-0.5B-Instruct-q4_k_m.gguf"
-    ]
-  }
 }
-

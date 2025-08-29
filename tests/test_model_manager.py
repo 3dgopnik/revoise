@@ -233,6 +233,44 @@ def test_ensure_model_converts_file_to_directory(tmp_path, monkeypatch):
     assert (model_dir / "config.json").read_text() == "cfg"
 
 
+def test_ensure_model_skips_missing_optional_files(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    files = ["model.bin", "config.json"]
+    for fn in files:
+        (repo / fn).write_text("data")
+    base_url = repo.as_uri() + "/"
+    entry = {
+        "base_urls": [base_url],
+        "files": files,
+        "optional_files": ["extra.json"],
+    }
+    monkeypatch.setattr(model_manager, "MODEL_REGISTRY", {"stt": {"dummy": entry}})
+
+    class MsgBox:
+        Yes = 1
+        No = 0
+        Retry = 2
+        Cancel = 3
+
+        @staticmethod
+        def question(*args, **kwargs):
+            return MsgBox.Yes
+
+        @staticmethod
+        def warning(*args, **kwargs):
+            return MsgBox.Cancel
+
+    monkeypatch.setattr(model_manager, "QMessageBox", MsgBox)
+
+    model_dir = ensure_model("dummy", "stt")
+    assert model_dir.is_dir()
+    for fn in files:
+        assert (model_dir / fn).exists()
+    assert not (model_dir / "extra.json").exists()
+
+
 def test_whispermodel_loads_from_directory(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     repo = tmp_path / "repo"

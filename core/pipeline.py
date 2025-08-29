@@ -73,16 +73,16 @@ def transcribe_whisper(
             logger.info("Ensuring Whisper model %s is available", model_size)
             try:
                 cache_key = (model_size, "stt")
-                model_path = MODEL_PATH_CACHE.get(cache_key)
-                if model_path is None:
-                    model_path = ensure_model(model_size, "stt", parent=parent)
-                    MODEL_PATH_CACHE[cache_key] = model_path
+                model_dir = MODEL_PATH_CACHE.get(cache_key)
+                if model_dir is None:
+                    model_dir = ensure_model(model_size, "stt", parent=parent)
+                    MODEL_PATH_CACHE[cache_key] = model_dir
             except FileNotFoundError as exc:
                 logger.error("Model download declined: %s", exc)
                 raise RuntimeError("Whisper model download was declined") from exc
-            logger.info("Loading Whisper model %s from %s on %s", model_size, model_path, device)
+            logger.info("Loading Whisper model %s from %s on %s", model_size, model_dir, device)
             compute_type = "int8_float16" if device == "cuda" else "int8"
-            FWHISPER = WhisperModel(str(model_path), device=device, compute_type=compute_type)
+            FWHISPER = WhisperModel(str(model_dir), device=device, compute_type=compute_type)
             FWHISPER._name = model_size
             logger.info("Whisper model %s initialized", model_size)
         assert FWHISPER is not None

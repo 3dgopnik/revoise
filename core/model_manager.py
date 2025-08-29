@@ -107,26 +107,90 @@ def ensure_model(name: str, category: str, *, parent: QWidget | None = None) -> 
     Parameters
     ----------
     name:
-        Model file name.
+        Model file name or repository name.
     category:
         Model category used inside the ``models`` folder.
 
     Returns
     -------
     Path
-        Path to the model file on disk.
+        Path to the model file or directory on disk.
     """
     models_dir = Path("models") / category
-    model_path = models_dir / name
-    if model_path.exists():
-        logging.info("Model '%s' found locally at %s", name, model_path)
-        return model_path
+
+    entry = MODEL_REGISTRY.get(category, {}).get(name)
+    entry = entry if isinstance(entry, dict) else {"urls": entry}
 
     config_path = Path("config.json")
     config: dict = {}
     if config_path.exists():
         with open(config_path, encoding="utf-8") as file:
             config = json.load(file)
+
+    if category == "stt":
+        files = entry.get("files", [])
+        base_urls = entry.get("base_urls", [])
+        model_dir = models_dir / name
+
+        def has_all_files(path: Path) -> bool:
+            return path.is_dir() and all((path / f).exists() for f in files)
+
+        if has_all_files(model_dir):
+            logging.info("Model '%s' found locally at %s", name, model_dir)
+            return model_dir
+
+        cached = config.get("models", {}).get(category, {}).get(name)
+        if cached:
+            cached_path = Path(cached)
+            if has_all_files(cached_path):
+                logging.info("Model '%s' found locally at %s", name, cached_path)
+                return cached_path
+
+        if not (files and base_urls):
+            raise FileNotFoundError(f"No source URLs for model '{name}' in category '{category}'")
+
+        consent = QMessageBox.question(
+            parent,
+            "Download model",
+            f"Model '{name}' is missing. Download it?",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No,
+        )
+        if consent != QMessageBox.Yes:
+            raise FileNotFoundError(f"Model '{name}' is missing.")
+
+        model_dir.mkdir(parents=True, exist_ok=True)
+        for file_name in files:
+            for base in base_urls:
+                url = base + file_name
+                logging.info(
+                    "Download of model '%s' file '%s' from %s started", name, file_name, url
+                )
+                try:
+                    download_model(url, model_dir / file_name)
+                    break
+                except DownloadError as exc:
+                    logging.info("Download failed: %s", exc)
+                    QMessageBox.warning(
+                        parent,
+                        "Download failed",
+                        f"Failed to download file '{file_name}' from {url}: {exc}",
+                        QMessageBox.Retry,
+                        QMessageBox.Retry,
+                    )
+            else:
+                raise DownloadError(f"Failed to download file '{file_name}' for model '{name}'")
+
+        config.setdefault("models", {}).setdefault(category, {})[name] = str(model_dir)
+        with open(config_path, "w", encoding="utf-8") as file:
+            json.dump(config, file, indent=2)
+        logging.info("Download of model '%s' completed", name)
+        return model_dir
+
+    model_path = models_dir / name
+    if model_path.exists():
+        logging.info("Model '%s' found locally at %s", name, model_path)
+        return model_path
 
     cached = config.get("models", {}).get(category, {}).get(name)
     if cached:
@@ -135,11 +199,7 @@ def ensure_model(name: str, category: str, *, parent: QWidget | None = None) -> 
             logging.info("Model '%s' found locally at %s", name, cached_path)
             return cached_path
 
-    entry = MODEL_REGISTRY.get(category, {}).get(name)
-    if isinstance(entry, dict):
-        urls = entry.get("urls", [])
-    else:
-        urls = entry
+    urls = entry.get("urls", [])
     if not urls:
         raise FileNotFoundError(f"No source URLs for model '{name}' in category '{category}'")
 

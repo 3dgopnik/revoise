@@ -1,4 +1,6 @@
 import json
+import sys
+import types
 from pathlib import Path
 
 import pytest
@@ -154,3 +156,95 @@ def test_download_failure(tmp_path):
     target = tmp_path / "file.bin"
     with pytest.raises(DownloadError):
         download_model("file:///nonexistent.bin", target)
+
+
+def test_ensure_model_downloads_stt_repo(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    files = ["model.bin", "config.json", "tokenizer.json"]
+    for fn in files:
+        (repo / fn).write_text("data")
+    base_url = repo.as_uri() + "/"
+    monkeypatch.setattr(
+        model_manager,
+        "MODEL_REGISTRY",
+        {"stt": {"dummy": {"base_urls": [base_url], "files": files}}},
+    )
+
+    class MsgBox:
+        Yes = 1
+        No = 0
+        Retry = 2
+        Cancel = 3
+
+        @staticmethod
+        def question(*args, **kwargs):
+            return MsgBox.Yes
+
+        @staticmethod
+        def warning(*args, **kwargs):
+            return MsgBox.Cancel
+
+    monkeypatch.setattr(model_manager, "QMessageBox", MsgBox)
+
+    model_dir = ensure_model("dummy", "stt")
+    assert model_dir.is_dir()
+    for fn in files:
+        assert (model_dir / fn).exists()
+
+
+def test_whispermodel_loads_from_directory(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    files = ["model.bin", "config.json", "tokenizer.json"]
+    for fn in files:
+        (repo / fn).write_text("data")
+    base_url = repo.as_uri() + "/"
+    monkeypatch.setattr(
+        model_manager,
+        "MODEL_REGISTRY",
+        {"stt": {"dummy": {"base_urls": [base_url], "files": files}}},
+    )
+
+    class MsgBox:
+        Yes = 1
+        No = 0
+        Retry = 2
+        Cancel = 3
+
+        @staticmethod
+        def question(*args, **kwargs):
+            return MsgBox.Yes
+
+        @staticmethod
+        def warning(*args, **kwargs):
+            return MsgBox.Cancel
+
+    monkeypatch.setattr(model_manager, "QMessageBox", MsgBox)
+
+    from core import pipeline
+
+    monkeypatch.setattr(pipeline, "ensure_model", model_manager.ensure_model)
+    monkeypatch.setattr(pipeline, "FWHISPER", None)
+    monkeypatch.setattr(pipeline, "MODEL_PATH_CACHE", {})
+
+    class DummyWhisperModel:
+        def __init__(self, model_dir, *args, **kwargs):
+            self.model_dir = model_dir
+
+        def transcribe(self, *args, **kwargs):
+            return [], None
+
+    fake_module = types.ModuleType("faster_whisper")
+    fake_module.WhisperModel = DummyWhisperModel
+    monkeypatch.setitem(sys.modules, "faster_whisper", fake_module)
+
+    audio = tmp_path / "a.wav"
+    audio.write_bytes(b"")
+
+    pipeline.transcribe_whisper(audio, model_size="dummy")
+
+    expected_dir = Path("models/stt/dummy")
+    assert pipeline.FWHISPER.model_dir == str(expected_dir)

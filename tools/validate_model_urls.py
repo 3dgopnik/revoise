@@ -18,7 +18,9 @@ def validate_registry(registry_path: Path | None = None) -> None:
     errors: list[str] = []
 
     for category, models in registry.items():
-        for name, urls in models.items():
+        for name, data in models.items():
+            urls = data.get("urls") if isinstance(data, dict) else data
+
             for url in urls:
                 try:
                     request = Request(url, method="HEAD")

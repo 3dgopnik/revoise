@@ -8,9 +8,38 @@
     ]
   },
   "stt": {
-    "large-v3": [
-      "https://huggingface.co/Systran/faster-whisper-large-v3/resolve/main/model.bin"
-    ]
+    "small": {
+      "urls": [
+        "https://huggingface.co/Systran/faster-whisper-small/resolve/main/model.bin?download=true",
+        "https://huggingface.co/guillaumekln/faster-whisper-small/resolve/main/model.bin?download=true"
+      ],
+      "description": "Fastest, lowest accuracy",
+      "size_mb": 462
+    },
+    "medium": {
+      "urls": [
+        "https://huggingface.co/Systran/faster-whisper-medium/resolve/main/model.bin?download=true",
+        "https://huggingface.co/guillaumekln/faster-whisper-medium/resolve/main/model.bin?download=true"
+      ],
+      "description": "Balanced speed and accuracy",
+      "size_mb": 1460
+    },
+    "large-v2": {
+      "urls": [
+        "https://huggingface.co/Systran/faster-whisper-large-v2/resolve/main/model.bin?download=true",
+        "https://huggingface.co/guillaumekln/faster-whisper-large-v2/resolve/main/model.bin?download=true"
+      ],
+      "description": "High accuracy, slower",
+      "size_mb": 2890
+    },
+    "large-v3": {
+      "urls": [
+        "https://huggingface.co/Systran/faster-whisper-large-v3/resolve/main/model.bin?download=true",
+        "https://huggingface.co/guillaumekln/faster-whisper-large-v3/resolve/main/model.bin?download=true"
+      ],
+      "description": "Latest model with highest accuracy, slowest",
+      "size_mb": 2920
+    }
   },
   "llm": {
     "qwen2.5": [

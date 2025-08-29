@@ -120,6 +120,36 @@ def test_ensure_model_fallback_url(tmp_path, monkeypatch):
     assert model_path.exists()
 
 
+def test_ensure_model_dict_entry(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    source = tmp_path / "payload.bin"
+    source.write_text("data")
+    url = source.as_uri()
+    monkeypatch.setattr(
+        model_manager,
+        "MODEL_REGISTRY",
+        {"tts": {"payload.bin": {"urls": [url], "description": "dummy"}}},
+    )
+
+    class MsgBox:
+        Yes = 1
+        No = 0
+        Retry = 2
+        Cancel = 3
+
+        @staticmethod
+        def question(*args, **kwargs):
+            return MsgBox.Yes
+
+        @staticmethod
+        def warning(*args, **kwargs):
+            return MsgBox.Cancel
+
+    monkeypatch.setattr(model_manager, "QMessageBox", MsgBox)
+    model_path = ensure_model("payload.bin", "tts")
+    assert model_path.exists()
+
+
 def test_download_failure(tmp_path):
     target = tmp_path / "file.bin"
     with pytest.raises(DownloadError):

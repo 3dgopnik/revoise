@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Dict
 from urllib.request import urlopen
 
 if TYPE_CHECKING:  # pragma: no cover - typing-only definitions
@@ -47,8 +47,8 @@ else:  # pragma: no cover - GUI import guard
 MODEL_REGISTRY_PATH = Path("models") / "model_registry.json"
 
 
-def load_model_registry() -> dict[str, dict[str, list[str]]]:
-    """Load model registry mapping categories to model URLs."""
+def load_model_registry() -> Dict[str, Dict[str, Any]]:
+    """Load model registry mapping categories to model metadata."""
     with open(MODEL_REGISTRY_PATH, encoding="utf-8") as file:
         return json.load(file)
 
@@ -89,6 +89,18 @@ def download_model(url: str, target: Path) -> None:
         raise DownloadError(str(exc)) from exc
 
 
+def list_models(category: str) -> Dict[str, Dict[str, Any]]:
+    """Return model metadata for a category."""
+    models = MODEL_REGISTRY.get(category, {})
+    result: Dict[str, Dict[str, Any]] = {}
+    for model_name, data in models.items():
+        if isinstance(data, list):
+            result[model_name] = {"urls": data}
+        else:
+            result[model_name] = data
+    return result
+
+
 def ensure_model(name: str, category: str, *, parent: QWidget | None = None) -> Path:
     """Ensure that a model exists locally, downloading if necessary.
 
@@ -123,7 +135,11 @@ def ensure_model(name: str, category: str, *, parent: QWidget | None = None) -> 
             logging.info("Model '%s' found locally at %s", name, cached_path)
             return cached_path
 
-    urls = MODEL_REGISTRY.get(category, {}).get(name)
+    entry = MODEL_REGISTRY.get(category, {}).get(name)
+    if isinstance(entry, dict):
+        urls = entry.get("urls", [])
+    else:
+        urls = entry
     if not urls:
         raise FileNotFoundError(f"No source URLs for model '{name}' in category '{category}'")
 

@@ -1,9 +1,8 @@
-
-target-version = "py310"
 line-length = 100
-
+target-version = "py310"
+exclude = ["ui"]
 lint.select = ["E","F","I","UP","B","SIM"]
-lint.ignore = ["E203", "E501"]
+lint.ignore = ["E203","E501"]
 lint.unfixable = ["F401"]
 
 [format]

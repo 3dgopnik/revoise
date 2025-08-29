@@ -55,7 +55,14 @@ def ensure_ffmpeg() -> str:
 
 
 # ===================== Whisper =====================
-def transcribe_whisper(audio_wav: Path, language="ru", model_size="large-v3", device="cuda"):
+def transcribe_whisper(
+    audio_wav: Path,
+    language="ru",
+    model_size="large-v3",
+    device="cuda",
+    *,
+    parent: Any | None = None,
+):
     global FWHISPER
     logger.debug("Starting transcribe_whisper for %s", audio_wav)
     try:
@@ -68,21 +75,21 @@ def transcribe_whisper(audio_wav: Path, language="ru", model_size="large-v3", de
                 cache_key = (model_size, "stt")
                 model_path = MODEL_PATH_CACHE.get(cache_key)
                 if model_path is None:
-                    model_path = ensure_model(model_size, "stt")
+                    model_path = ensure_model(model_size, "stt", parent=parent)
                     MODEL_PATH_CACHE[cache_key] = model_path
             except FileNotFoundError as exc:
                 logger.error("Model download declined: %s", exc)
                 raise RuntimeError("Whisper model download was declined") from exc
-            logger.info(
-                "Loading Whisper model %s from %s on %s", model_size, model_path, device
-            )
+            logger.info("Loading Whisper model %s from %s on %s", model_size, model_path, device)
             compute_type = "int8_float16" if device == "cuda" else "int8"
             FWHISPER = WhisperModel(str(model_path), device=device, compute_type=compute_type)
             FWHISPER._name = model_size
             logger.info("Whisper model %s initialized", model_size)
         assert FWHISPER is not None
         segments, _ = FWHISPER.transcribe(
-            str(audio_wav), language=language, vad_filter=True,
+            str(audio_wav),
+            language=language,
+            vad_filter=True,
             vad_parameters={"min_silence_duration_ms": 300},
         )
         result = [(s.start, s.end, s.text.strip()) for s in segments]
@@ -502,6 +509,7 @@ def revoice_video(
         # Mixing voice with background music
         logger.info("Mixing voice with background music")
         out_audio = tmp / "mix.wav"
+        # fmt: off
         cmd = [
             ffmpeg,
             "-y",
@@ -518,6 +526,7 @@ def revoice_video(
             "-map", "[out]",
             "-ar", str(sr), "-ac", "1", "-c:a", "pcm_s16le", str(out_audio)
         ]
+        # fmt: on
         try:
             run(cmd)
         except Exception:

@@ -4,6 +4,7 @@ import base64
 import json
 from io import BytesIO
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import requests
@@ -22,11 +23,11 @@ class CoquiXTTS:
     def __init__(self, root: Path):
         self.root = Path(root)
 
-    def _ensure_model(self):
+    def _ensure_model(self, parent: Any | None = None):
         if CoquiXTTS._model is None:
             from TTS.api import TTS
 
-            model_dir = ensure_model("coqui_xtts", "tts")
+            model_dir = ensure_model("coqui_xtts", "tts", parent=parent)
             # Load locally (offline)
             CoquiXTTS._model = TTS(model_path=str(model_dir))
         return CoquiXTTS._model
@@ -38,8 +39,10 @@ class CoquiXTTS:
         wavs = sorted([str(p) for p in sp_dir.glob("*.wav")])
         return wavs
 
-    def tts(self, text: str, speaker: str, sr: int = 48000) -> np.ndarray:
-        tts = self._ensure_model()
+    def tts(
+        self, text: str, speaker: str, sr: int = 48000, *, parent: Any | None = None
+    ) -> np.ndarray:
+        tts = self._ensure_model(parent=parent)
         refs = self._load_refs(speaker)
         # Если рефов нет — используем встроенный голос модели (speaker=None)
         wav = tts.tts(
@@ -66,11 +69,11 @@ class SileroTTS:
     def __init__(self, root: Path):
         self.root = Path(root)
 
-    def _ensure_model(self):
+    def _ensure_model(self, parent: Any | None = None):
         if SileroTTS._model is None:
             import torch
 
-            model_dir = ensure_model("silero", "tts")
+            model_dir = ensure_model("silero", "tts", parent=parent)
             model_path = next(model_dir.glob("*.pt"))
             model = torch.package.PackageImporter(str(model_path)).load_pickle(
                 "tts_models", "model"
@@ -83,8 +86,10 @@ class SileroTTS:
             raise RuntimeError("Failed to load Silero TTS model")
         return SileroTTS._model
 
-    def tts(self, text: str, speaker: str, sr: int = 48000) -> np.ndarray:
-        model = self._ensure_model()
+    def tts(
+        self, text: str, speaker: str, sr: int = 48000, *, parent: Any | None = None
+    ) -> np.ndarray:
+        model = self._ensure_model(parent=parent)
         wav = model.apply_tts(text=text or "", speaker=speaker or "baya", sample_rate=sr)
         if isinstance(wav, np.ndarray):
             arr = wav

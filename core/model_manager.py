@@ -5,6 +5,30 @@ import logging
 from pathlib import Path
 from urllib.request import urlopen
 
+try:  # pragma: no cover - GUI import guard
+    from PySide6.QtWidgets import QMessageBox, QWidget
+except Exception:  # pragma: no cover - fallback for headless environments
+
+    class QMessageBox:  # type: ignore[override]
+        Yes = 1
+        No = 0
+        Retry = 2
+        Cancel = 3
+
+        @staticmethod
+        def question(*args, **kwargs):  # pragma: no cover - fallback behaviour
+            raise RuntimeError("Qt is not available")
+
+        @staticmethod
+        def warning(*args, **kwargs):  # pragma: no cover - fallback behaviour
+            raise RuntimeError("Qt is not available")
+
+    class QWidget:  # type: ignore[override]
+        pass
+
+
+from .model_sources import MODEL_SOURCES
+
 
 class DownloadError(Exception):
     """Raised when a model download fails."""
@@ -39,7 +63,7 @@ def download_model(url: str, target: Path) -> None:
         raise DownloadError(str(exc)) from exc
 
 
-def ensure_model(name: str, category: str) -> Path:
+def ensure_model(name: str, category: str, *, parent: QWidget | None = None) -> Path:
     """Ensure that a model exists locally, downloading if necessary.
 
     Parameters
@@ -66,32 +90,41 @@ def ensure_model(name: str, category: str) -> Path:
         with open(config_path, encoding="utf-8") as file:
             config = json.load(file)
 
-    cached = (
-        config.get("models", {})
-        .get(category, {})
-        .get(name)
-    )
+    cached = config.get("models", {}).get(category, {}).get(name)
     if cached:
         cached_path = Path(cached)
         if cached_path.exists():
             logging.info("Model '%s' found locally at %s", name, cached_path)
             return cached_path
 
+    url = MODEL_SOURCES.get(category, {}).get(name)
+    if url is None:
+        raise FileNotFoundError(f"No source URL for model '{name}' in category '{category}'")
+
     while True:
-        consent = input(
-            f"Model '{name}' is missing. Download it? [y/N]: "
-        ).strip().lower()
-        if consent not in {"y", "yes"}:
+        consent = QMessageBox.question(
+            parent,
+            "Download model",
+            f"Model '{name}' is missing. Download it?",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No,
+        )
+        if consent != QMessageBox.Yes:
             raise FileNotFoundError(f"Model '{name}' is missing.")
 
-        url = input("Enter download URL: ").strip()
         logging.info("Download of model '%s' started", name)
         try:
             download_model(url, model_path)
         except DownloadError as exc:
-            print(f"Download failed: {exc}")
-            retry = input("Retry download? [y/N]: ").strip().lower()
-            if retry in {"y", "yes"}:
+            logging.info("Download failed: %s", exc)
+            retry = QMessageBox.warning(
+                parent,
+                "Download failed",
+                f"Failed to download model '{name}': {exc}",
+                QMessageBox.Retry | QMessageBox.Cancel,
+                QMessageBox.Retry,
+            )
+            if retry == QMessageBox.Retry:
                 continue
             raise
         else:

@@ -94,6 +94,18 @@ uv run pytest -q
 > Silero модели ищутся в папке `models/tts/silero/` (файл `.pt`).
 > Референсы спикеров для Coqui XTTS кладите в `models/speakers/<имя>`.
 
+### Silero prerequisites
+```bash
+pip install torch --index-url https://download.pytorch.org/whl/cpu
+```
+
+### TTS dependencies
+Missing Python packages are installed automatically for TTS engines:
+
+- Silero: `torch` (`pip install torch --index-url https://download.pytorch.org/whl/cpu`)
+- Coqui XTTS: `TTS`
+- gTTS: `gTTS`
+
 - gTTS: выберите движок `gtts` в UI. Сервис не предлагает голоса и требует интернет.
 
 ---

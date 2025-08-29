@@ -12,6 +12,7 @@ import soundfile as sf
 from pydub import AudioSegment
 
 from . import model_service
+from .tts_dependencies import ensure_tts_dependencies
 
 __all__ = ["CoquiXTTS", "SileroTTS", "BeepTTS", "YandexTTS", "GTTSTTS"]
 
@@ -25,12 +26,8 @@ class CoquiXTTS:
 
     def _ensure_model(self, parent: Any | None = None):
         if CoquiXTTS._model is None:
-            try:
-                from TTS.api import TTS
-            except ModuleNotFoundError as exc:
-                raise RuntimeError(
-                    "CoquiXTTS requires the 'TTS' package with its 'torch' dependency."
-                ) from exc
+            ensure_tts_dependencies("coqui_xtts")
+            from TTS.api import TTS
 
             model_dir = model_service.get_model_path(
                 "coqui_xtts", "tts", parent=parent, auto_download=True
@@ -78,10 +75,8 @@ class SileroTTS:
 
     def _ensure_model(self, parent: Any | None = None):
         if SileroTTS._model is None:
-            try:
-                import torch
-            except ModuleNotFoundError as exc:
-                raise RuntimeError("SileroTTS requires the 'torch' package.") from exc
+            ensure_tts_dependencies("silero")
+            import torch
 
             model_dir = model_service.get_model_path(
                 "silero", "tts", parent=parent, auto_download=True
@@ -170,6 +165,7 @@ class GTTSTTS:
 
     def tts(self, text: str, speaker: str, sr: int = 48000) -> np.ndarray:
         """Synthesize speech via gTTS and resample to the desired rate."""
+        ensure_tts_dependencies("gtts")
         from gtts import gTTS
 
         buf = BytesIO()

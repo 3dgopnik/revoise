@@ -4,9 +4,8 @@ import re
 import shutil
 import subprocess
 import tempfile
-import logging
 from pathlib import Path
-from typing import List, Tuple, Optional
+from typing import Any, List, Optional, Tuple
 from itertools import zip_longest
 
 import numpy as np
@@ -17,8 +16,8 @@ from .tts_adapters import BeepTTS, CoquiXTTS, SileroTTS, YandexTTS, GTTSTTS
 
 logger = logging.getLogger(__name__)
 
-# ===================== Глобальные =====================
-FWHISPER = None
+# ===================== Global =====================
+FWHISPER: Any | None = None
 TTS_MODEL = None
 
 MULTISPACE = re.compile(r"\s+")
@@ -61,9 +60,10 @@ def transcribe_whisper(audio_wav: Path, language="ru", model_size="large-v3", de
             compute_type = "int8_float16" if device == "cuda" else "int8"
             FWHISPER = WhisperModel(model_size, device=device, compute_type=compute_type)
             FWHISPER._name = model_size
+        assert FWHISPER is not None
         segments, _ = FWHISPER.transcribe(
             str(audio_wav), language=language, vad_filter=True,
-            vad_parameters={"min_silence_duration_ms": 300}
+            vad_parameters={"min_silence_duration_ms": 300},
         )
         result = [(s.start, s.end, s.text.strip()) for s in segments]
         logger.debug("Finished transcribe_whisper with %d segments", len(result))
@@ -93,7 +93,7 @@ def merge_into_phrases(segments: List[Tuple[float, float, str]], max_gap=0.35, m
         Merged phrases sorted by start time.
     """
 
-    phrases = []
+    phrases: List[Tuple[float, float, str]] = []
     if not segments:
         return phrases
 
@@ -227,27 +227,22 @@ def synth_chunk(ffmpeg: str, text: str, sr: int, speaker: str,
     logger.debug("Synthesizing chunk with engine=%s", engine)
     try:
         if engine == "beep":
-            tts = BeepTTS()
-            wav = tts.tts(text, speaker, sr=sr)
+            wav = BeepTTS().tts(text, speaker, sr=sr)
             model_sr = sr
         elif engine == "silero":
-            tts = SileroTTS(Path(__file__).resolve().parent.parent)
-            wav = tts.tts(text, speaker, sr=sr)
+            wav = SileroTTS(Path(__file__).resolve().parent.parent).tts(text, speaker, sr=sr)
             model_sr = sr
         elif engine == "coqui_xtts":
-            tts = CoquiXTTS(Path(__file__).resolve().parent.parent)
-            wav = tts.tts(text, speaker, sr=24000)
+            wav = CoquiXTTS(Path(__file__).resolve().parent.parent).tts(text, speaker, sr=24000)
             model_sr = 24000
         elif engine == "gtts":
-            tts = GTTSTTS()
-            wav = tts.tts(text, speaker, sr=sr)
+            wav = GTTSTTS().tts(text, speaker, sr=sr)
             model_sr = sr
         elif engine == "yandex":
             if not yandex_key or not (yandex_voice or speaker):
                 raise ValueError("Yandex TTS requires yandex_key and yandex_voice")
-            tts = YandexTTS()  # Use Yandex Cloud API
             voice = yandex_voice or speaker
-            wav = tts.tts(text, voice, sr=sr, key=yandex_key)
+            wav = YandexTTS().tts(text, voice, sr=sr, key=yandex_key)
             model_sr = sr
         else:
             raise ValueError(f"Unsupported TTS engine: {engine}")
@@ -380,7 +375,7 @@ def revoice_video(video: str, outdir: str, speaker: str, whisper_size: str, devi
             "-filter_complex",
             f"[1:a]volume={music_db}dB[bg];",
             f"[bg][0:a]sidechaincompress=threshold={duck_thresh}:ratio={duck_ratio}:attack=20:release=300[mduck];",
-            f"[mduck][0:a]amix=inputs=2:duration=first:dropout_transition=200,volume=1.0[out]",
+            "[mduck][0:a]amix=inputs=2:duration=first:dropout_transition=200,volume=1.0[out]",
             "-map", "[out]",
             "-ar", str(sr), "-ac", "1", "-c:a", "pcm_s16le", str(out_audio)
         ]

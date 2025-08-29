@@ -159,15 +159,25 @@ def ensure_model(name: str, category: str, *, parent: QWidget | None = None) -> 
         if consent != QMessageBox.Yes:
             raise FileNotFoundError(f"Model '{name}' is missing.")
 
-        model_dir.mkdir(parents=True, exist_ok=True)
+        if model_dir.exists() and model_dir.is_file():
+            legacy_file = model_dir
+            tmp_file = model_dir.with_suffix(".bin")
+            legacy_file.rename(tmp_file)
+            model_dir.mkdir(parents=True, exist_ok=True)
+            tmp_file.rename(model_dir / "model.bin")
+        else:
+            model_dir.mkdir(parents=True, exist_ok=True)
         for file_name in files:
+            target = model_dir / file_name
+            if target.exists():
+                continue
             for base in base_urls:
                 url = base + file_name
                 logging.info(
                     "Download of model '%s' file '%s' from %s started", name, file_name, url
                 )
                 try:
-                    download_model(url, model_dir / file_name)
+                    download_model(url, target)
                     break
                 except DownloadError as exc:
                     logging.info("Download failed: %s", exc)

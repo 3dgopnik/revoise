@@ -194,6 +194,45 @@ def test_ensure_model_downloads_stt_repo(tmp_path, monkeypatch):
         assert (model_dir / fn).exists()
 
 
+def test_ensure_model_converts_file_to_directory(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    legacy_file = Path("models/stt/dummy")
+    legacy_file.parent.mkdir(parents=True)
+    legacy_file.write_text("old")
+
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    files = ["model.bin", "config.json"]
+    (repo / "model.bin").write_text("new")
+    (repo / "config.json").write_text("cfg")
+    base_url = repo.as_uri() + "/"
+    monkeypatch.setattr(
+        model_manager,
+        "MODEL_REGISTRY",
+        {"stt": {"dummy": {"base_urls": [base_url], "files": files}}},
+    )
+
+    class MsgBox:
+        Yes = 1
+        No = 0
+        Retry = 2
+        Cancel = 3
+
+        @staticmethod
+        def question(*args, **kwargs):
+            return MsgBox.Yes
+
+        @staticmethod
+        def warning(*args, **kwargs):
+            return MsgBox.Cancel
+
+    monkeypatch.setattr(model_manager, "QMessageBox", MsgBox)
+
+    model_dir = ensure_model("dummy", "stt")
+    assert (model_dir / "model.bin").read_text() == "old"
+    assert (model_dir / "config.json").read_text() == "cfg"
+
+
 def test_whispermodel_loads_from_directory(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     repo = tmp_path / "repo"

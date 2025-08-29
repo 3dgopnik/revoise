@@ -4,14 +4,16 @@ import re
 import shutil
 import subprocess
 import tempfile
+from itertools import zip_longest
 from pathlib import Path
 from typing import Any, List, Optional, Tuple
-from itertools import zip_longest
 
 import numpy as np
 import soundfile as sf
-from tqdm import tqdm
 from num2words import num2words
+from tqdm import tqdm
+
+from .model_manager import ensure_model
 from .tts_adapters import BeepTTS, CoquiXTTS, SileroTTS, YandexTTS, GTTSTTS
 
 logger = logging.getLogger(__name__)
@@ -60,10 +62,19 @@ def transcribe_whisper(audio_wav: Path, language="ru", model_size="large-v3", de
 
         need_load = (FWHISPER is None) or getattr(FWHISPER, "_name", "") != model_size
         if need_load:
-            logger.info("Loading Whisper model %s on %s", model_size, device)
+            logger.info("Ensuring Whisper model %s is available", model_size)
+            try:
+                model_path = ensure_model(model_size, "stt")
+            except FileNotFoundError as exc:
+                logger.error("Model download declined: %s", exc)
+                raise RuntimeError("Whisper model download was declined") from exc
+            logger.info(
+                "Loading Whisper model %s from %s on %s", model_size, model_path, device
+            )
             compute_type = "int8_float16" if device == "cuda" else "int8"
-            FWHISPER = WhisperModel(model_size, device=device, compute_type=compute_type)
+            FWHISPER = WhisperModel(str(model_path), device=device, compute_type=compute_type)
             FWHISPER._name = model_size
+            logger.info("Whisper model %s initialized", model_size)
         assert FWHISPER is not None
         segments, _ = FWHISPER.transcribe(
             str(audio_wav), language=language, vad_filter=True,

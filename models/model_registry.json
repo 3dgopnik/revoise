@@ -16,11 +16,13 @@
       "files": [
         "model.bin",
         "config.json",
-        "preprocessor_config.json",
         "tokenizer.json",
         "tokenizer_config.json",
         "vocabulary.json",
         "special_tokens_map.json"
+      ],
+      "optional_files": [
+        "preprocessor_config.json"
       ],
       "description": "Fastest, lowest accuracy",
       "size_mb": 462
@@ -83,3 +85,4 @@
     ]
   }
 }
+

@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict
+from typing import TYPE_CHECKING, Any
 from urllib.request import urlopen
 
 if TYPE_CHECKING:  # pragma: no cover - typing-only definitions
@@ -47,7 +47,7 @@ else:  # pragma: no cover - GUI import guard
 MODEL_REGISTRY_PATH = Path("models") / "model_registry.json"
 
 
-def load_model_registry() -> Dict[str, Dict[str, Any]]:
+def load_model_registry() -> dict[str, dict[str, Any]]:
     """Load model registry mapping categories to model metadata."""
     with open(MODEL_REGISTRY_PATH, encoding="utf-8") as file:
         return json.load(file)
@@ -89,10 +89,10 @@ def download_model(url: str, target: Path) -> None:
         raise DownloadError(str(exc)) from exc
 
 
-def list_models(category: str) -> Dict[str, Dict[str, Any]]:
+def list_models(category: str) -> dict[str, dict[str, Any]]:
     """Return model metadata for a category."""
     models = MODEL_REGISTRY.get(category, {})
-    result: Dict[str, Dict[str, Any]] = {}
+    result: dict[str, dict[str, Any]] = {}
     for model_name, data in models.items():
         if isinstance(data, list):
             result[model_name] = {"urls": data}
@@ -129,6 +129,7 @@ def ensure_model(name: str, category: str, *, parent: QWidget | None = None) -> 
 
     if category == "stt":
         files = entry.get("files", [])
+        optional_files = entry.get("optional_files", [])
         base_urls = entry.get("base_urls", [])
         model_dir = models_dir / name
 
@@ -167,7 +168,7 @@ def ensure_model(name: str, category: str, *, parent: QWidget | None = None) -> 
             tmp_file.rename(model_dir / "model.bin")
         else:
             model_dir.mkdir(parents=True, exist_ok=True)
-        for file_name in files:
+        for file_name in files + optional_files:
             target = model_dir / file_name
             if target.exists():
                 continue
@@ -181,6 +182,8 @@ def ensure_model(name: str, category: str, *, parent: QWidget | None = None) -> 
                     break
                 except DownloadError as exc:
                     logging.info("Download failed: %s", exc)
+                    if file_name in optional_files:
+                        continue
                     QMessageBox.warning(
                         parent,
                         "Download failed",
@@ -189,6 +192,13 @@ def ensure_model(name: str, category: str, *, parent: QWidget | None = None) -> 
                         QMessageBox.Retry,
                     )
             else:
+                if file_name in optional_files:
+                    logging.info(
+                        "Optional file '%s' for model '%s' could not be downloaded",
+                        file_name,
+                        name,
+                    )
+                    continue
                 raise DownloadError(f"Failed to download file '{file_name}' for model '{name}'")
 
         config.setdefault("models", {}).setdefault(category, {})[name] = str(model_dir)

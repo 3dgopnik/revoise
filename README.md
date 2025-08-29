@@ -58,6 +58,12 @@
 uv sync --all-extras --frozen || uv sync
 uv run python -m ui.main_window
 ```
+- Проверки качества:
+```bash
+uv run ruff check .
+uv run mypy .
+uv run pytest
+```
 - Windows: запустить `revoice_portable.bat`, Linux/macOS: `./revoice_portable.sh`.
 
 ---

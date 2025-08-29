@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import annotations
 from pathlib import Path
-import logging
 import base64
 import json
 from io import BytesIO
@@ -11,6 +10,7 @@ import requests
 from pydub import AudioSegment
 
 __all__ = ["CoquiXTTS", "SileroTTS", "BeepTTS", "YandexTTS", "GTTSTTS"]
+
 
 # --- XTTS v2 (Coqui) ---
 class CoquiXTTS:
@@ -23,6 +23,7 @@ class CoquiXTTS:
     def _ensure_model(self):
         if CoquiXTTS._model is None:
             from TTS.api import TTS
+
             # Загружаем локально (без интернета)
             CoquiXTTS._model = TTS(model_path=str(self.model_dir))
         return CoquiXTTS._model
@@ -42,7 +43,7 @@ class CoquiXTTS:
             text=text or "",
             speaker_wav=refs if refs else None,
             language="ru",
-            split_sentences=False
+            split_sentences=False,
         )
         # API Coqui обычно возвращает numpy.float32 [-1..1]
         if not isinstance(wav, np.ndarray):
@@ -53,6 +54,7 @@ class CoquiXTTS:
             # тут оставим как есть, ресемплинг у тебя уже есть в synth_natural.
             pass
         return wav.astype(np.float32)
+
 
 # --- Silero TTS ---
 class SileroTTS:
@@ -65,11 +67,14 @@ class SileroTTS:
     def _ensure_model(self):
         if SileroTTS._model is None:
             import torch
+
             pt_files = sorted(self.model_dir.glob("*.pt"))
             if not pt_files:
                 raise FileNotFoundError(f"Silero model (.pt) not found in {self.model_dir}")
             model_path = pt_files[0]
-            model = torch.package.PackageImporter(str(model_path)).load_pickle("tts_models", "model")
+            model = torch.package.PackageImporter(str(model_path)).load_pickle(
+                "tts_models", "model"
+            )
             model.to("cpu")
             if hasattr(model, "eval"):
                 model.eval()  # Some model versions do not provide eval()
@@ -92,7 +97,15 @@ class SileroTTS:
 class YandexTTS:
     _url = "https://tts.api.cloud.yandex.net/tts/v3/utteranceSynthesis"
 
-    def tts(self, text: str, speaker: str, sr: int = 48000, *, key: str, folder_id: str | None = None) -> np.ndarray:
+    def tts(
+        self,
+        text: str,
+        speaker: str,
+        sr: int = 48000,
+        *,
+        key: str,
+        folder_id: str | None = None,
+    ) -> np.ndarray:
         """Synthesize speech using Yandex Cloud TTS v3."""
         headers = {"Content-Type": "application/json"}
         # Choose auth scheme depending on whether folder_id was supplied
@@ -141,6 +154,7 @@ class GTTSTTS:
     def tts(self, text: str, speaker: str, sr: int = 48000) -> np.ndarray:
         """Synthesize speech via gTTS and resample to the desired rate."""
         from gtts import gTTS
+
         buf = BytesIO()
         gTTS(text=text or "", lang="ru").write_to_fp(buf)
         buf.seek(0)

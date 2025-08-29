@@ -138,6 +138,13 @@ uv run python -m ui.main_window
 - Лицензии/контент: предупреждать при клонировании голосов
 - Логи и профилирование производительности
 
+```bash
+uv run ruff check .
+uv run ruff format --check .
+uv run mypy .
+uv run pytest -q
+```
+
 ---
 
 ## Быстрый старт

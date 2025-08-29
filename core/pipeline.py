@@ -1,10 +1,9 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 import logging
 import re
 import shutil
 import subprocess
 import tempfile
-import logging
 from pathlib import Path
 from typing import List, Tuple, Optional
 from itertools import zip_longest
@@ -24,13 +23,14 @@ TTS_MODEL = None
 MULTISPACE = re.compile(r"\s+")
 PAUSE_TAG = re.compile(r"\[\[\s*PAUSE\s*=\s*(\d+)\s*\]\]", re.IGNORECASE)
 
+
 # ===================== Утилиты =====================
 def run(cmd: List[str]):
     logger.debug("Run: %s", " ".join(cmd))
     try:
         r = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        logger.debug("STDOUT: %s", r.stdout)   # capture normal output
-        logger.debug("STDERR: %s", r.stderr)   # capture warnings/errors
+        logger.debug("STDOUT: %s", r.stdout)  # capture normal output
+        logger.debug("STDERR: %s", r.stderr)  # capture warnings/errors
         if r.returncode != 0:
             raise RuntimeError(
                 f"Command failed: {' '.join(cmd)}\nSTDOUT:\n{r.stdout}\nSTDERR:\n{r.stderr}"
@@ -40,14 +40,16 @@ def run(cmd: List[str]):
         logger.exception("Run failed")
         raise
 
+
 def ensure_ffmpeg() -> str:
     exe = shutil.which("ffmpeg")
-    if exe: 
+    if exe:
         return exe
     local = Path(__file__).resolve().parent.parent / "bin" / "ffmpeg.exe"
     if local.exists():
         return str(local)
     raise RuntimeError("ffmpeg не найден. Положите ffmpeg.exe в bin/ или добавьте в PATH.")
+
 
 # ===================== Whisper =====================
 def transcribe_whisper(audio_wav: Path, language="ru", model_size="large-v3", device="cuda"):
@@ -55,6 +57,7 @@ def transcribe_whisper(audio_wav: Path, language="ru", model_size="large-v3", de
     logger.debug("Starting transcribe_whisper for %s", audio_wav)
     try:
         from faster_whisper import WhisperModel
+
         need_load = (FWHISPER is None) or getattr(FWHISPER, "_name", "") != model_size
         if need_load:
             logger.info("Loading Whisper model %s on %s", model_size, device)
@@ -62,8 +65,10 @@ def transcribe_whisper(audio_wav: Path, language="ru", model_size="large-v3", de
             FWHISPER = WhisperModel(model_size, device=device, compute_type=compute_type)
             FWHISPER._name = model_size
         segments, _ = FWHISPER.transcribe(
-            str(audio_wav), language=language, vad_filter=True,
-            vad_parameters={"min_silence_duration_ms": 300}
+            str(audio_wav),
+            language=language,
+            vad_filter=True,
+            vad_parameters={"min_silence_duration_ms": 300},
         )
         result = [(s.start, s.end, s.text.strip()) for s in segments]
         logger.debug("Finished transcribe_whisper with %d segments", len(result))
@@ -71,6 +76,7 @@ def transcribe_whisper(audio_wav: Path, language="ru", model_size="large-v3", de
     except Exception:
         logger.exception("Whisper transcription failed")
         raise
+
 
 # ===================== Фразы =====================
 def merge_into_phrases(segments: List[Tuple[float, float, str]], max_gap=0.35, min_len=0.8):
@@ -93,7 +99,7 @@ def merge_into_phrases(segments: List[Tuple[float, float, str]], max_gap=0.35, m
         Merged phrases sorted by start time.
     """
 
-    phrases = []
+    phrases: List[Tuple[float, float, str]] = []
     if not segments:
         return phrases
 
@@ -111,15 +117,20 @@ def merge_into_phrases(segments: List[Tuple[float, float, str]], max_gap=0.35, m
     phrases.append((cs, ce, MULTISPACE.sub(" ", ct).strip()))
     return phrases
 
-def phrases_to_marked_text(phrases: List[Tuple[float,float,str]]) -> str:
-    lines=[]
-    for i,(_,_,t) in enumerate(phrases, start=1):
+
+def phrases_to_marked_text(phrases: List[Tuple[float, float, str]]) -> str:
+    lines = []
+    for i, (_, _, t) in enumerate(phrases, start=1):
         lines.append(f"[[#{i}]] {t}")
     return "\n".join(lines)
 
 
-def apply_edited_text(phrases: List[Tuple[float, float, str]], edited_text: str,
-                      *, use_markers: bool = True) -> List[Tuple[float, float, str]]:
+def apply_edited_text(
+    phrases: List[Tuple[float, float, str]],
+    edited_text: str,
+    *,
+    use_markers: bool = True,
+) -> List[Tuple[float, float, str]]:
     """Apply user edits to phrases.
 
     Parameters
@@ -168,12 +179,22 @@ def apply_edited_text(phrases: List[Tuple[float, float, str]], edited_text: str,
     return updated
 
 
-def _setup(wav: Path, whisper_size: str, device: str,
-           phrases_cache: Optional[List[Tuple[float, float, str]]],
-           edited_text: Optional[str], *, use_markers: bool) -> List[Tuple[float, float, str]]:
+def _setup(
+    wav: Path,
+    whisper_size: str,
+    device: str,
+    phrases_cache: Optional[List[Tuple[float, float, str]]],
+    edited_text: Optional[str],
+    *,
+    use_markers: bool,
+) -> List[Tuple[float, float, str]]:
     """Prepare phrases: transcribe if needed and apply edited text."""
 
-    logger.debug("Starting _setup with cache=%s edited=%s", phrases_cache is not None, bool(edited_text))
+    logger.debug(
+        "Starting _setup with cache=%s edited=%s",
+        phrases_cache is not None,
+        bool(edited_text),
+    )
     try:
         if phrases_cache is None:
             logger.info("Transcribing audio %s", wav)
@@ -212,14 +233,24 @@ def normalize_text(text: str, *, read_numbers: bool = False, spell_latin: bool =
         text = re.sub(r"[A-Za-z]+", lambda m: " ".join(list(m.group())), text)
     return text
 
+
 # ===================== TTS-заглушки =====================
 # Здесь остаются твои текущие реализации synth_natural и synth_chunk.
 # Если используется Silero/Yandex/XTTS — они будут вызывать normalize_text с read_numbers/spell_latin.
 
-def synth_chunk(ffmpeg: str, text: str, sr: int, speaker: str,
-                tmpdir: Path, tts_engine: str,
-                read_numbers: bool = False, spell_latin: bool = False,
-                yandex_key: Optional[str] = None, yandex_voice: Optional[str] = None) -> np.ndarray:
+
+def synth_chunk(
+    ffmpeg: str,
+    text: str,
+    sr: int,
+    speaker: str,
+    tmpdir: Path,
+    tts_engine: str,
+    read_numbers: bool = False,
+    spell_latin: bool = False,
+    yandex_key: Optional[str] = None,
+    yandex_voice: Optional[str] = None,
+) -> np.ndarray:
     """Generate an audio fragment for a single phrase."""
 
     text = normalize_text(text, read_numbers=read_numbers, spell_latin=spell_latin)
@@ -227,27 +258,22 @@ def synth_chunk(ffmpeg: str, text: str, sr: int, speaker: str,
     logger.debug("Synthesizing chunk with engine=%s", engine)
     try:
         if engine == "beep":
-            tts = BeepTTS()
-            wav = tts.tts(text, speaker, sr=sr)
+            wav = BeepTTS().tts(text, speaker, sr=sr)
             model_sr = sr
         elif engine == "silero":
-            tts = SileroTTS(Path(__file__).resolve().parent.parent)
-            wav = tts.tts(text, speaker, sr=sr)
+            wav = SileroTTS(Path(__file__).resolve().parent.parent).tts(text, speaker, sr=sr)
             model_sr = sr
         elif engine == "coqui_xtts":
-            tts = CoquiXTTS(Path(__file__).resolve().parent.parent)
-            wav = tts.tts(text, speaker, sr=24000)
+            wav = CoquiXTTS(Path(__file__).resolve().parent.parent).tts(text, speaker, sr=24000)
             model_sr = 24000
         elif engine == "gtts":
-            tts = GTTSTTS()
-            wav = tts.tts(text, speaker, sr=sr)
+            wav = GTTSTTS().tts(text, speaker, sr=sr)
             model_sr = sr
         elif engine == "yandex":
             if not yandex_key or not (yandex_voice or speaker):
                 raise ValueError("Yandex TTS requires yandex_key and yandex_voice")
-            tts = YandexTTS()  # Use Yandex Cloud API
             voice = yandex_voice or speaker
-            wav = tts.tts(text, voice, sr=sr, key=yandex_key)
+            wav = YandexTTS().tts(text, voice, sr=sr, key=yandex_key)
             model_sr = sr
         else:
             raise ValueError(f"Unsupported TTS engine: {engine}")
@@ -255,8 +281,21 @@ def synth_chunk(ffmpeg: str, text: str, sr: int, speaker: str,
         raw = tmpdir / "tts_raw.wav"
         sf.write(raw, wav, model_sr)
         out = tmpdir / "tts.wav"
-        run([ffmpeg, "-y", "-i", str(raw), "-ac", "1", "-ar", str(sr),
-             "-c:a", "pcm_s16le", str(out)])
+        run(
+            [
+                ffmpeg,
+                "-y",
+                "-i",
+                str(raw),
+                "-ac",
+                "1",
+                "-ar",
+                str(sr),
+                "-c:a",
+                "pcm_s16le",
+                str(out),
+            ]
+        )
         wav_out, _ = sf.read(out, dtype=np.float32)
         logger.debug("synth_chunk produced %d samples", len(wav_out))
         return wav_out
@@ -264,12 +303,22 @@ def synth_chunk(ffmpeg: str, text: str, sr: int, speaker: str,
         logger.exception("synth_chunk failed")
         raise
 
-def synth_natural(ffmpeg: str, phrases: List[Tuple[float,float,str]], sr: int,
-                  speaker: str, tmpdir: Path, tts_engine: str,
-                  yandex_key: Optional[str] = None, yandex_voice: Optional[str] = None,
-                  min_gap_sec: float = 0.30, overall_speed: float = 1.0,
-                  read_numbers: bool = False, spell_latin: bool = False,
-                  speed_jitter: float = 0.03) -> Path:
+
+def synth_natural(
+    ffmpeg: str,
+    phrases: List[Tuple[float, float, str]],
+    sr: int,
+    speaker: str,
+    tmpdir: Path,
+    tts_engine: str,
+    yandex_key: Optional[str] = None,
+    yandex_voice: Optional[str] = None,
+    min_gap_sec: float = 0.30,
+    overall_speed: float = 1.0,
+    read_numbers: bool = False,
+    spell_latin: bool = False,
+    speed_jitter: float = 0.03,
+) -> Path:
     """
     Simple synthesis: calls synth_chunk for each phrase.
     """
@@ -281,9 +330,18 @@ def synth_natural(ffmpeg: str, phrases: List[Tuple[float,float,str]], sr: int,
         for i, (start, end, txt) in enumerate(tqdm(phrases, desc="TTS", unit="phr"), start=1):
             logger.debug("Synthesizing phrase %d", i)
             try:
-                wav = synth_chunk(ffmpeg, txt, sr, speaker, tmpdir, tts_engine,
-                                  read_numbers=read_numbers, spell_latin=spell_latin,
-                                  yandex_key=yandex_key, yandex_voice=yandex_voice)
+                wav = synth_chunk(
+                    ffmpeg,
+                    txt,
+                    sr,
+                    speaker,
+                    tmpdir,
+                    tts_engine,
+                    read_numbers=read_numbers,
+                    spell_latin=spell_latin,
+                    yandex_key=yandex_key,
+                    yandex_voice=yandex_voice,
+                )
             except Exception:
                 logger.exception("synth_chunk failed for phrase %d", i)
                 raise
@@ -291,7 +349,7 @@ def synth_natural(ffmpeg: str, phrases: List[Tuple[float,float,str]], sr: int,
             s0 = int(place_t * sr)
             s1 = min(len(master), s0 + len(wav))
             if s0 < len(master):
-                master[s0:s1] += wav[:(s1 - s0)]
+                master[s0:s1] += wav[: (s1 - s0)]
             cur_tail = (s0 + len(wav)) / sr
         out_wav = tmpdir / "voice_aligned.wav"
         sf.write(out_wav, master, sr)
@@ -301,18 +359,31 @@ def synth_natural(ffmpeg: str, phrases: List[Tuple[float,float,str]], sr: int,
         logger.exception("synth_natural failed")
         raise
 
+
 # ===================== Основной пайплайн =====================
-def revoice_video(video: str, outdir: str, speaker: str, whisper_size: str, device: str,
-                  sr: int = 48000, min_gap_ms: int = 300,
-                  speed_pct: int = 100, edited_text: Optional[str] = None,
-                  phrases_cache: Optional[List[Tuple[float,float,str]]] = None,
-                  use_markers: bool = True,
-                  read_numbers: bool = False, spell_latin: bool = False,
-                  music_path: Optional[str] = None, music_db: float = -18.0,
-                  duck_ratio: float = 8.0, duck_thresh: float = 0.05,
-                  tts_engine: str = "silero",
-                  yandex_key: Optional[str] = None, yandex_voice: Optional[str] = None,
-                  speed_jitter: float = 0.03) -> str:
+def revoice_video(
+    video: str,
+    outdir: str,
+    speaker: str,
+    whisper_size: str,
+    device: str,
+    sr: int = 48000,
+    min_gap_ms: int = 300,
+    speed_pct: int = 100,
+    edited_text: Optional[str] = None,
+    phrases_cache: Optional[List[Tuple[float, float, str]]] = None,
+    use_markers: bool = True,
+    read_numbers: bool = False,
+    spell_latin: bool = False,
+    music_path: Optional[str] = None,
+    music_db: float = -18.0,
+    duck_ratio: float = 8.0,
+    duck_thresh: float = 0.05,
+    tts_engine: str = "silero",
+    yandex_key: Optional[str] = None,
+    yandex_voice: Optional[str] = None,
+    speed_jitter: float = 0.03,
+) -> str:
     """Main revoicing function: transcribes, synthesizes speech, and mixes."""
     logger.info("Starting revoice_video for %s", video)
     ffmpeg = ensure_ffmpeg()
@@ -327,15 +398,35 @@ def revoice_video(video: str, outdir: str, speaker: str, whisper_size: str, devi
         wav = tmp / "orig.wav"
         logger.debug("Extracting audio from %s", in_video)
         try:
-            run([ffmpeg, "-y", "-i", str(in_video), "-vn", "-ac", "1", "-ar", str(sr),
-                 "-acodec", "pcm_s16le", str(wav)])
+            run(
+                [
+                    ffmpeg,
+                    "-y",
+                    "-i",
+                    str(in_video),
+                    "-vn",
+                    "-ac",
+                    "1",
+                    "-ar",
+                    str(sr),
+                    "-acodec",
+                    "pcm_s16le",
+                    str(wav),
+                ]
+            )
         except Exception:
             logger.exception("Failed to extract audio")
             raise
 
         try:
-            phrases = _setup(wav, whisper_size, device, phrases_cache, edited_text,
-                             use_markers=use_markers)
+            phrases = _setup(
+                wav,
+                whisper_size,
+                device,
+                phrases_cache,
+                edited_text,
+                use_markers=use_markers,
+            )
         except ValueError as e:
             logger.exception("_setup reported invalid edited_text")
             raise ValueError(f"Invalid edited_text: {e}") from e
@@ -346,12 +437,19 @@ def revoice_video(video: str, outdir: str, speaker: str, whisper_size: str, devi
         logger.info("Synthesizing voice track")
         try:
             voice_wav = synth_natural(
-                ffmpeg, phrases, sr, speaker, tmp, tts_engine,
-                yandex_key=yandex_key, yandex_voice=yandex_voice,
-                min_gap_sec=max(0, min_gap_ms)/1000.0,
-                overall_speed=np.clip(speed_pct/100.0, 0.8, 1.2),
-                read_numbers=read_numbers, spell_latin=spell_latin,
-                speed_jitter=speed_jitter
+                ffmpeg,
+                phrases,
+                sr,
+                speaker,
+                tmp,
+                tts_engine,
+                yandex_key=yandex_key,
+                yandex_voice=yandex_voice,
+                min_gap_sec=max(0, min_gap_ms) / 1000.0,
+                overall_speed=np.clip(speed_pct / 100.0, 0.8, 1.2),
+                read_numbers=read_numbers,
+                spell_latin=spell_latin,
+                speed_jitter=speed_jitter,
             )
         except Exception:
             logger.exception("synth_natural failed in revoice_video")
@@ -362,8 +460,24 @@ def revoice_video(video: str, outdir: str, speaker: str, whisper_size: str, devi
             logger.info("Muxing video without background music")
             out_video = out_dirp / f"{in_video.stem}_revoiced.mp4"
             try:
-                run([ffmpeg, "-y", "-i", str(in_video), "-i", str(voice_wav),
-                     "-map", "0:v:0", "-map", "1:a:0", "-c:v", "copy", "-shortest", str(out_video)])
+                run(
+                    [
+                        ffmpeg,
+                        "-y",
+                        "-i",
+                        str(in_video),
+                        "-i",
+                        str(voice_wav),
+                        "-map",
+                        "0:v:0",
+                        "-map",
+                        "1:a:0",
+                        "-c:v",
+                        "copy",
+                        "-shortest",
+                        str(out_video),
+                    ]
+                )
             except Exception:
                 logger.exception("Video muxing failed")
                 raise
@@ -374,15 +488,27 @@ def revoice_video(video: str, outdir: str, speaker: str, whisper_size: str, devi
         logger.info("Mixing voice with background music")
         out_audio = tmp / "mix.wav"
         cmd = [
-            ffmpeg, "-y",
-            "-i", str(voice_wav),
-            "-stream_loop", "-1", "-i", str(music_path),
+            ffmpeg,
+            "-y",
+            "-i",
+            str(voice_wav),
+            "-stream_loop",
+            "-1",
+            "-i",
+            str(music_path),
             "-filter_complex",
             f"[1:a]volume={music_db}dB[bg];",
             f"[bg][0:a]sidechaincompress=threshold={duck_thresh}:ratio={duck_ratio}:attack=20:release=300[mduck];",
-            f"[mduck][0:a]amix=inputs=2:duration=first:dropout_transition=200,volume=1.0[out]",
-            "-map", "[out]",
-            "-ar", str(sr), "-ac", "1", "-c:a", "pcm_s16le", str(out_audio)
+            "[mduck][0:a]amix=inputs=2:duration=first:dropout_transition=200,volume=1.0[out]",
+            "-map",
+            "[out]",
+            "-ar",
+            str(sr),
+            "-ac",
+            "1",
+            "-c:a",
+            "pcm_s16le",
+            str(out_audio),
         ]
         try:
             run(cmd)
@@ -392,11 +518,26 @@ def revoice_video(video: str, outdir: str, speaker: str, whisper_size: str, devi
 
         out_video = out_dirp / f"{in_video.stem}_revoiced.mp4"
         try:
-            run([ffmpeg, "-y", "-i", str(in_video), "-i", str(out_audio),
-                 "-map", "0:v:0", "-map", "1:a:0", "-c:v", "copy", "-shortest", str(out_video)])
+            run(
+                [
+                    ffmpeg,
+                    "-y",
+                    "-i",
+                    str(in_video),
+                    "-i",
+                    str(out_audio),
+                    "-map",
+                    "0:v:0",
+                    "-map",
+                    "1:a:0",
+                    "-c:v",
+                    "copy",
+                    "-shortest",
+                    str(out_video),
+                ]
+            )
         except Exception:
             logger.exception("Final muxing failed")
             raise
         logger.info("revoice_video finished: %s", out_video)
         return str(out_video)
-

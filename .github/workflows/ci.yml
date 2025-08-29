@@ -1,15 +1,61 @@
-name: ci
+name: CI
 
 on:
   push:
+    branches: [ main, master ]
   pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  lint:
+  build-and-check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v3
-      - run: uv sync --dev
-      - run: uv run ruff check .
-      - run: uv run mypy .
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Cache uv & venv
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/uv
+            .venv
+          key: uv-${{ runner.os }}-${{ hashFiles('**/pyproject.toml', '**/uv.lock') }}
+          restore-keys: |
+            uv-${{ runner.os }}-
+
+      - name: Sync dependencies
+        run: uv sync --all-extras --dev
+
+      - name: Ruff (lint)
+        run: uv run ruff check .
+
+      - name: Ruff (format check)
+        run: uv run ruff format --check .
+
+      - name: Mypy (type check)
+        run: uv run mypy .
+        # Чтобы временно не падать из-за mypy, можно включить мягкий режим:
+        # continue-on-error: true
+
+      - name: Pytest (if tests exist)
+        run: |
+          if [ -d tests ] && find tests -type f \( -name "*test*.py" -o -name "test_*.py" \) | grep -q .; then
+            uv run pytest -q --maxfail=1
+          else
+            echo "No tests found, skipping pytest."
+          fi

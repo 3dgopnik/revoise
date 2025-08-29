@@ -1,4 +1,11 @@
-name: ci
+name: CI
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 on:
   push:
@@ -9,10 +16,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v3
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@v4
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/uv
+            .venv
+          key: ${{ runner.os }}-uv-${{ hashFiles('**/uv.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-uv-
 
       - name: Sync dependencies
-        run: uv sync --dev
+        run: uv sync --all-extras --dev
 
       - name: Ruff
         run: uv run ruff check .
@@ -24,6 +42,5 @@ jobs:
         run: uv run mypy .
 
       - name: Pytest
-
-        run: uv run pytest
+        run: uv run pytest -q
 

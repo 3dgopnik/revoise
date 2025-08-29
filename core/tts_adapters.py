@@ -81,7 +81,7 @@ class SileroTTS:
             except ModuleNotFoundError as exc:
                 raise RuntimeError("SileroTTS requires the 'torch' package.") from exc
 
-            model_dir = ensure_model("silero", "tts", parent=parent)
+            model_dir = ensure_model("silero", "tts", parent=parent, auto_download=True)
             model_path = next(model_dir.glob("*.pt"))
             model = torch.package.PackageImporter(str(model_path)).load_pickle(
                 "tts_models", "model"

@@ -101,7 +101,13 @@ def list_models(category: str) -> dict[str, dict[str, Any]]:
     return result
 
 
-def ensure_model(name: str, category: str, *, parent: QWidget | None = None) -> Path:
+def ensure_model(
+    name: str,
+    category: str,
+    *,
+    parent: QWidget | None = None,
+    auto_download: bool = False,
+) -> Path:
     """Ensure that a model exists locally, downloading if necessary.
 
     Parameters
@@ -110,6 +116,10 @@ def ensure_model(name: str, category: str, *, parent: QWidget | None = None) -> 
         Model file name or repository name.
     category:
         Model category used inside the ``models`` folder.
+    parent:
+        Optional parent widget for dialogs.
+    auto_download:
+        When ``True``, download without showing any message boxes.
 
     Returns
     -------
@@ -150,15 +160,16 @@ def ensure_model(name: str, category: str, *, parent: QWidget | None = None) -> 
         if not (files and base_urls):
             raise FileNotFoundError(f"No source URLs for model '{name}' in category '{category}'")
 
-        consent = QMessageBox.question(
-            parent,
-            "Download model",
-            f"Model '{name}' is missing. Download it?",
-            QMessageBox.Yes | QMessageBox.No,
-            QMessageBox.No,
-        )
-        if consent != QMessageBox.Yes:
-            raise FileNotFoundError(f"Model '{name}' is missing.")
+        if not auto_download:
+            consent = QMessageBox.question(
+                parent,
+                "Download model",
+                f"Model '{name}' is missing. Download it?",
+                QMessageBox.Yes | QMessageBox.No,
+                QMessageBox.No,
+            )
+            if consent != QMessageBox.Yes:
+                raise FileNotFoundError(f"Model '{name}' is missing.")
 
         if model_dir.exists() and model_dir.is_file():
             legacy_file = model_dir
@@ -184,13 +195,14 @@ def ensure_model(name: str, category: str, *, parent: QWidget | None = None) -> 
                     logging.info("Download failed: %s", exc)
                     if file_name in optional_files:
                         continue
-                    QMessageBox.warning(
-                        parent,
-                        "Download failed",
-                        f"Failed to download file '{file_name}' from {url}: {exc}",
-                        QMessageBox.Retry,
-                        QMessageBox.Retry,
-                    )
+                    if not auto_download:
+                        QMessageBox.warning(
+                            parent,
+                            "Download failed",
+                            f"Failed to download file '{file_name}' from {url}: {exc}",
+                            QMessageBox.Retry,
+                            QMessageBox.Retry,
+                        )
             else:
                 if file_name in optional_files:
                     logging.info(
@@ -223,15 +235,16 @@ def ensure_model(name: str, category: str, *, parent: QWidget | None = None) -> 
     if not urls:
         raise FileNotFoundError(f"No source URLs for model '{name}' in category '{category}'")
 
-    consent = QMessageBox.question(
-        parent,
-        "Download model",
-        f"Model '{name}' is missing. Download it?",
-        QMessageBox.Yes | QMessageBox.No,
-        QMessageBox.No,
-    )
-    if consent != QMessageBox.Yes:
-        raise FileNotFoundError(f"Model '{name}' is missing.")
+    if not auto_download:
+        consent = QMessageBox.question(
+            parent,
+            "Download model",
+            f"Model '{name}' is missing. Download it?",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No,
+        )
+        if consent != QMessageBox.Yes:
+            raise FileNotFoundError(f"Model '{name}' is missing.")
 
     for url in urls:
         logging.info("Download of model '%s' from %s started", name, url)
@@ -239,13 +252,14 @@ def ensure_model(name: str, category: str, *, parent: QWidget | None = None) -> 
             download_model(url, model_path)
         except DownloadError as exc:
             logging.info("Download failed: %s", exc)
-            QMessageBox.warning(
-                parent,
-                "Download failed",
-                f"Failed to download model '{name}' from {url}: {exc}",
-                QMessageBox.Retry,
-                QMessageBox.Retry,
-            )
+            if not auto_download:
+                QMessageBox.warning(
+                    parent,
+                    "Download failed",
+                    f"Failed to download model '{name}' from {url}: {exc}",
+                    QMessageBox.Retry,
+                    QMessageBox.Retry,
+                )
             continue
         else:
             logging.info("Download of model '%s' completed", name)

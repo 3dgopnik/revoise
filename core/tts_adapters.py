@@ -6,6 +6,7 @@ from io import BytesIO
 from pathlib import Path
 from typing import Any
 
+import logging
 import numpy as np
 import requests
 import soundfile as sf
@@ -77,6 +78,7 @@ class SileroTTS:
         if SileroTTS._model is None:
             try:
                 import torch
+                logging.info("Using torch %s for Silero TTS", torch.__version__)
             except ModuleNotFoundError as exc:
                 raise RuntimeError(
                     "SileroTTS requires the 'torch' package. "

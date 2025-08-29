@@ -367,3 +367,38 @@ def test_whispermodel_loads_from_directory(tmp_path, monkeypatch):
 
     expected_dir = Path("models/stt/dummy")
     assert pipeline.FWHISPER.model_dir == str(expected_dir)
+
+
+def test_ensure_model_auto_download(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    source = tmp_path / "source.bin"
+    source.write_text("payload")
+    url = source.as_uri()
+    monkeypatch.setattr(
+        model_manager,
+        "MODEL_REGISTRY",
+        {"tts": {"auto.bin": [url]}},
+    )
+
+    class MsgBox:
+        Yes = 1
+        No = 0
+        Retry = 2
+        Cancel = 3
+        called = {"question": False, "warning": False}
+
+        @staticmethod
+        def question(*args, **kwargs):
+            MsgBox.called["question"] = True
+            return MsgBox.Yes
+
+        @staticmethod
+        def warning(*args, **kwargs):
+            MsgBox.called["warning"] = True
+            return MsgBox.Retry
+
+    monkeypatch.setattr(model_manager, "QMessageBox", MsgBox)
+
+    model_path = ensure_model("auto.bin", "tts", auto_download=True)
+    assert model_path.exists()
+    assert MsgBox.called == {"question": False, "warning": False}

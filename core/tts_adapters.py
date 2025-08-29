@@ -32,7 +32,7 @@ class CoquiXTTS:
                     "CoquiXTTS requires the 'TTS' package with its 'torch' dependency."
                 ) from exc
 
-            model_dir = ensure_model("coqui_xtts", "tts", parent=parent)
+            model_dir = ensure_model("coqui_xtts", "tts", parent=parent, auto_download=True)
             # Load locally (offline)
             CoquiXTTS._model = TTS(model_path=str(model_dir))
         return CoquiXTTS._model

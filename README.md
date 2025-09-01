@@ -94,15 +94,17 @@ uv run pytest -q
 > Silero модели ищутся в папке `models/tts/silero/` (файл `.pt`).
 > Референсы спикеров для Coqui XTTS кладите в `models/speakers/<имя>`.
 
-### Silero prerequisites
+### Silero requirements
+Silero TTS requires `torch` and `torchaudio`. Install them to avoid a BeepTTS fallback:
 ```bash
-pip install torch --index-url https://download.pytorch.org/whl/cpu
+pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu121
 ```
+If these packages are missing, the pipeline falls back to BeepTTS with an audible beep.
 
 ### TTS dependencies
 Missing Python packages are installed automatically for TTS engines:
 
-- Silero: `torch` (`pip install torch --index-url https://download.pytorch.org/whl/cpu`)
+- Silero: `torch` and `torchaudio` (`pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu121`)
 - Coqui XTTS: `TTS`
 - gTTS: `gTTS`
 

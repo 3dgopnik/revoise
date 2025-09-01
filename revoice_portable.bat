@@ -2,6 +2,12 @@
 chcp 65001 > nul
 cd /d %~dp0
 
+where uv >nul 2>nul
+if errorlevel 1 (
+    echo "uv is required but not found. Please install uv."
+    exit /b 1
+)
+
 if not exist venv\Scripts\python.exe (
     echo Creating local virtual environment...
     uv venv venv

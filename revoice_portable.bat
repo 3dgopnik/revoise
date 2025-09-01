@@ -19,5 +19,12 @@ if %ERRORLEVEL% NEQ 0 (
 )
 
 echo Starting RevoicePortable...
-uv run python -m ui.main %*
+(
+    uv run python -m ui.main %*
+)
+set "EXITCODE=%ERRORLEVEL%"
+if not "%EXITCODE%"=="0" (
+    echo RevoicePortable failed to start. You may be missing dependencies.
+    exit /b %EXITCODE%
+)
 

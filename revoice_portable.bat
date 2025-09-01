@@ -2,6 +2,15 @@
 chcp 65001 > nul
 cd /d %~dp0
 
+if not exist venv\Scripts\python.exe (
+    echo Creating local virtual environment...
+    uv venv venv
+    echo Installing project requirements and torch...
+    uv pip install --python venv\Scripts\python.exe .
+    uv pip install --python venv\Scripts\python.exe torch
+)
+call venv\Scripts\activate.bat
+
 :: наши DLL (cuDNN) и ffmpeg
 set PATH=%CD%\bin;%PATH%
 
@@ -17,4 +26,4 @@ set HUGGINGFACE_HUB_CACHE=%HF_HOME%
 set TRANSFORMERS_CACHE=%HF_HOME%
 
 echo Starting RevoicePortable...
-uv run python -m ui.main %*
+python -m ui.main %*

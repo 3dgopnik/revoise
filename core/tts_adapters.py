@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import base64
 import json
+import os
 from io import BytesIO
 from pathlib import Path
 from typing import Any
+from zipfile import ZipFile
 
 import logging
 import numpy as np
@@ -12,10 +14,69 @@ import requests
 import soundfile as sf
 from pydub import AudioSegment
 
-from . import model_service
 from .tts_dependencies import ensure_tts_dependencies
 
-__all__ = ["CoquiXTTS", "SileroTTS", "BeepTTS", "YandexTTS", "GTTSTTS"]
+__all__ = [
+    "CoquiXTTS",
+    "SileroTTS",
+    "BeepTTS",
+    "YandexTTS",
+    "GTTSTTS",
+    "resolve_model_path",
+    "load_silero_model",
+]
+
+
+def resolve_model_path() -> Path:
+    """Determine path to Silero model.
+
+    Priority: environment variable ``SILERO_MODEL`` → ``config.json``
+    (``tts.silero.model_path``) → default path.
+    """
+
+    env_path = os.getenv("SILERO_MODEL")
+    if env_path:
+        return Path(env_path)
+
+    cfg = Path("config.json")
+    if cfg.exists():
+        try:
+            with open(cfg, encoding="utf-8") as f:
+                data = json.load(f)
+            model_path = data.get("tts", {}).get("silero", {}).get("model_path")
+            if model_path:
+                return Path(model_path)
+        except Exception:
+            pass
+
+    return Path("models/tts/silero/model.pt")
+
+
+def load_silero_model(model_path: str) -> tuple[Any, list[str], str]:
+    """Load Silero model from ``model_path``.
+
+    Returns a tuple ``(model, speakers, mode)``.
+    """
+
+    import torch
+
+    model = torch.jit.load(model_path, map_location="cpu")
+    if hasattr(model, "eval"):
+        model.eval()
+
+    speakers: list[str] = []
+    mode = ""
+    try:
+        with ZipFile(model_path) as zf:
+            if "speakers.json" in zf.namelist():
+                speakers = json.loads(zf.read("speakers.json").decode("utf-8"))
+            if "metadata.json" in zf.namelist():
+                meta = json.loads(zf.read("metadata.json").decode("utf-8"))
+                mode = meta.get("mode", "")
+    except Exception:
+        pass
+
+    return model, speakers, mode
 
 
 # --- XTTS v2 (Coqui) ---
@@ -84,18 +145,11 @@ class SileroTTS:
                     "SileroTTS requires the 'torch' package. "
                     "Install it via `pip install torch --index-url https://download.pytorch.org/whl/cpu`"
                 ) from exc
-
-            model_dir = model_service.get_model_path(
-                "silero", "tts", parent=parent, auto_download=True
-            )
-            model_path = next(model_dir.glob("*.pt"))
-            model = torch.package.PackageImporter(str(model_path)).load_pickle(
-                "tts_models", "model"
-            )
-            model.to("cpu")
-            if hasattr(model, "eval"):
-                model.eval()  # Some model versions do not provide eval()
+            model_path = resolve_model_path()
+            model, speakers, mode = load_silero_model(str(model_path))
             SileroTTS._model = model
+            SileroTTS._speakers = speakers
+            SileroTTS._mode = mode
         if SileroTTS._model is None:
             raise RuntimeError("Failed to load Silero TTS model")
         return SileroTTS._model

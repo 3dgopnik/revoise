@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from core import model_service
+import core.tts_adapters as silero
 from core.tts_adapters import SileroTTS
 
 
@@ -23,8 +23,8 @@ def test_silero_logs_torch_version(monkeypatch):
 
     monkeypatch.setattr(logging, "info", fake_info)
     monkeypatch.setattr(
-        model_service,
-        "get_model_path",
+        silero,
+        "load_silero_model",
         lambda *args, **kwargs: (_ for _ in ()).throw(RuntimeError("stop")),
     )
 

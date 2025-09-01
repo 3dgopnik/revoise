@@ -2,26 +2,30 @@
 chcp 65001 > nul
 cd /d %~dp0
 
-set "PATH=%CD%\bin;%PATH%"
-set "PATH=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.0\bin;%PATH%"
-set "CT2_FORCE_CPU="
+@if exist ".venv\Scripts\activate.bat" (
+    call ".venv\Scripts\activate.bat"
+) else if exist "venv\Scripts\activate.bat" (
+    call "venv\Scripts\activate.bat"
+) else (
+    echo Virtual environment not found ^& exit /b 1
+)
 
-if not exist "%CD%\hf_cache" mkdir "%CD%\hf_cache"
-set "HF_HOME=%CD%\hf_cache"
-set "HUGGINGFACE_HUB_CACHE=%HF_HOME%"
-set "TRANSFORMERS_CACHE=%HF_HOME%"
+if exist "%CD%\bin" (
+    set "PATH=%CD%\bin;%PATH%"
+)
 
-where uv >nul 2>&1
-if %ERRORLEVEL% NEQ 0 (
-    where uv
-    echo uv is required but was not found in PATH. See https://astral.sh/uv for installation instructions.
-    exit /b 1
+if /I "%TTS_ENGINE%"=="beep" (
+    set "TTS_ENGINE="
 )
 
 echo Starting RevoicePortable...
-(
-    uv run python -m ui.main %*
+
+if exist ui\main.py (
+    python -m ui.main %*
+) else (
+    python main.py %*
 )
+
 set "EXITCODE=%ERRORLEVEL%"
 if not "%EXITCODE%"=="0" (
     echo RevoicePortable failed to start. You may be missing dependencies.

@@ -49,10 +49,12 @@ def ensure_ffmpeg() -> str:
     exe = shutil.which("ffmpeg")
     if exe:
         return exe
-    local = Path(__file__).resolve().parent.parent / "bin" / "ffmpeg.exe"
-    if local.exists():
-        return str(local)
-    raise RuntimeError("ffmpeg не найден. Положите ffmpeg.exe в bin/ или добавьте в PATH.")
+    local_dir = Path(__file__).resolve().parent.parent / "bin"
+    for candidate in ("ffmpeg", "ffmpeg.exe"):
+        path = local_dir / candidate
+        if path.exists():
+            return str(path)
+    raise RuntimeError("ffmpeg не найден. Положите ffmpeg в bin/ или добавьте в PATH.")
 
 
 # ===================== Whisper =====================
@@ -361,8 +363,10 @@ def synth_natural(
     """
     Simple synthesis: calls synth_chunk for each phrase.
     """
+    if not phrases:
+        raise ValueError("No phrases to synthesize")
     logger.info("Starting synth_natural for %d phrases", len(phrases))
-    total_dur = phrases[-1][1] + 3.0
+    total_dur = max(p[1] for p in phrases) + 3.0
     master = np.zeros(int(total_dur * sr), dtype=np.float32)
     cur_tail = 0.0
     try:

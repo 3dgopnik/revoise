@@ -49,6 +49,9 @@ MODEL_REGISTRY_PATH = Path("models") / "model_registry.json"
 
 def load_model_registry() -> dict[str, dict[str, Any]]:
     """Load model registry mapping categories to model metadata."""
+    if not MODEL_REGISTRY_PATH.exists():
+        logging.warning("Model registry not found at %s", MODEL_REGISTRY_PATH)
+        return {}
     with open(MODEL_REGISTRY_PATH, encoding="utf-8") as file:
         return json.load(file)
 

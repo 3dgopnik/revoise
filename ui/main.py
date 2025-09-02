@@ -5,6 +5,7 @@
 
 from PySide6 import QtWidgets, QtGui, QtCore
 from pathlib import Path
+import argparse
 import os, subprocess, tempfile, traceback, logging, sys
 from datetime import datetime
 
@@ -350,7 +351,32 @@ class MainWindow(QtWidgets.QMainWindow):
             QtWidgets.QMessageBox.critical(self,"Ошибка",str(e))
 
 def main():
-    """Run application and ensure logs are flushed on exit."""
+    """Run application or synthesize text via CLI."""
+
+    parser = argparse.ArgumentParser(description="RevoicePortable UI")
+    parser.add_argument("--say", help="Text to synthesize and exit")
+    args = parser.parse_args()
+
+    if args.say:
+        from core.tts_registry import get_engine, registry
+        from core.tts_adapters import resolve_model_path
+
+        engine_fn = get_engine()
+        engine_name = next((k for k, v in registry.items() if v is engine_fn), "unknown")
+        speaker = os.getenv("SILERO_SPEAKER") or "aidar"
+        model_path = ""
+        if engine_name == "silero":
+            model_path = str(resolve_model_path())
+        wav = engine_fn(args.say, speaker, 48000)
+        out_path = OUTPUT_DIR / "tts_test.wav"
+        out_path.parent.mkdir(exist_ok=True)
+        with open(out_path, "wb") as fh:
+            fh.write(wav)
+        print(
+            f"TTS: engine={engine_name} model={model_path} speaker={speaker} -> {out_path.relative_to(BASE_DIR)}"
+        )
+        return 0
+
     app = QtWidgets.QApplication([])
     w = MainWindow()
     w.show()

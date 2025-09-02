@@ -3,6 +3,7 @@ from __future__ import annotations
 import base64
 import json
 import os
+import wave
 from io import BytesIO
 from pathlib import Path
 from typing import Any
@@ -24,6 +25,7 @@ __all__ = [
     "GTTSTTS",
     "resolve_model_path",
     "load_silero_model",
+    "synthesize_silero",
 ]
 
 
@@ -77,6 +79,53 @@ def load_silero_model(model_path: str) -> tuple[Any, list[str], str]:
         pass
 
     return model, speakers, mode
+
+
+def synthesize_silero(
+    text: str,
+    speaker: str | None,
+    sample_rate: int,
+) -> bytes:
+    """Synthesize speech with Silero TTS and return WAV bytes."""
+
+    model_path = resolve_model_path()
+    model, speakers, _ = load_silero_model(str(model_path))
+
+    resolved = speaker or os.getenv("SILERO_SPEAKER")
+    if resolved is None:
+        cfg = Path("config.json")
+        if cfg.exists():
+            try:
+                with open(cfg, encoding="utf-8") as f:
+                    data = json.load(f)
+                resolved = data.get("tts", {}).get("silero", {}).get("speaker")
+            except Exception:
+                resolved = None
+    resolved = resolved or "aidar"
+    if speakers and resolved not in speakers:
+        resolved = speakers[0]
+
+    try:
+        wav = model.apply_tts(
+            text=text or "",
+            speaker=resolved,
+            sample_rate=sample_rate,
+        )
+    except TypeError:
+        wav = model.apply_tts(text or "", resolved, sample_rate)
+
+    if not isinstance(wav, np.ndarray):
+        wav = np.array(wav, dtype=np.float32)
+    wav = wav.astype(np.float32)
+    pcm16 = (np.clip(wav, -1.0, 1.0) * 32767).astype("<i2")
+
+    buffer = BytesIO()
+    with wave.open(buffer, "wb") as wf:
+        wf.setnchannels(1)
+        wf.setsampwidth(2)
+        wf.setframerate(sample_rate)
+        wf.writeframes(pcm16.tobytes())
+    return buffer.getvalue()
 
 
 # --- XTTS v2 (Coqui) ---

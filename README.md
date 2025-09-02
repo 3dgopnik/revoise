@@ -102,6 +102,17 @@ Missing Python packages are installed automatically for TTS engines:
 
 - gTTS: выберите движок `gtts` в UI. Сервис не предлагает голоса и требует интернет.
 
+### TTS CLI
+Переменные окружения:
+- `TTS_ENGINE` — движок (по умолчанию `silero`)
+- `SILERO_MODEL` — путь к `.pt`
+- `SILERO_SPEAKER` — имя диктора
+
+```bash
+python -m ui.main --say "text"
+# появится output/tts_test.wav
+```
+
 ---
 
 ## Звук: музыка, SFX, постпроцесс

@@ -16,7 +16,8 @@ from tqdm import tqdm
 
 from .model_manager import DownloadError
 from . import model_service
-from .tts_adapters import BeepTTS, CoquiXTTS, SileroTTS, YandexTTS, GTTSTTS
+from .tts_adapters import CoquiXTTS, YandexTTS, GTTSTTS
+from .tts_registry import registry, get_engine
 
 logger = logging.getLogger(__name__)
 
@@ -274,7 +275,7 @@ def synth_chunk(
     sr: int,
     speaker: str,
     tmpdir: Path,
-    tts_engine: str,
+    tts_engine: str | None,
     read_numbers: bool = False,
     spell_latin: bool = False,
     yandex_key: Optional[str] = None,
@@ -283,41 +284,37 @@ def synth_chunk(
     """Generate an audio fragment for a single phrase."""
 
     text = normalize_text(text, read_numbers=read_numbers, spell_latin=spell_latin)
-    engine = (tts_engine or "beep").lower()
-    logger.debug("Synthesizing chunk with engine=%s", engine)
+    engine_name = (tts_engine or "").lower()
+    logger.debug("Synthesizing chunk with engine=%s", engine_name or "<auto>")
     try:
-        if engine == "beep":
-            wav = BeepTTS().tts(text, speaker, sr=sr)
-            model_sr = sr
-        elif engine == "silero":
-            if importlib.util.find_spec("torch") is None:
-                logger.warning(
-                    "Falling back to BeepTTS: install torch for Silero support"
-                )
-                wav = BeepTTS().tts(text, speaker, sr=sr)
-                model_sr = sr
-            else:
-                wav = SileroTTS(Path(__file__).resolve().parent.parent).tts(text, speaker, sr=sr)
-                model_sr = sr
-        elif engine == "coqui_xtts":
+        if engine_name == "coqui_xtts":
             if importlib.util.find_spec("TTS") is None or importlib.util.find_spec("torch") is None:
                 logger.warning("TTS or torch not found, falling back to BeepTTS")
-                wav = BeepTTS().tts(text, speaker, sr=sr)
+                wav = registry["beep"](text, speaker, sr=sr)
                 model_sr = sr
             else:
                 wav = CoquiXTTS(Path(__file__).resolve().parent.parent).tts(text, speaker, sr=24000)
                 model_sr = 24000
-        elif engine == "gtts":
+        elif engine_name == "gtts":
             wav = GTTSTTS().tts(text, speaker, sr=sr)
             model_sr = sr
-        elif engine == "yandex":
+        elif engine_name == "yandex":
             if not yandex_key or not (yandex_voice or speaker):
                 raise ValueError("Yandex TTS requires yandex_key and yandex_voice")
             voice = yandex_voice or speaker
             wav = YandexTTS().tts(text, voice, sr=sr, key=yandex_key)
             model_sr = sr
         else:
-            raise ValueError(f"Unsupported TTS engine: {engine}")
+            engine_fn = get_engine(engine_name or None)
+            if engine_fn is registry["silero"]:
+                try:
+                    wav = engine_fn(text, speaker, sr=sr)
+                except Exception as e:
+                    logger.warning("Silero unavailable (%s), falling back to beep.", e)
+                    wav = registry["beep"](text, speaker, sr=sr)
+            else:
+                wav = engine_fn(text, speaker, sr=sr)
+            model_sr = sr
 
         raw = tmpdir / "tts_raw.wav"
         sf.write(raw, wav, model_sr)
@@ -351,7 +348,7 @@ def synth_natural(
     sr: int,
     speaker: str,
     tmpdir: Path,
-    tts_engine: str,
+    tts_engine: str | None,
     yandex_key: Optional[str] = None,
     yandex_voice: Optional[str] = None,
     min_gap_sec: float = 0.30,
@@ -422,7 +419,7 @@ def revoice_video(
     music_db: float = -18.0,
     duck_ratio: float = 8.0,
     duck_thresh: float = 0.05,
-    tts_engine: str = "silero",
+    tts_engine: str | None = None,
     yandex_key: Optional[str] = None,
     yandex_voice: Optional[str] = None,
     speed_jitter: float = 0.03,

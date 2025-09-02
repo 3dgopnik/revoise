@@ -3,33 +3,27 @@ from __future__ import annotations
 import json
 import logging
 import os
-from pathlib import Path
 from collections.abc import Callable
 
-import numpy as np
-
-from .tts_adapters import BeepTTS, SileroTTS
+from .tts_adapters import synthesize_beep as _synthesize_beep
+from .tts_adapters import synthesize_silero
 
 logger = logging.getLogger(__name__)
 
 
-def synthesize_silero(text: str, speaker: str, sr: int) -> np.ndarray:
-    """Synthesize speech via Silero TTS."""
-    return SileroTTS(Path(__file__).resolve().parent.parent).tts(text, speaker, sr=sr)
 
-
-def synthesize_beep(text: str, speaker: str, sr: int) -> np.ndarray:
+def synthesize_beep(text: str, speaker: str, sr: int) -> bytes:
     """Fallback beep synthesis."""
-    return BeepTTS().tts(text, speaker, sr=sr)
+    return _synthesize_beep(sample_rate=sr)
 
 
-registry: dict[str, Callable[[str, str, int], np.ndarray]] = {
+registry: dict[str, Callable[[str, str, int], bytes]] = {
     "silero": synthesize_silero,
     "beep": synthesize_beep,
 }
 
 
-def get_engine(name: str | None = None) -> Callable[[str, str, int], np.ndarray]:
+def get_engine(name: str | None = None) -> Callable[[str, str, int], bytes]:
     """Resolve TTS engine by name or configuration."""
     if name is None or not name:
         name = os.getenv("TTS_ENGINE")

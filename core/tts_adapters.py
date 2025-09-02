@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import base64
 import json
+import logging
 import os
 import wave
 from io import BytesIO
@@ -9,12 +10,12 @@ from pathlib import Path
 from typing import Any
 from zipfile import ZipFile
 
-import logging
 import numpy as np
 import requests
 import soundfile as sf
 from pydub import AudioSegment
 
+from . import model_service
 from .tts_dependencies import ensure_tts_dependencies
 
 __all__ = [
@@ -26,6 +27,7 @@ __all__ = [
     "resolve_model_path",
     "load_silero_model",
     "synthesize_silero",
+    "synthesize_beep",
 ]
 
 
@@ -118,6 +120,26 @@ def synthesize_silero(
         wav = np.array(wav, dtype=np.float32)
     wav = wav.astype(np.float32)
     pcm16 = (np.clip(wav, -1.0, 1.0) * 32767).astype("<i2")
+
+    buffer = BytesIO()
+    with wave.open(buffer, "wb") as wf:
+        wf.setnchannels(1)
+        wf.setsampwidth(2)
+        wf.setframerate(sample_rate)
+        wf.writeframes(pcm16.tobytes())
+    return buffer.getvalue()
+
+
+def synthesize_beep(
+    sample_rate: int = 48000,
+    duration: float = 0.25,
+    freq: float = 880.0,
+) -> bytes:
+    """Generate a simple sine beep and return WAV bytes."""
+
+    t = np.linspace(0, duration, int(sample_rate * duration), False)
+    wave_arr = 0.5 * np.sin(2 * np.pi * freq * t)
+    pcm16 = (np.clip(wave_arr, -1.0, 1.0) * 32767).astype("<i2")
 
     buffer = BytesIO()
     with wave.open(buffer, "wb") as wf:

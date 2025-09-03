@@ -208,14 +208,9 @@ class SileroTTS:
 
     def _ensure_model(self, parent: Any | None = None):
         if SileroTTS._model is None:
-            try:
-                import torch
-                logging.info("Using torch %s for Silero TTS", torch.__version__)
-            except ModuleNotFoundError as exc:
-                raise RuntimeError(
-                    "SileroTTS requires the 'torch' package. "
-                    "Install it via `pip install torch --index-url https://download.pytorch.org/whl/cpu`"
-                ) from exc
+            ensure_tts_dependencies("silero")
+            import torch
+            logging.info("Using torch %s for Silero TTS", torch.__version__)
             model_path = resolve_model_path()
             model, speakers, mode = load_silero_model(str(model_path))
             SileroTTS._model = model

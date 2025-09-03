@@ -1,3 +1,4 @@
+import builtins
 import importlib
 import importlib.util as imp_util
 import subprocess
@@ -25,11 +26,18 @@ def test_silero_ensure_model_missing_torch(monkeypatch):
     monkeypatch.setattr(importlib, "import_module", fake_import)
     calls: list[list[str]] = []
 
+    def fake_run(cmd, *args, **kwargs):
+        calls.append(cmd)
+        raise subprocess.CalledProcessError(1, cmd)
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
     with pytest.raises(RuntimeError) as excinfo:
         SileroTTS(Path("."))._ensure_model()
     assert "pip install torch --index-url https://download.pytorch.org/whl/cpu" in str(
         excinfo.value
     )
+    assert calls and "torch" in " ".join(calls[0])
 
 
 def test_coqui_ensure_model_missing_tts(monkeypatch):
@@ -73,14 +81,20 @@ def _setup_synth(monkeypatch, fallback_array: np.ndarray):
 
 
 def test_synth_chunk_fallback_silero(monkeypatch, tmp_path):
-    original_find_spec = imp_util.find_spec
+    original_import = builtins.__import__
 
-    def fake_find_spec(name, *args, **kwargs):
+    def fake_import(name, *args, **kwargs):
         if name == "torch":
-            return None
-        return original_find_spec(name, *args, **kwargs)
+            raise ModuleNotFoundError("No module named 'torch'")
+        return original_import(name, *args, **kwargs)
 
-    monkeypatch.setattr(imp_util, "find_spec", fake_find_spec)
+    monkeypatch.setattr(builtins, "__import__", fake_import)
+
+    def fake_ensure(engine):
+        raise ModuleNotFoundError("No module named 'torch'")
+
+    monkeypatch.setattr(pipeline, "ensure_tts_dependencies", fake_ensure)
+
     expected = np.array([0.1, -0.1], dtype=np.float32)
     _setup_synth(monkeypatch, expected)
     wav = synth_chunk("ffmpeg", "hi", 16000, "spk", tmp_path, "silero")
@@ -88,14 +102,20 @@ def test_synth_chunk_fallback_silero(monkeypatch, tmp_path):
 
 
 def test_synth_chunk_fallback_silero_warns(monkeypatch, tmp_path, caplog):
-    original_find_spec = imp_util.find_spec
+    original_import = builtins.__import__
 
-    def fake_find_spec(name, *args, **kwargs):
+    def fake_import(name, *args, **kwargs):
         if name == "torch":
-            return None
-        return original_find_spec(name, *args, **kwargs)
+            raise ModuleNotFoundError("No module named 'torch'")
+        return original_import(name, *args, **kwargs)
 
-    monkeypatch.setattr(imp_util, "find_spec", fake_find_spec)
+    monkeypatch.setattr(builtins, "__import__", fake_import)
+
+    def fake_ensure(engine):
+        raise ModuleNotFoundError("No module named 'torch'")
+
+    monkeypatch.setattr(pipeline, "ensure_tts_dependencies", fake_ensure)
+
     _setup_synth(monkeypatch, np.array([0.1, -0.1], dtype=np.float32))
     with caplog.at_level(logging.WARNING):
         synth_chunk("ffmpeg", "hi", 16000, "spk", tmp_path, "silero")

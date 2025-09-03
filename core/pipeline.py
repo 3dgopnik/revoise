@@ -16,8 +16,9 @@ from tqdm import tqdm
 
 from .model_manager import DownloadError
 from . import model_service
-from .tts_adapters import CoquiXTTS, YandexTTS, GTTSTTS
-from .tts_registry import registry, get_engine
+from .tts_adapters import CoquiXTTS, YandexTTS, GTTSTTS, SileroTTS, BeepTTS
+from .tts_dependencies import ensure_tts_dependencies
+from .tts_registry import get_engine
 
 logger = logging.getLogger(__name__)
 
@@ -284,13 +285,13 @@ def synth_chunk(
     """Generate an audio fragment for a single phrase."""
 
     text = normalize_text(text, read_numbers=read_numbers, spell_latin=spell_latin)
-    engine_name = (tts_engine or "").lower()
-    logger.debug("Synthesizing chunk with engine=%s", engine_name or "<auto>")
+    engine_name = (tts_engine or "silero").lower()
+    logger.debug("Synthesizing chunk with engine=%s", engine_name)
     try:
         if engine_name == "coqui_xtts":
             if importlib.util.find_spec("TTS") is None or importlib.util.find_spec("torch") is None:
                 logger.warning("TTS or torch not found, falling back to BeepTTS")
-                wav = registry["beep"](text, speaker, sr=sr)
+                wav = BeepTTS().tts(text, speaker, sr=sr)
                 model_sr = sr
             else:
                 wav = CoquiXTTS(Path(__file__).resolve().parent.parent).tts(text, speaker, sr=24000)
@@ -304,16 +305,28 @@ def synth_chunk(
             voice = yandex_voice or speaker
             wav = YandexTTS().tts(text, voice, sr=sr, key=yandex_key)
             model_sr = sr
-        else:
-            engine_fn = get_engine(engine_name or None)
-            if engine_fn is registry["silero"]:
-                try:
-                    wav = engine_fn(text, speaker, sr=sr)
-                except Exception as e:
-                    logger.warning("Silero unavailable (%s), falling back to beep.", e)
-                    wav = registry["beep"](text, speaker, sr=sr)
+        elif engine_name == "silero":
+            try:
+                ensure_tts_dependencies("silero")
+                import torch  # noqa: F401
+            except Exception as e:
+                logger.warning(
+                    "Falling back to BeepTTS: install torch for Silero support",
+                    exc_info=e,
+                )
+                wav = BeepTTS().tts(text, speaker, sr=sr)
+                model_sr = sr
             else:
-                wav = engine_fn(text, speaker, sr=sr)
+                wav = SileroTTS(Path(__file__).resolve().parent.parent).tts(
+                    text, speaker, sr=sr
+                )
+                model_sr = sr
+        elif engine_name == "beep":
+            wav = BeepTTS().tts(text, speaker, sr=sr)
+            model_sr = sr
+        else:
+            engine_fn = get_engine(engine_name)
+            wav = engine_fn(text, speaker, sr=sr)
             model_sr = sr
 
         raw = tmpdir / "tts_raw.wav"

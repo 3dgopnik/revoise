@@ -330,6 +330,9 @@ def synth_chunk(
             model_sr = sr
 
         raw = tmpdir / "tts_raw.wav"
+        wav = np.asarray(wav, dtype=np.float32)
+        if wav.ndim == 1 or (wav.ndim == 2 and wav.shape[1] == 0):
+            wav = wav.reshape(-1, 1)
         sf.write(raw, wav, model_sr)
         out = tmpdir / "tts.wav"
         run(

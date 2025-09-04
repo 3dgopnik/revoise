@@ -20,7 +20,9 @@ def test_signature_detection(tmp_path, monkeypatch):
         return np.zeros(10, dtype=np.float32)
 
     monkeypatch.setattr(pipeline, 'run', _copy_run)
-    monkeypatch.setattr(pipeline, 'check_engine_available', lambda name: None)
+    monkeypatch.setattr(
+        pipeline, 'check_engine_available', lambda name, auto_download_models=True: None
+    )
     monkeypatch.setitem(registry, 'dummy', dummy)
 
     wav, reason = pipeline.synth_chunk(
@@ -40,7 +42,7 @@ def test_signature_detection(tmp_path, monkeypatch):
 def test_unavailable_engine_no_fallback(tmp_path, monkeypatch):
     monkeypatch.setattr(pipeline, 'run', _copy_run)
 
-    def unavailable(name):
+    def unavailable(name, auto_download_models=True):
         raise pipeline.TTSEngineError('missing')
 
     monkeypatch.setattr(pipeline, 'check_engine_available', unavailable)
@@ -53,7 +55,7 @@ def test_unavailable_engine_no_fallback(tmp_path, monkeypatch):
 def test_unavailable_engine_with_fallback(tmp_path, monkeypatch, caplog):
     monkeypatch.setattr(pipeline, 'run', _copy_run)
 
-    def unavailable(name):
+    def unavailable(name, auto_download_models=True):
         raise pipeline.TTSEngineError('missing dep')
 
     monkeypatch.setattr(pipeline, 'check_engine_available', unavailable)

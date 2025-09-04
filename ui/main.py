@@ -368,6 +368,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 yandex_key=self.yandex_key, yandex_voice=voice,
                 speed_jitter=float(self.ed_jitter.text() or "0.03"),
                 allow_beep_fallback=self.allow_beep_fallback,
+                auto_download_models=self.auto_download_models,
             )
             if fb_reason:
                 warn = f"Used beep fallback due to: {fb_reason}"
@@ -388,14 +389,14 @@ def main():
 
     if args.say:
         from core.tts_registry import get_engine, registry
-        from core.tts_adapters import resolve_model_path
+        import torch
 
         engine_fn = get_engine()
         engine_name = next((k for k, v in registry.items() if v is engine_fn), "unknown")
         speaker = os.getenv("SILERO_SPEAKER") or "aidar"
         model_path = ""
         if engine_name == "silero":
-            model_path = str(resolve_model_path())
+            model_path = str(Path(torch.hub.get_dir()) / "snakers4_silero-models_master")
         wav = engine_fn(args.say, speaker, 48000)
         out_path = OUTPUT_DIR / "tts_test.wav"
         out_path.parent.mkdir(exist_ok=True)

@@ -8,6 +8,7 @@ from collections.abc import Mapping
 TTS_DEPENDENCIES: Mapping[str, dict[str, str]] = {
     "silero": {
         "torch": "pip install torch --index-url https://download.pytorch.org/whl/cpu",
+        "omegaconf": "pip install omegaconf",
     },
     "coqui_xtts": {
         "TTS": "pip install TTS",

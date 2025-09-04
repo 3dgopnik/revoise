@@ -21,7 +21,9 @@ torch.device = lambda *a, **k: None
 sys.modules["torch"] = torch
 sys.modules["torch.hub"] = hub
 sys.modules["torch.package"] = pkg
+sys.modules["omegaconf"] = types.ModuleType("omegaconf")
 
+from core import pipeline  # noqa: E402
 from core.tts_adapters import SileroTTS  # noqa: E402
 
 
@@ -78,3 +80,23 @@ def test_silero_no_cache(monkeypatch, tmp_path):
     tts = SileroTTS(auto_download=False)
     with pytest.raises(RuntimeError, match="Auto-download models"):
         tts.tts("hi", "baya", sr=16000)
+
+
+def test_check_engine_available_no_cache(monkeypatch, tmp_path):
+    hub = tmp_path / "hub"
+    torch.hub.get_dir = lambda: str(hub)
+
+    def fake_load(*args, **kwargs):
+        raise RuntimeError("missing")
+
+    torch.hub.load = fake_load
+    monkeypatch.setattr(pipeline, "ensure_tts_dependencies", lambda engine: None)
+    monkeypatch.setattr(
+        pipeline.importlib.util,
+        "find_spec",
+        lambda name: object() if name == "torch" else None,
+    )
+
+    SileroTTS._model = None
+    with pytest.raises(pipeline.TTSEngineError, match="Auto-download models"):
+        pipeline.check_engine_available("silero")

@@ -115,31 +115,38 @@ class SileroTTS:
             import torch
 
             torch.set_num_threads(max(1, os.cpu_count() // 2))
+            old_autofetch = os.environ.get("TORCH_HUB_DISABLE_AUTOFETCH")
             if not auto_download:
                 os.environ["TORCH_HUB_DISABLE_AUTOFETCH"] = "1"
-            hub_dir = Path(torch.hub.get_dir())
-            cache_dir = hub_dir / "snakers4_silero-models_master"
-            cached_before = cache_dir.exists()
-            if not auto_download and not cached_before:
-                raise RuntimeError(
-                    "Silero model cache not found. Enable 'Auto-download models' in Settings or prefetch via CLI."
+            try:
+                hub_dir = Path(torch.hub.get_dir())
+                cache_dir = hub_dir / "snakers4_silero-models_master"
+                cached_before = cache_dir.exists()
+                if not auto_download and not cached_before:
+                    raise RuntimeError(
+                        "Silero model cache not found. Enable 'Auto-download models' in Settings or prefetch via CLI."
+                    )
+                logging.info("Using torch %s for Silero TTS", torch.__version__)
+                model, _ = torch.hub.load(
+                    repo_or_dir="snakers4/silero-models",
+                    model="silero_tts",
+                    language="ru",
+                    speaker="v4_ru",
+                    trust_repo=True,
+                    force_reload=False,
                 )
-            logging.info("Using torch %s for Silero TTS", torch.__version__)
-            model, _ = torch.hub.load(
-                repo_or_dir="snakers4/silero-models",
-                model="silero_tts",
-                language="ru",
-                speaker="v4_ru",
-                trust_repo=True,
-                force_reload=False,
-            )
-            model.to(torch.device("cpu"))
-            SileroTTS._model = model
-            SileroTTS._speakers = getattr(model, "speakers", [])
-            SileroTTS._mode = "offline"
-            status = "cached" if cached_before else "downloaded"
-            SileroTTS._status = status
-            logging.info("tts.silero ensure status=%s cache_dir=%s", status, cache_dir)
+                model.to(torch.device("cpu"))
+                SileroTTS._model = model
+                SileroTTS._speakers = getattr(model, "speakers", [])
+                SileroTTS._mode = "offline"
+                status = "cached" if cached_before else "downloaded"
+                SileroTTS._status = status
+                logging.info("tts.silero ensure status=%s cache_dir=%s", status, cache_dir)
+            finally:
+                if old_autofetch is None:
+                    os.environ.pop("TORCH_HUB_DISABLE_AUTOFETCH", None)
+                else:
+                    os.environ["TORCH_HUB_DISABLE_AUTOFETCH"] = old_autofetch
         model = SileroTTS._model
         return (model, SileroTTS._status) if return_status else model
 

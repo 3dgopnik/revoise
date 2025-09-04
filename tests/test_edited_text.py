@@ -1,5 +1,6 @@
 import sys
 import types
+import re
 from pathlib import Path
 
 import pytest
@@ -54,4 +55,39 @@ def test_revoice_video_calls_setup_and_catches(monkeypatch, tmp_path):
         )
 
     assert called.get("called")
+
+
+def test_revoice_video_out_path_includes_engine_and_speaker(monkeypatch, tmp_path):
+    dummy_video = tmp_path / "in.mp4"
+    dummy_video.write_bytes(b"0")
+
+    monkeypatch.setattr(pipeline, "ensure_ffmpeg", lambda: "ffmpeg")
+
+    def fake_run(cmd):
+        Path(cmd[-1]).touch()
+        return types.SimpleNamespace(returncode=0, stdout="", stderr="")
+
+    monkeypatch.setattr(pipeline, "run", fake_run)
+    monkeypatch.setattr(pipeline, "_setup", lambda *a, **k: [(0.0, 1.0, "hi")])
+
+    def fake_synth(ffmpeg, phrases, sr, speaker, tmp, tts_engine, **kwargs):
+        voice = tmp / "voice.wav"
+        voice.touch()
+        return voice, None
+
+    monkeypatch.setattr(pipeline, "synth_natural", fake_synth)
+
+    out, _ = pipeline.revoice_video(
+        str(dummy_video),
+        str(tmp_path),
+        speaker="spk!",
+        whisper_size="small",
+        device="cpu",
+        tts_engine="eng@1",
+    )
+
+    safe_engine = re.sub(r"[^\w.-]", "", "eng@1")
+    safe_voice = re.sub(r"[^\w.-]", "", "spk!")
+    assert safe_engine in out
+    assert safe_voice in out
 

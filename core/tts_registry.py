@@ -3,10 +3,14 @@ from __future__ import annotations
 import json
 import logging
 import os
+import wave
 from collections.abc import Callable
+from io import BytesIO
+from pathlib import Path
 
-from .tts_adapters import synthesize_beep as _synthesize_beep
-from .tts_adapters import synthesize_silero
+import numpy as np
+
+from .tts_adapters import SileroTTS, synthesize_beep as _synthesize_beep
 
 logger = logging.getLogger(__name__)
 
@@ -15,6 +19,18 @@ logger = logging.getLogger(__name__)
 def synthesize_beep(text: str, speaker: str, sr: int) -> bytes:
     """Fallback beep synthesis."""
     return _synthesize_beep(sample_rate=sr)
+
+
+def synthesize_silero(text: str, speaker: str, sr: int) -> bytes:
+    wav = SileroTTS(Path(__file__).resolve().parent.parent).tts(text, speaker, sr)
+    pcm16 = (np.clip(wav, -1.0, 1.0) * 32767).astype("<i2")
+    buf = BytesIO()
+    with wave.open(buf, "wb") as wf:
+        wf.setnchannels(1)
+        wf.setsampwidth(2)
+        wf.setframerate(sr)
+        wf.writeframes(pcm16.tobytes())
+    return buf.getvalue()
 
 
 registry: dict[str, Callable[[str, str, int], bytes]] = {

@@ -1,4 +1,6 @@
-# -*- coding: utf-8 -*-
+# ruff: noqa: UP006,UP007,UP022,UP035,UP045
+import importlib.util
+import inspect
 import logging
 import re
 import shutil
@@ -8,20 +10,62 @@ from itertools import zip_longest
 from pathlib import Path
 from typing import Any, List, Optional, Tuple
 
-import importlib.util
-import inspect
 import numpy as np
 import soundfile as sf
 from num2words import num2words
 from tqdm import tqdm
 
-from .model_manager import DownloadError
 from . import model_service
-from .tts_adapters import CoquiXTTS, YandexTTS, GTTSTTS, SileroTTS, BeepTTS
+from .model_manager import DownloadError
+from .tts_adapters import (
+    GTTSTTS,
+    BeepTTS,
+    CoquiXTTS,
+    SileroTTS,
+    YandexTTS,
+    resolve_model_path,
+)
 from .tts_dependencies import ensure_tts_dependencies
 from .tts_registry import get_engine
 
 logger = logging.getLogger(__name__)
+
+
+class TTSEngineError(RuntimeError):
+    """Raised when the selected TTS engine cannot be used."""
+
+
+def check_engine_available(engine_name: str) -> None:
+    """Validate that the requested TTS engine can run."""
+    try:
+        if engine_name == "silero":
+            ensure_tts_dependencies("silero")
+            if importlib.util.find_spec("torch") is None:
+                raise ImportError("torch not installed")
+            if not resolve_model_path().exists():
+                raise FileNotFoundError("Silero model not found")
+        elif engine_name == "coqui_xtts":
+            if (
+                importlib.util.find_spec("TTS") is None
+                or importlib.util.find_spec("torch") is None
+            ):
+                raise ImportError("TTS or torch not installed")
+            model_dir = Path(__file__).resolve().parent.parent / "models" / "tts" / "coqui_xtts"
+            if not model_dir.exists():
+                raise FileNotFoundError("Coqui XTTS model not found")
+        elif engine_name == "gtts":
+            if importlib.util.find_spec("gtts") is None:
+                raise ImportError("gtts not installed")
+        elif engine_name == "yandex":
+            pass
+        else:
+            ensure_tts_dependencies(engine_name)
+    except (
+        ImportError,
+        ModuleNotFoundError,
+        FileNotFoundError,
+    ) as e:
+        raise TTSEngineError(str(e)) from e
 
 # ===================== Global =====================
 FWHISPER: Any | None = None
@@ -280,55 +324,52 @@ def synth_chunk(
     tts_engine: str | None,
     read_numbers: bool = False,
     spell_latin: bool = False,
-    yandex_key: Optional[str] = None,
-    yandex_voice: Optional[str] = None,
-) -> np.ndarray:
+    yandex_key: str | None = None,
+    yandex_voice: str | None = None,
+    allow_beep_fallback: bool = False,
+) -> tuple[np.ndarray, str | None]:
     """Generate an audio fragment for a single phrase."""
 
     text = normalize_text(text, read_numbers=read_numbers, spell_latin=spell_latin)
     engine_name = (tts_engine or "silero").lower()
     logger.debug("Synthesizing chunk with engine=%s", engine_name)
+    fallback_reason: str | None = None
     try:
-        if engine_name == "coqui_xtts":
-            if importlib.util.find_spec("TTS") is None or importlib.util.find_spec("torch") is None:
-                logger.warning("TTS or torch not found, falling back to BeepTTS")
-                wav = BeepTTS().tts(text, speaker, sr=sr)
-                model_sr = sr
-            else:
-                wav = CoquiXTTS(Path(__file__).resolve().parent.parent).tts(text, speaker, sr=24000)
-                model_sr = 24000
-        elif engine_name == "gtts":
-            wav = GTTSTTS().tts(text, speaker, sr=sr)
-            model_sr = sr
-        elif engine_name == "yandex":
-            if not yandex_key or not (yandex_voice or speaker):
-                raise ValueError("Yandex TTS requires yandex_key and yandex_voice")
-            voice = yandex_voice or speaker
-            wav = YandexTTS().tts(text, voice, sr=sr, key=yandex_key)
-            model_sr = sr
-        elif engine_name == "silero":
-            try:
-                ensure_tts_dependencies("silero")
-                import torch  # noqa: F401
-            except Exception as e:
-                logger.warning(
-                    "Falling back to BeepTTS: install torch for Silero support",
-                    exc_info=e,
+        check_engine_available(engine_name)
+    except TTSEngineError as e:
+        if not allow_beep_fallback:
+            logger.info("tts.engine=%s fallback=false reason=\"%s\"", engine_name, e)
+            raise
+        logger.info("tts.engine=%s fallback=true reason=\"%s\"", engine_name, e)
+        wav = BeepTTS().tts(text, speaker, sr=sr)
+        model_sr = sr
+        fallback_reason = str(e)
+    else:
+        try:
+            if engine_name == "coqui_xtts":
+                wav = CoquiXTTS(Path(__file__).resolve().parent.parent).tts(
+                    text, speaker, sr=24000
                 )
-                wav = BeepTTS().tts(text, speaker, sr=sr)
+                model_sr = 24000
+            elif engine_name == "gtts":
+                wav = GTTSTTS().tts(text, speaker, sr=sr)
                 model_sr = sr
-            else:
+            elif engine_name == "yandex":
+                if not yandex_key or not (yandex_voice or speaker):
+                    raise ValueError("Yandex TTS requires yandex_key and yandex_voice")
+                voice = yandex_voice or speaker
+                wav = YandexTTS().tts(text, voice, sr=sr, key=yandex_key)
+                model_sr = sr
+            elif engine_name == "silero":
                 wav = SileroTTS(Path(__file__).resolve().parent.parent).tts(
                     text, speaker, sr=sr
                 )
                 model_sr = sr
-        elif engine_name == "beep":
-            wav = BeepTTS().tts(text, speaker, sr=sr)
-            model_sr = sr
-        else:
-            engine_fn = get_engine(engine_name)
-            try:
-                ensure_tts_dependencies(engine_name)
+            elif engine_name == "beep":
+                wav = BeepTTS().tts(text, speaker, sr=sr)
+                model_sr = sr
+            else:
+                engine_fn = get_engine(engine_name)
                 sig = inspect.signature(engine_fn)
                 kwargs = {}
                 if "sr" in sig.parameters:
@@ -336,62 +377,73 @@ def synth_chunk(
                 elif "sample_rate" in sig.parameters:
                     kwargs["sample_rate"] = sr
                 wav = engine_fn(text, speaker, **kwargs)
-            except (
-                TypeError,
-                RuntimeError,
-                ImportError,
-                ModuleNotFoundError,
-            ) as e:
-                logger.warning(
-                    "Falling back to BeepTTS for %s: %s", engine_name, e, exc_info=e
+                model_sr = sr
+        except (
+            TypeError,
+            RuntimeError,
+            ImportError,
+            ModuleNotFoundError,
+        ) as e:
+            if not allow_beep_fallback:
+                logger.info(
+                    "tts.engine=%s fallback=false reason=\"%s\"", engine_name, e
                 )
-                wav = BeepTTS().tts(text, speaker, sr=sr)
+                raise TTSEngineError(str(e)) from e
+            logger.info(
+                "tts.engine=%s fallback=true reason=\"%s\"", engine_name, e
+            )
+            wav = BeepTTS().tts(text, speaker, sr=sr)
             model_sr = sr
+            fallback_reason = str(e)
 
-        raw = tmpdir / "tts_raw.wav"
-        wav = np.asarray(wav, dtype=np.float32)
-        if wav.ndim == 1 or (wav.ndim == 2 and wav.shape[1] == 0):
-            wav = wav.reshape(-1, 1)
-        sf.write(raw, wav, model_sr)
-        out = tmpdir / "tts.wav"
-        run(
-            [
-                ffmpeg,
-                "-y",
-                "-i",
-                str(raw),
-                "-ac",
-                "1",
-                "-ar",
-                str(sr),
-                "-c:a",
-                "pcm_s16le",
-                str(out),
-            ]
+    raw = tmpdir / "tts_raw.wav"
+    wav = np.asarray(wav, dtype=np.float32)
+    if wav.ndim == 1 or (wav.ndim == 2 and wav.shape[1] == 0):
+        wav = wav.reshape(-1, 1)
+    sf.write(raw, wav, model_sr)
+    out = tmpdir / "tts.wav"
+    run(
+        [
+            ffmpeg,
+            "-y",
+            "-i",
+            str(raw),
+            "-ac",
+            "1",
+            "-ar",
+            str(sr),
+            "-c:a",
+            "pcm_s16le",
+            str(out),
+        ]
+    )
+    wav_out, _ = sf.read(out, dtype=np.float32)
+    if not fallback_reason:
+        peak = float(np.max(np.abs(wav_out)))
+        rms = float(np.sqrt(np.mean(np.square(wav_out))))
+        logger.info(
+            "tts.engine=%s fallback=false peak=%.4f rms=%.4f", engine_name, peak, rms
         )
-        wav_out, _ = sf.read(out, dtype=np.float32)
-        logger.debug("synth_chunk produced %d samples", len(wav_out))
-        return wav_out
-    except Exception:
-        logger.exception("synth_chunk failed")
-        raise
+    logger.debug("synth_chunk produced %d samples", len(wav_out))
+    return wav_out, fallback_reason
 
 
 def synth_natural(
     ffmpeg: str,
-    phrases: List[Tuple[float, float, str]],
+    phrases: list[tuple[float, float, str]],
     sr: int,
     speaker: str,
     tmpdir: Path,
     tts_engine: str | None,
-    yandex_key: Optional[str] = None,
-    yandex_voice: Optional[str] = None,
+    yandex_key: str | None = None,
+    yandex_voice: str | None = None,
     min_gap_sec: float = 0.30,
     overall_speed: float = 1.0,
     read_numbers: bool = False,
     spell_latin: bool = False,
     speed_jitter: float = 0.03,
-) -> Path:
+    allow_beep_fallback: bool = False,
+) -> tuple[Path, str | None]:
     """
     Simple synthesis: calls synth_chunk for each phrase.
     """
@@ -399,13 +451,16 @@ def synth_natural(
         raise ValueError("No phrases to synthesize")
     logger.info("Starting synth_natural for %d phrases", len(phrases))
     total_dur = max(p[1] for p in phrases) + 3.0
-    master = np.zeros(int(total_dur * sr), dtype=np.float32)
+    master: np.ndarray = np.zeros(int(total_dur * sr), dtype=np.float32)
     cur_tail = 0.0
     try:
-        for i, (start, end, txt) in enumerate(tqdm(phrases, desc="TTS", unit="phr"), start=1):
+        fallback_reason: str | None = None
+        for i, (start, _end, txt) in enumerate(
+            tqdm(phrases, desc="TTS", unit="phr"), start=1
+        ):
             logger.debug("Synthesizing phrase %d", i)
             try:
-                wav = synth_chunk(
+                wav, reason = synth_chunk(
                     ffmpeg,
                     txt,
                     sr,
@@ -416,7 +471,10 @@ def synth_natural(
                     spell_latin=spell_latin,
                     yandex_key=yandex_key,
                     yandex_voice=yandex_voice,
+                    allow_beep_fallback=allow_beep_fallback,
                 )
+                if reason and not fallback_reason:
+                    fallback_reason = reason
             except Exception:
                 logger.exception("synth_chunk failed for phrase %d", i)
                 raise
@@ -429,7 +487,7 @@ def synth_natural(
         out_wav = tmpdir / "voice_aligned.wav"
         sf.write(out_wav, master, sr)
         logger.info("Finished synth_natural: %s", out_wav)
-        return out_wav
+        return out_wav, fallback_reason
     except Exception:
         logger.exception("synth_natural failed")
         raise
@@ -445,20 +503,21 @@ def revoice_video(
     sr: int = 48000,
     min_gap_ms: int = 300,
     speed_pct: int = 100,
-    edited_text: Optional[str] = None,
-    phrases_cache: Optional[List[Tuple[float, float, str]]] = None,
+    edited_text: str | None = None,
+    phrases_cache: list[tuple[float, float, str]] | None = None,
     use_markers: bool = True,
     read_numbers: bool = False,
     spell_latin: bool = False,
-    music_path: Optional[str] = None,
+    music_path: str | None = None,
     music_db: float = -18.0,
     duck_ratio: float = 8.0,
     duck_thresh: float = 0.05,
     tts_engine: str | None = None,
-    yandex_key: Optional[str] = None,
-    yandex_voice: Optional[str] = None,
+    yandex_key: str | None = None,
+    yandex_voice: str | None = None,
     speed_jitter: float = 0.03,
-) -> str:
+    allow_beep_fallback: bool = False,
+) -> tuple[str, str | None]:
     """Main revoicing function: transcribes, synthesizes speech, and mixes."""
     logger.info("Starting revoice_video for %s", video)
     ffmpeg = ensure_ffmpeg()
@@ -511,7 +570,7 @@ def revoice_video(
 
         logger.info("Synthesizing voice track")
         try:
-            voice_wav = synth_natural(
+            voice_wav, fb_reason = synth_natural(
                 ffmpeg,
                 phrases,
                 sr,
@@ -525,6 +584,7 @@ def revoice_video(
                 read_numbers=read_numbers,
                 spell_latin=spell_latin,
                 speed_jitter=speed_jitter,
+                allow_beep_fallback=allow_beep_fallback,
             )
         except Exception:
             logger.exception("synth_natural failed in revoice_video")
@@ -557,7 +617,7 @@ def revoice_video(
                 logger.exception("Video muxing failed")
                 raise
             logger.info("revoice_video finished: %s", out_video)
-            return str(out_video)
+            return str(out_video), fb_reason
 
         # Mixing voice with background music
         logger.info("Mixing voice with background music")
@@ -610,4 +670,4 @@ def revoice_video(
             logger.exception("Final muxing failed")
             raise
         logger.info("revoice_video finished: %s", out_video)
-        return str(out_video)
+        return str(out_video), fb_reason

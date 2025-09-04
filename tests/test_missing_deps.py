@@ -1,11 +1,11 @@
 import builtins
 import importlib
 import importlib.util as imp_util
+import logging
 import subprocess
 import sys
 from pathlib import Path
 
-import logging
 import numpy as np
 import pytest
 
@@ -69,7 +69,7 @@ def _setup_synth(monkeypatch, fallback_array: np.ndarray):
     storage: dict[str, np.ndarray] = {}
 
     def fake_write(path, data, sr):
-        storage["data"] = np.array(data, dtype=np.float32)
+        storage["data"] = np.array(data, dtype=np.float32).reshape(-1)
         storage["sr"] = sr
 
     def fake_read(path, dtype):
@@ -97,8 +97,11 @@ def test_synth_chunk_fallback_silero(monkeypatch, tmp_path):
 
     expected = np.array([0.1, -0.1], dtype=np.float32)
     _setup_synth(monkeypatch, expected)
-    wav = synth_chunk("ffmpeg", "hi", 16000, "spk", tmp_path, "silero")
+    wav, reason = synth_chunk(
+        "ffmpeg", "hi", 16000, "spk", tmp_path, "silero", allow_beep_fallback=True
+    )
     np.testing.assert_array_equal(wav, expected)
+    assert reason
 
 
 def test_synth_chunk_fallback_silero_warns(monkeypatch, tmp_path, caplog):
@@ -117,11 +120,11 @@ def test_synth_chunk_fallback_silero_warns(monkeypatch, tmp_path, caplog):
     monkeypatch.setattr(pipeline, "ensure_tts_dependencies", fake_ensure)
 
     _setup_synth(monkeypatch, np.array([0.1, -0.1], dtype=np.float32))
-    with caplog.at_level(logging.WARNING):
-        synth_chunk("ffmpeg", "hi", 16000, "spk", tmp_path, "silero")
-    assert (
-        "Falling back to BeepTTS: install torch for Silero support" in caplog.text
-    )
+    with caplog.at_level(logging.INFO):
+        synth_chunk(
+            "ffmpeg", "hi", 16000, "spk", tmp_path, "silero", allow_beep_fallback=True
+        )
+    assert "fallback=true" in caplog.text
 
 
 def test_synth_chunk_fallback_coqui(monkeypatch, tmp_path):
@@ -135,5 +138,8 @@ def test_synth_chunk_fallback_coqui(monkeypatch, tmp_path):
     monkeypatch.setattr(imp_util, "find_spec", fake_find_spec)
     expected = np.array([0.2, -0.2], dtype=np.float32)
     _setup_synth(monkeypatch, expected)
-    wav = synth_chunk("ffmpeg", "hi", 16000, "spk", tmp_path, "coqui_xtts")
+    wav, reason = synth_chunk(
+        "ffmpeg", "hi", 16000, "spk", tmp_path, "coqui_xtts", allow_beep_fallback=True
+    )
     np.testing.assert_array_equal(wav, expected)
+    assert reason

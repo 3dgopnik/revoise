@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any, List, Optional, Tuple
 
 import importlib.util
+import inspect
 import numpy as np
 import soundfile as sf
 from num2words import num2words
@@ -326,7 +327,25 @@ def synth_chunk(
             model_sr = sr
         else:
             engine_fn = get_engine(engine_name)
-            wav = engine_fn(text, speaker, sr=sr)
+            try:
+                ensure_tts_dependencies(engine_name)
+                sig = inspect.signature(engine_fn)
+                kwargs = {}
+                if "sr" in sig.parameters:
+                    kwargs["sr"] = sr
+                elif "sample_rate" in sig.parameters:
+                    kwargs["sample_rate"] = sr
+                wav = engine_fn(text, speaker, **kwargs)
+            except (
+                TypeError,
+                RuntimeError,
+                ImportError,
+                ModuleNotFoundError,
+            ) as e:
+                logger.warning(
+                    "Falling back to BeepTTS for %s: %s", engine_name, e, exc_info=e
+                )
+                wav = BeepTTS().tts(text, speaker, sr=sr)
             model_sr = sr
 
         raw = tmpdir / "tts_raw.wav"

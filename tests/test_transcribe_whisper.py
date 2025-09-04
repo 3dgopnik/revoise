@@ -14,7 +14,7 @@ def test_transcribe_whisper_download_refused(tmp_path, monkeypatch):
 
     captured: dict[str, bool] = {}
 
-    def fake_get_model_path(name, category, *, parent=None, auto_download=False):
+    def fake_get_model_path(name, category, *, parent=None, auto_download=None):
         captured["auto_download"] = auto_download
         raise FileNotFoundError("missing")
 
@@ -25,7 +25,7 @@ def test_transcribe_whisper_download_refused(tmp_path, monkeypatch):
     with pytest.raises(RuntimeError, match="download was declined"):
         pipeline.transcribe_whisper(tmp_path / "dummy.wav")
 
-    assert captured["auto_download"] is True
+    assert captured["auto_download"] is None
 
 
 def test_transcribe_whisper_loads_existing_model(tmp_path, monkeypatch):
@@ -92,7 +92,7 @@ def test_transcribe_whisper_download_failure(tmp_path, monkeypatch):
 
     captured: dict[str, bool] = {}
 
-    def fake_get_model_path(name, category, *, parent=None, auto_download=False):
+    def fake_get_model_path(name, category, *, parent=None, auto_download=None):
         captured["auto_download"] = auto_download
         raise DownloadError("failed")
 
@@ -103,5 +103,5 @@ def test_transcribe_whisper_download_failure(tmp_path, monkeypatch):
     with pytest.raises(RuntimeError, match="download failed"):
         pipeline.transcribe_whisper(tmp_path / "dummy.wav")
 
-    assert captured["auto_download"] is True
+    assert captured["auto_download"] is None
 

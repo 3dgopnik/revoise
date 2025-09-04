@@ -31,16 +31,14 @@ __all__ = [
 ]
 
 
-def resolve_model_path() -> Path:
-    """Determine path to Silero model.
-
-    Priority: environment variable ``SILERO_MODEL`` → ``config.json``
-    (``tts.silero.model_path``) → default path.
-    """
+def resolve_model_path(*, parent: Any | None = None) -> Path:
+    """Determine path to Silero model, downloading if necessary."""
 
     env_path = os.getenv("SILERO_MODEL")
     if env_path:
-        return Path(env_path)
+        p = Path(env_path)
+        if p.exists():
+            return p
 
     cfg = Path("config.json")
     if cfg.exists():
@@ -49,11 +47,13 @@ def resolve_model_path() -> Path:
                 data = json.load(f)
             model_path = data.get("tts", {}).get("silero", {}).get("model_path")
             if model_path:
-                return Path(model_path)
+                p = Path(model_path)
+                if p.exists():
+                    return p
         except Exception:
             pass
 
-    return Path("models/tts/silero/model.pt")
+    return model_service.get_model_path("silero", "tts", parent=parent)
 
 
 def load_silero_model(model_path: str) -> tuple[Any, list[str], str]:
@@ -162,9 +162,7 @@ class CoquiXTTS:
             ensure_tts_dependencies("coqui_xtts")
             from TTS.api import TTS
 
-            model_dir = model_service.get_model_path(
-                "coqui_xtts", "tts", parent=parent, auto_download=True
-            )
+            model_dir = model_service.get_model_path("coqui_xtts", "tts", parent=parent)
             # Load locally (offline)
             CoquiXTTS._model = TTS(model_path=str(model_dir))
         return CoquiXTTS._model
@@ -211,7 +209,7 @@ class SileroTTS:
             ensure_tts_dependencies("silero")
             import torch
             logging.info("Using torch %s for Silero TTS", torch.__version__)
-            model_path = resolve_model_path()
+            model_path = resolve_model_path(parent=parent)
             model, speakers, mode = load_silero_model(str(model_path))
             SileroTTS._model = model
             SileroTTS._speakers = speakers

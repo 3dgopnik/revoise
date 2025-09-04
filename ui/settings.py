@@ -9,6 +9,7 @@ class SettingsDialog(QtWidgets.QDialog):
         yandex_key: str = "",
         chatgpt_key: str = "",
         allow_beep_fallback: bool = False,
+        auto_download_models: bool = True,
     ):
         super().__init__(parent)
         self.setWindowTitle("Настройки API")
@@ -21,6 +22,9 @@ class SettingsDialog(QtWidgets.QDialog):
         self.chk_beep = QtWidgets.QCheckBox("Allow beep fallback")
         self.chk_beep.setChecked(allow_beep_fallback)
         form.addRow(self.chk_beep)
+        self.chk_auto = QtWidgets.QCheckBox("Auto-download models")
+        self.chk_auto.setChecked(auto_download_models)
+        form.addRow(self.chk_auto)
 
         buttons = QtWidgets.QDialogButtonBox(
             QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel
@@ -29,10 +33,11 @@ class SettingsDialog(QtWidgets.QDialog):
         buttons.rejected.connect(self.reject)
         form.addWidget(buttons)
 
-    def get_keys(self) -> tuple[str, str, bool]:
+    def get_keys(self) -> tuple[str, str, bool, bool]:
         """Return the API keys and options entered by the user."""
         return (
             self.ed_yandex.text().strip(),
             self.ed_chatgpt.text().strip(),
             self.chk_beep.isChecked(),
+            self.chk_auto.isChecked(),
         )

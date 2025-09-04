@@ -35,8 +35,9 @@ def test_silero_ensure_model_missing_torch(monkeypatch):
 
     monkeypatch.setattr(subprocess, "run", fake_run)
 
+    SileroTTS._model = None
     with pytest.raises(RuntimeError) as excinfo:
-        SileroTTS(Path("."))._ensure_model()
+        SileroTTS()._ensure_model()
     assert "pip install torch --index-url https://download.pytorch.org/whl/cpu" in str(
         excinfo.value
     )

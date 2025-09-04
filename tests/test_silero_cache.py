@@ -1,9 +1,12 @@
 import logging
-import numpy as np
-import pytest
 import sys
 import types
 from pathlib import Path
+
+import numpy as np
+import pytest
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 torch = types.ModuleType("torch")
 hub = types.ModuleType("torch.hub")
@@ -19,9 +22,7 @@ sys.modules["torch"] = torch
 sys.modules["torch.hub"] = hub
 sys.modules["torch.package"] = pkg
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-
-from core.tts_adapters import SileroTTS
+from core.tts_adapters import SileroTTS  # noqa: E402
 
 
 class DummyModel:
@@ -46,7 +47,7 @@ def test_silero_download_and_cache(monkeypatch, tmp_path, caplog):
     torch.hub.load = online_load
     SileroTTS._model = None
     with caplog.at_level(logging.INFO):
-        _, status = SileroTTS(tmp_path, auto_download=True)._ensure_model(return_status=True)
+        _, status = SileroTTS(auto_download=True)._ensure_model(return_status=True)
     assert calls["online"] == 1
     assert status == "downloaded"
     assert str(cache_dir) in caplog.text
@@ -59,7 +60,7 @@ def test_silero_download_and_cache(monkeypatch, tmp_path, caplog):
 
     torch.hub.load = offline_load
     SileroTTS._model = None
-    _, status = SileroTTS(tmp_path, auto_download=False)._ensure_model(return_status=True)
+    _, status = SileroTTS(auto_download=False)._ensure_model(return_status=True)
     assert calls["offline"] == 1
     assert status == "cached"
 
@@ -74,7 +75,6 @@ def test_silero_no_cache(monkeypatch, tmp_path):
     torch.hub.load = fake_load
 
     SileroTTS._model = None
-    tts = SileroTTS(tmp_path, auto_download=False)
+    tts = SileroTTS(auto_download=False)
     with pytest.raises(RuntimeError, match="Auto-download models"):
         tts.tts("hi", "baya", sr=16000)
-

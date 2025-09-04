@@ -506,6 +506,8 @@ def revoice_video(
     """Main revoicing function: transcribes, synthesizes speech, and mixes."""
     logger.info("Starting revoice_video for %s", video)
     ffmpeg = ensure_ffmpeg()
+    safe_engine = re.sub(r"[^\w.-]", "", tts_engine or "unknown")
+    safe_voice = re.sub(r"[^\w.-]", "", speaker)
     in_video = Path(video).resolve()
     out_dirp = Path(outdir).resolve()
     out_dirp.mkdir(parents=True, exist_ok=True)
@@ -579,7 +581,7 @@ def revoice_video(
         # Replace audio if no background music is provided
         if not music_path or not Path(music_path).exists():
             logger.info("Muxing video without background music")
-            out_video = out_dirp / f"{in_video.stem}_revoiced.mp4"
+            out_video = out_dirp / f"{in_video.stem}_{safe_engine}_{safe_voice}.mp4"
             try:
                 run(
                     [
@@ -632,7 +634,7 @@ def revoice_video(
             logger.exception("Audio mixing failed")
             raise
 
-        out_video = out_dirp / f"{in_video.stem}_revoiced.mp4"
+        out_video = out_dirp / f"{in_video.stem}_{safe_engine}_{safe_voice}.mp4"
         try:
             run(
                 [

@@ -1,3 +1,4 @@
+import logging
 import numpy as np
 import pytest
 import sys
@@ -31,7 +32,7 @@ class DummyModel:
         return self
 
 
-def test_silero_download_and_cache(monkeypatch, tmp_path):
+def test_silero_download_and_cache(monkeypatch, tmp_path, caplog):
     hub_dir = tmp_path / "hub"
     cache_dir = hub_dir / "snakers4_silero-models_master"
     torch.hub.get_dir = lambda: str(hub_dir)
@@ -44,8 +45,11 @@ def test_silero_download_and_cache(monkeypatch, tmp_path):
 
     torch.hub.load = online_load
     SileroTTS._model = None
-    SileroTTS(tmp_path, auto_download=True).tts("hi", "baya", sr=16000)
+    with caplog.at_level(logging.INFO):
+        _, status = SileroTTS(tmp_path, auto_download=True)._ensure_model(return_status=True)
     assert calls["online"] == 1
+    assert status == "downloaded"
+    assert str(cache_dir) in caplog.text
 
     def offline_load(*args, **kwargs):
         calls["offline"] += 1
@@ -55,8 +59,9 @@ def test_silero_download_and_cache(monkeypatch, tmp_path):
 
     torch.hub.load = offline_load
     SileroTTS._model = None
-    SileroTTS(tmp_path, auto_download=False).tts("hi", "baya", sr=16000)
+    _, status = SileroTTS(tmp_path, auto_download=False)._ensure_model(return_status=True)
     assert calls["offline"] == 1
+    assert status == "cached"
 
 
 def test_silero_no_cache(monkeypatch, tmp_path):

@@ -35,6 +35,7 @@ def check_engine_available(engine_name: str) -> None:
             ensure_tts_dependencies("silero")
             if importlib.util.find_spec("torch") is None:
                 raise ImportError("torch not installed")
+            SileroTTS(auto_download=False)._ensure_model(auto_download=False)
         elif engine_name == "coqui_xtts":
             if importlib.util.find_spec("TTS") is None or importlib.util.find_spec("torch") is None:
                 raise ImportError("TTS or torch not installed")
@@ -51,6 +52,7 @@ def check_engine_available(engine_name: str) -> None:
         ModuleNotFoundError,
         FileNotFoundError,
         DownloadError,
+        RuntimeError,
     ) as e:
         raise TTSEngineError(str(e)) from e
 

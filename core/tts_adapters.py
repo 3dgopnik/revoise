@@ -114,6 +114,9 @@ class SileroTTS:
             import torch
 
             torch.set_num_threads(max(1, os.cpu_count() // 2))
+            torch_home = Path("models") / "torch_hub"
+            torch_home.mkdir(parents=True, exist_ok=True)
+            torch.hub.set_dir(str(torch_home))
             old_autofetch = os.environ.get("TORCH_HUB_DISABLE_AUTOFETCH")
             if not auto_download:
                 os.environ["TORCH_HUB_DISABLE_AUTOFETCH"] = "1"

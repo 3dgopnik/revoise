@@ -82,7 +82,6 @@ uv run pytest -q
 **Онлайн/гибрид:** Hume, gTTS, Gemini, OpenAI TTS, Minimax, Chatterbox, VibeVoice
 Сравнение: https://huggingface.co/spaces/TTS-AGI/TTS-Arena
 
-> Silero модели ищутся в папке `models/tts/silero/` (файл `.pt`).
 > Референсы спикеров для Coqui XTTS кладите в `models/speakers/<имя>`.
 
 ### Silero requirements
@@ -105,7 +104,6 @@ Missing Python packages are installed automatically for TTS engines:
 ### TTS CLI
 Переменные окружения:
 - `TTS_ENGINE` — движок (по умолчанию `silero`)
-- `SILERO_MODEL` — путь к `.pt`
 - `SILERO_SPEAKER` — имя диктора
 
 ```bash

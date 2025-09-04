@@ -54,7 +54,7 @@ def fetch(models: list[str]) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Fetch TTS models")
-    available = sorted(list_models("tts"))
+    available = sorted({*list_models("tts"), "silero"})
     parser.add_argument(
         "--engine",
         action="append",

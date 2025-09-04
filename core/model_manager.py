@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 from urllib.request import urlopen
 
+
 if TYPE_CHECKING:  # pragma: no cover - typing-only definitions
 
     class QMessageBox:

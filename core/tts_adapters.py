@@ -97,22 +97,27 @@ class CoquiXTTS:
 # --- Silero TTS ---
 class SileroTTS:
     _model = None
+    _status: str | None = None
 
-    def __init__(self, root: Path, auto_download: bool = True):
-        self.root = Path(root)
+    def __init__(self, auto_download: bool = True):
         self.auto_download = auto_download
 
     def _ensure_model(
-        self, auto_download: bool = True, parent: Any | None = None
+        self,
+        auto_download: bool = True,
+        parent: Any | None = None,
+        *,
+        return_status: bool = False,
     ):
         if SileroTTS._model is None:
             ensure_tts_dependencies("silero")
             import torch
+
             torch.set_num_threads(max(1, os.cpu_count() // 2))
-            original = os.environ.get("TORCH_HUB_DISABLE_AUTOFETCH")
+            old_autofetch = os.environ.get("TORCH_HUB_DISABLE_AUTOFETCH")
+            if not auto_download:
+                os.environ["TORCH_HUB_DISABLE_AUTOFETCH"] = "1"
             try:
-                if not auto_download:
-                    os.environ["TORCH_HUB_DISABLE_AUTOFETCH"] = "1"
                 hub_dir = Path(torch.hub.get_dir())
                 cache_dir = hub_dir / "snakers4_silero-models_master"
                 cached_before = cache_dir.exists()
@@ -130,33 +135,34 @@ class SileroTTS:
                         trust_repo=True,
                         force_reload=False,
                     )
-                except Exception as e:  # pragma: no cover - network errors
+                except Exception as e:
                     logging.info("torch.hub.load failed: %s", e)
-                    raise RuntimeError(f"Silero download failed: {e}") from e
+                    logging.debug("Silero download failed", exc_info=True)
+                    try:
+                        from .pipeline import TTSEngineError  # type: ignore
+                    except Exception:
+                        raise RuntimeError(f"Silero download failed: {e}") from e
+                    raise TTSEngineError(f"Silero download failed: {e}") from e
                 model.to(torch.device("cpu"))
                 SileroTTS._model = model
                 SileroTTS._speakers = getattr(model, "speakers", [])
                 SileroTTS._mode = "offline"
                 status = "cached" if cached_before else "downloaded"
-                logging.info(
-                    "tts.silero ensure status=%s cache_dir=%s", status, cache_dir
-                )
+                SileroTTS._status = status
+                logging.info("tts.silero ensure status=%s cache_dir=%s", status, cache_dir)
             finally:
-                if original is None:
+                if old_autofetch is None:
                     os.environ.pop("TORCH_HUB_DISABLE_AUTOFETCH", None)
                 else:
-                    os.environ["TORCH_HUB_DISABLE_AUTOFETCH"] = original
-        return SileroTTS._model
+                    os.environ["TORCH_HUB_DISABLE_AUTOFETCH"] = old_autofetch
+        model = SileroTTS._model
+        return (model, SileroTTS._status) if return_status else model
 
     def tts(
         self, text: str, speaker: str, sr: int = 48000, *, parent: Any | None = None
     ) -> np.ndarray:
-        model = self._ensure_model(
-            auto_download=self.auto_download, parent=parent
-        )
-        wav = model.apply_tts(
-            text=text or "", speaker=speaker or "baya", sample_rate=sr
-        )
+        model = self._ensure_model(auto_download=self.auto_download, parent=parent)
+        wav = model.apply_tts(text=text or "", speaker=speaker or "baya", sample_rate=sr)
         if isinstance(wav, np.ndarray):
             arr = wav
         else:

@@ -1,9 +1,12 @@
+import logging
 import sys
 import types
 from pathlib import Path
 
 import numpy as np
 import pytest
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 torch = types.ModuleType("torch")
 hub = types.ModuleType("torch.hub")
@@ -18,9 +21,9 @@ torch.device = lambda *a, **k: None
 sys.modules["torch"] = torch
 sys.modules["torch.hub"] = hub
 sys.modules["torch.package"] = pkg
+sys.modules["omegaconf"] = types.ModuleType("omegaconf")
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-
+from core import pipeline  # noqa: E402
 from core.tts_adapters import SileroTTS  # noqa: E402
 
 
@@ -32,24 +35,36 @@ class DummyModel:
         return self
 
 
-def test_silero_download_and_cache(monkeypatch, tmp_path):
-    hub = tmp_path / "hub"
-    cache_dir = hub / "snakers4_silero-models_master"
-    torch.hub.get_dir = lambda: str(hub)
-    calls = {"n": 0}
+def test_silero_download_and_cache(monkeypatch, tmp_path, caplog):
+    hub_dir = tmp_path / "hub"
+    cache_dir = hub_dir / "snakers4_silero-models_master"
+    torch.hub.get_dir = lambda: str(hub_dir)
+    calls = {"online": 0, "offline": 0}
 
-    def fake_load(*args, **kwargs):
-        calls["n"] += 1
+    def online_load(*args, **kwargs):
+        calls["online"] += 1
         cache_dir.mkdir(parents=True, exist_ok=True)
         return DummyModel(), "hi"
 
-    torch.hub.load = fake_load
+    torch.hub.load = online_load
+    SileroTTS._model = None
+    with caplog.at_level(logging.INFO):
+        _, status = SileroTTS(auto_download=True)._ensure_model(return_status=True)
+    assert calls["online"] == 1
+    assert status == "downloaded"
+    assert str(cache_dir) in caplog.text
 
+    def offline_load(*args, **kwargs):
+        calls["offline"] += 1
+        if not cache_dir.exists():
+            raise RuntimeError("missing")
+        return DummyModel(), "hi"
+
+    torch.hub.load = offline_load
     SileroTTS._model = None
-    SileroTTS(tmp_path, auto_download=True).tts("hi", "baya", sr=16000)
-    SileroTTS._model = None
-    SileroTTS(tmp_path, auto_download=False).tts("hi", "baya", sr=16000)
-    assert calls["n"] == 2
+    _, status = SileroTTS(auto_download=False)._ensure_model(return_status=True)
+    assert calls["offline"] == 1
+    assert status == "cached"
 
 
 def test_silero_no_cache(monkeypatch, tmp_path):
@@ -62,7 +77,26 @@ def test_silero_no_cache(monkeypatch, tmp_path):
     torch.hub.load = fake_load
 
     SileroTTS._model = None
-    tts = SileroTTS(tmp_path, auto_download=False)
+    tts = SileroTTS(auto_download=False)
     with pytest.raises(RuntimeError, match="Auto-download models"):
         tts.tts("hi", "baya", sr=16000)
 
+
+def test_check_engine_available_no_cache(monkeypatch, tmp_path):
+    hub = tmp_path / "hub"
+    torch.hub.get_dir = lambda: str(hub)
+
+    def fake_load(*args, **kwargs):
+        raise RuntimeError("missing")
+
+    torch.hub.load = fake_load
+    monkeypatch.setattr(pipeline, "ensure_tts_dependencies", lambda engine: None)
+    monkeypatch.setattr(
+        pipeline.importlib.util,
+        "find_spec",
+        lambda name: object() if name == "torch" else None,
+    )
+
+    SileroTTS._model = None
+    with pytest.raises(pipeline.TTSEngineError, match="Auto-download models"):
+        pipeline.check_engine_available("silero")

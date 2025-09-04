@@ -1,7 +1,6 @@
 import logging
 import sys
 import types
-from pathlib import Path
 
 import pytest
 
@@ -9,22 +8,29 @@ from core.tts_adapters import SileroTTS
 
 
 def test_silero_logs_torch_version(monkeypatch):
+    monkeypatch.delitem(sys.modules, "torch", raising=False)
+    monkeypatch.setitem(sys.modules, "omegaconf", types.ModuleType("omegaconf"))
+
     dummy_torch = types.SimpleNamespace(
         __version__="1.2.3",
+        set_num_threads=lambda n: None,
         hub=types.SimpleNamespace(
-            load=lambda *a, **k: (_ for _ in ()).throw(RuntimeError("stop")),
             get_dir=lambda: ".",
+            load=lambda *a, **k: (_ for _ in ()).throw(RuntimeError("stop")),
         ),
-        set_num_threads=lambda *a, **k: None,
-        device=lambda *a, **k: None,
     )
     monkeypatch.setitem(sys.modules, "torch", dummy_torch)
 
     messages: list[str] = []
-    monkeypatch.setattr(logging, "info", lambda msg, *a, **k: messages.append(msg % a))
 
-    tts = SileroTTS(Path("."), auto_download=True)
-    with pytest.raises(RuntimeError, match="Silero download failed: stop"):
-        tts._ensure_model(auto_download=True)
+    def fake_info(msg, *args, **kwargs):
+        messages.append(msg % args)
 
-    assert any("1.2.3" in m for m in messages)
+    monkeypatch.setattr(logging, "info", fake_info)
+
+    SileroTTS._model = None
+    tts = SileroTTS()
+    with pytest.raises(RuntimeError, match="stop"):
+        tts._ensure_model()
+
+    assert messages and "1.2.3" in messages[0]

@@ -126,14 +126,23 @@ class SileroTTS:
                         "Silero model cache not found. Enable 'Auto-download models' in Settings or prefetch via CLI."
                     )
                 logging.info("Using torch %s for Silero TTS", torch.__version__)
-                model, _ = torch.hub.load(
-                    repo_or_dir="snakers4/silero-models",
-                    model="silero_tts",
-                    language="ru",
-                    speaker="v4_ru",
-                    trust_repo=True,
-                    force_reload=False,
-                )
+                try:
+                    model, _ = torch.hub.load(
+                        repo_or_dir="snakers4/silero-models",
+                        model="silero_tts",
+                        language="ru",
+                        speaker="v4_ru",
+                        trust_repo=True,
+                        force_reload=False,
+                    )
+                except Exception as e:
+                    logging.info("torch.hub.load failed: %s", e)
+                    logging.debug("Silero download failed", exc_info=True)
+                    try:
+                        from .pipeline import TTSEngineError  # type: ignore
+                    except Exception:
+                        raise RuntimeError(f"Silero download failed: {e}") from e
+                    raise TTSEngineError(f"Silero download failed: {e}") from e
                 model.to(torch.device("cpu"))
                 SileroTTS._model = model
                 SileroTTS._speakers = getattr(model, "speakers", [])

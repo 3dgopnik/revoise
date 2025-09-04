@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 import json
+import logging
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
+
+SKIP_MODELS: dict[str, set[str]] = {}
 
 
 def validate_registry(
@@ -36,6 +39,10 @@ def validate_registry(
 
     for category, models in registry.items():
         for name, data in models.items():
+            if name in SKIP_MODELS.get(category, set()):
+                logging.warning("Skipping %s/%s", category, name)
+                continue
+
             if not isinstance(data, dict):
                 urls = data
             elif "urls" in data:

@@ -1,7 +1,6 @@
 {
     "tts": {
-        "coqui_xtts": ["https://huggingface.co/coqui/XTTS-v2/resolve/main/model.pth"],
-        "silero": ["https://models.silero.ai/models/tts/ru/v4_ru.pt"]
+        "coqui_xtts": ["https://huggingface.co/coqui/XTTS-v2/resolve/main/model.pth"]
     },
     "stt": {
         "small": {

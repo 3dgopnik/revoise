@@ -24,7 +24,8 @@
 - Поместите модели в `models/whisper` (ggml/gguf для whisper.cpp или файлы для faster-whisper).
 
 ## TTS
-- Silero, Coqui XTTS-v2, Dia, MARS5, Orpheus — каждая в своей подпапке (`models/tts/<engine>`).
+- Coqui XTTS-v2, Dia, MARS5, Orpheus — каждая в своей подпапке (`models/tts/<engine>`).
+- Silero скачивается автоматически через `torch.hub`.
 - Некоторые модели требуют GPU и значительную VRAM.
 - Референсы спикеров для Coqui XTTS кладите в `models/speakers/<имя_спикера>/` (wav-файлы).
 

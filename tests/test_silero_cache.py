@@ -11,6 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 torch = types.ModuleType("torch")
 hub = types.ModuleType("torch.hub")
 hub.download_url_to_file = lambda *a, **k: None
+hub.set_dir = lambda *a, **k: None
 torch.hub = hub
 pkg = types.ModuleType("torch.package")
 pkg.PackageImporter = type("PackageImporter", (), {})
@@ -99,4 +100,4 @@ def test_check_engine_available_no_cache(monkeypatch, tmp_path):
 
     SileroTTS._model = None
     with pytest.raises(pipeline.TTSEngineError, match="Auto-download models"):
-        pipeline.check_engine_available("silero")
+        pipeline.check_engine_available("silero", auto_download_models=False)

@@ -28,14 +28,16 @@ class TTSEngineError(RuntimeError):
     """Raised when the selected TTS engine cannot be used."""
 
 
-def check_engine_available(engine_name: str) -> None:
+def check_engine_available(engine_name: str, auto_download_models: bool = True) -> None:
     """Validate that the requested TTS engine can run."""
     try:
         if engine_name == "silero":
             ensure_tts_dependencies("silero")
             if importlib.util.find_spec("torch") is None:
                 raise ImportError("torch not installed")
-            SileroTTS(auto_download=False)._ensure_model(auto_download=False)
+            SileroTTS(auto_download=auto_download_models)._ensure_model(
+                auto_download=auto_download_models
+            )
         elif engine_name == "coqui_xtts":
             if importlib.util.find_spec("TTS") is None or importlib.util.find_spec("torch") is None:
                 raise ImportError("TTS or torch not installed")
@@ -325,7 +327,7 @@ def synth_chunk(
     logger.debug("Synthesizing chunk with engine=%s", engine_name)
     fallback_reason: str | None = None
     try:
-        check_engine_available(engine_name)
+        check_engine_available(engine_name, auto_download_models=auto_download_models)
     except TTSEngineError as e:
         if not allow_beep_fallback:
             logger.info("tts.engine=%s fallback=false reason=\"%s\"", engine_name, e)

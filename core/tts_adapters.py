@@ -97,13 +97,18 @@ class CoquiXTTS:
 # --- Silero TTS ---
 class SileroTTS:
     _model = None
+    _status: str | None = None
 
     def __init__(self, root: Path, auto_download: bool = True):
         self.root = Path(root)
         self.auto_download = auto_download
 
     def _ensure_model(
-        self, auto_download: bool = True, parent: Any | None = None
+        self,
+        auto_download: bool = True,
+        parent: Any | None = None,
+        *,
+        return_status: bool = False,
     ):
         if SileroTTS._model is None:
             ensure_tts_dependencies("silero")
@@ -133,8 +138,10 @@ class SileroTTS:
             SileroTTS._speakers = getattr(model, "speakers", [])
             SileroTTS._mode = "offline"
             status = "cached" if cached_before else "downloaded"
+            SileroTTS._status = status
             logging.info("tts.silero ensure status=%s cache_dir=%s", status, cache_dir)
-        return SileroTTS._model
+        model = SileroTTS._model
+        return (model, SileroTTS._status) if return_status else model
 
     def tts(
         self, text: str, speaker: str, sr: int = 48000, *, parent: Any | None = None

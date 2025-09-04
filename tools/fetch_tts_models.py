@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Скачивает TTS-модели в portable-кэш и раскладывает в D:\RevoicePortable\models\tts\...
 - Coqui XTTS v2 (мульти-язык)

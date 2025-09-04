@@ -1,14 +1,15 @@
 """
-Скачивает TTS-модели в portable-кэш и раскладывает в D:\RevoicePortable\models\tts\...
-- Coqui XTTS v2 (мульти-язык)
+Download TTS models into the portable cache and place them in
+D:\\RevoicePortable\\models\\tts\\...
+- Coqui XTTS v2 (multi-language)
 """
 
 import os
 from pathlib import Path
 
 HF_REPOS = {
-    # XTTS v2 — офлайн чекпоинт (Coqui)
-    "coqui_xtts": "coqui/XTTS-v2",  # можно заменить на альтернативный форк при желании
+    # XTTS v2 — offline checkpoint (Coqui)
+    "coqui_xtts": "coqui/XTTS-v2",  # can be replaced with an alternative fork if desired
 }
 
 def main():
@@ -16,7 +17,7 @@ def main():
     models_dir = root / "models" / "tts"
     models_dir.mkdir(parents=True, exist_ok=True)
 
-    # кэш HF в portable
+    # HF cache in portable
     hf_home = root / "hf_cache"
     os.environ.setdefault("HF_HOME", str(hf_home))
     os.environ.setdefault("HUGGINGFACE_HUB_CACHE", str(hf_home))
@@ -35,11 +36,11 @@ def main():
             local_dir=target,
             local_dir_use_symlinks=False,
             revision="main",
-            ignore_patterns=["*.md", "*.png", "*.jpg", "*.gif", "*.ipynb"]
+            ignore_patterns=["*.md", "*.png", "*.jpg", "*.gif", "*.ipynb"],
         )
         print("  done:", local)
 
-    print("OK. Модели скачаны.")
+    print("OK. Models downloaded.")
 
 if __name__ == "__main__":
     main()

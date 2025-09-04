@@ -5,6 +5,7 @@ from typing import Any
 
 from .model_manager import ensure_model
 
+# Cache for resolved model paths
 _MODEL_PATH_CACHE: dict[tuple[str, str], Path] = {}
 
 

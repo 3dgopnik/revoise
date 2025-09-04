@@ -6,7 +6,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from core import model_manager, model_service, tts_adapters
+from core import model_manager, model_service
 from core.tts_adapters import CoquiXTTS
 
 

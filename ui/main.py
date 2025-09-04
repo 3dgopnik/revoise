@@ -81,7 +81,8 @@ class MainWindow(QtWidgets.QMainWindow):
         # API keys for external services
         self.yandex_key = ""
         self.chatgpt_key = ""
-        self.yandex_key, self.chatgpt_key = load_config()  # load stored keys
+        self.allow_beep_fallback = False
+        self.yandex_key, self.chatgpt_key, self.allow_beep_fallback = load_config()
 
         log.info("UI start. Version=%s", APP_VER)
         self._build_ui()
@@ -257,10 +258,15 @@ class MainWindow(QtWidgets.QMainWindow):
     # ---------- Действия ----------
     def open_settings(self):
         """Open dialog to configure API keys and persist them."""
-        dlg = SettingsDialog(self, self.yandex_key, self.chatgpt_key)
+        dlg = SettingsDialog(
+            self,
+            self.yandex_key,
+            self.chatgpt_key,
+            self.allow_beep_fallback,
+        )
         if dlg.exec() == QtWidgets.QDialog.Accepted:
-            self.yandex_key, self.chatgpt_key = dlg.get_keys()
-            save_config(self.yandex_key, self.chatgpt_key)
+            self.yandex_key, self.chatgpt_key, self.allow_beep_fallback = dlg.get_keys()
+            save_config(self.yandex_key, self.chatgpt_key, self.allow_beep_fallback)
 
     def show_help(self):
         """Show instructions for connecting Yandex API."""
@@ -332,7 +338,7 @@ class MainWindow(QtWidgets.QMainWindow):
             engine = self.cmb_engine.currentText(); voice = self.cmb_voice.currentText()
             self.log_print(f"Озвучиваю… (engine={engine}, voice={voice})")
             # Forward engine choice (incl. coqui_xtts) to the synthesis pipeline
-            out = revoice_video(
+            out, fb_reason = revoice_video(
                 self.inp_video.text(), self.inp_out.text(),
                 speaker=voice, whisper_size=self.cmb_whisper.currentData(), device="cuda",
                 sr=48000, min_gap_ms=int(self.ed_mingap.text() or "350"),
@@ -343,9 +349,15 @@ class MainWindow(QtWidgets.QMainWindow):
                 music_db=float(self.ed_music_db.text() or "-18"), duck_ratio=float(self.ed_duck_ratio.text() or "8.0"),
                 duck_thresh=float(self.ed_duck_thresh.text() or "0.05"), tts_engine=engine,
                 yandex_key=self.yandex_key, yandex_voice=voice,
-                speed_jitter=float(self.ed_jitter.text() or "0.03")
+                speed_jitter=float(self.ed_jitter.text() or "0.03"),
+                allow_beep_fallback=self.allow_beep_fallback,
             )
-            self.log_print("Готово:", out); QtWidgets.QMessageBox.information(self,"Готово",f"Сохранено:\n{out}")
+            if fb_reason:
+                warn = f"Used beep fallback due to: {fb_reason}"
+                self.log_print(warn)
+                QtWidgets.QMessageBox.warning(self, "Предупреждение", warn)
+            self.log_print("Готово:", out)
+            QtWidgets.QMessageBox.information(self,"Готово",f"Сохранено:\n{out}")
         except Exception as e:
             self.log_print(f"Ошибка озвучивания: {e}"); log.error("Traceback:\n%s",traceback.format_exc())
             QtWidgets.QMessageBox.critical(self,"Ошибка",str(e))

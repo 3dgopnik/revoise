@@ -10,7 +10,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from core.model_manager import DownloadError, ensure_model, list_models
+from core.model_manager import DownloadError, ensure_model, list_models  # noqa: E402
 
 
 def fetch(models: list[str]) -> None:

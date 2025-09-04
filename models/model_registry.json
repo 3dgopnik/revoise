@@ -1,6 +1,6 @@
 {
     "tts": {
-        "coqui_xtts": ["https://huggingface.co/coqui/XTTS-v2/resolve/main/model.zip"],
+        "coqui_xtts": ["https://huggingface.co/coqui/XTTS-v2/resolve/main/model.pth"],
         "silero": ["https://models.silero.ai/models/tts/ru/v4_ru.pt"]
     },
     "stt": {
@@ -51,14 +51,13 @@
         },
         "large-v3": {
             "base_urls": [
-                "https://huggingface.co/Systran/faster-whisper-large-v3/resolve/main/",
-                "https://huggingface.co/guillaumekln/faster-whisper-large-v3/resolve/main/"
+                "https://huggingface.co/Systran/faster-whisper-large-v3/resolve/main/"
             ],
             "files": [
                 "model.bin",
                 "config.json",
                 "tokenizer.json",
-                "vocabulary.txt"
+                "vocabulary.json"
             ],
             "optional_files": ["preprocessor_config.json", "tokenizer_config.json"],
             "description": "Latest model with highest accuracy, slowest",
@@ -67,7 +66,7 @@
     },
     "llm": {
         "qwen2.5": [
-            "https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct/resolve/main/Qwen2.5-0.5B-Instruct-q4_k_m.gguf"
+            "https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF/resolve/main/qwen2.5-0.5b-instruct-q4_k_m.gguf"
         ]
     }
 }

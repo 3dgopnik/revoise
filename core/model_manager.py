@@ -6,6 +6,9 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 from urllib.request import urlopen
 
+from torch.hub import download_url_to_file
+from torch.package import PackageImporter
+
 if TYPE_CHECKING:  # pragma: no cover - typing-only definitions
 
     class QMessageBox:
@@ -272,3 +275,35 @@ def ensure_model(
             return model_path
 
     raise DownloadError(f"Failed to download model '{name}' from all registered sources")
+
+
+def ensure_model_silero() -> Any:
+    """Ensure Silero TTS model exists locally and return it."""
+    models_dir = Path("models") / "tts" / "silero"
+    model_path = models_dir / "model.pt"
+    url = "https://models.silero.ai/models/tts/ru/v4_ru.pt"
+    models_dir.mkdir(parents=True, exist_ok=True)
+    status = "cached"
+    if not model_path.exists():
+        for attempt in range(2):
+            try:
+                download_url_to_file(url, model_path)
+                if model_path.stat().st_size <= 1_000_000:
+                    raise ValueError("file too small")
+            except Exception as exc:  # pragma: no cover - safety net
+                if model_path.exists():
+                    model_path.unlink()
+                if attempt:
+                    raise DownloadError(f"Failed to download model from {url}") from exc
+            else:
+                status = "downloaded"
+                break
+    size = model_path.stat().st_size
+    model = PackageImporter(model_path).load_pickle("tts_models", "model")
+    logging.info(
+        "models.ensure name=silero status=%s path=%s size=%d",
+        status,
+        model_path,
+        size,
+    )
+    return model

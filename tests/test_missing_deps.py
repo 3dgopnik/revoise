@@ -4,6 +4,7 @@ import importlib.util as imp_util
 import logging
 import subprocess
 import sys
+import types
 from pathlib import Path
 
 import numpy as np
@@ -12,10 +13,12 @@ import pytest
 from core import pipeline
 from core.pipeline import synth_chunk
 from core.tts_adapters import BeepTTS, CoquiXTTS, SileroTTS
+from core.tts_dependencies import ensure_tts_dependencies
 
 
 def test_silero_ensure_model_missing_torch(monkeypatch):
     monkeypatch.delitem(sys.modules, "torch", raising=False)
+    monkeypatch.setitem(sys.modules, "omegaconf", types.ModuleType("omegaconf"))
     original_import = importlib.import_module
 
     def fake_import(name, *args, **kwargs):
@@ -38,6 +41,30 @@ def test_silero_ensure_model_missing_torch(monkeypatch):
         excinfo.value
     )
     assert calls and "torch" in " ".join(calls[0])
+
+
+def test_silero_missing_omegaconf(monkeypatch):
+    monkeypatch.delitem(sys.modules, "omegaconf", raising=False)
+    monkeypatch.setitem(sys.modules, "torch", types.ModuleType("torch"))
+    original_import = importlib.import_module
+
+    def fake_import(name, *args, **kwargs):
+        if name == "omegaconf":
+            raise ModuleNotFoundError("No module named 'omegaconf'")
+        return original_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(importlib, "import_module", fake_import)
+    calls: list[list[str]] = []
+
+    def fake_run(cmd, *args, **kwargs):
+        calls.append(cmd)
+        raise subprocess.CalledProcessError(1, cmd)
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    with pytest.raises(RuntimeError, match="pip install omegaconf"):
+        ensure_tts_dependencies("silero")
+    assert calls and "omegaconf" in " ".join(calls[0])
 
 
 def test_coqui_ensure_model_missing_tts(monkeypatch):
@@ -121,9 +148,7 @@ def test_synth_chunk_fallback_silero_warns(monkeypatch, tmp_path, caplog):
 
     _setup_synth(monkeypatch, np.array([0.1, -0.1], dtype=np.float32))
     with caplog.at_level(logging.INFO):
-        synth_chunk(
-            "ffmpeg", "hi", 16000, "spk", tmp_path, "silero", allow_beep_fallback=True
-        )
+        synth_chunk("ffmpeg", "hi", 16000, "spk", tmp_path, "silero", allow_beep_fallback=True)
     assert "fallback=true" in caplog.text
 
 

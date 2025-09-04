@@ -32,23 +32,31 @@ class DummyModel:
 
 
 def test_silero_download_and_cache(monkeypatch, tmp_path):
-    hub = tmp_path / "hub"
-    cache_dir = hub / "snakers4_silero-models_master"
-    torch.hub.get_dir = lambda: str(hub)
-    calls = {"n": 0}
+    hub_dir = tmp_path / "hub"
+    cache_dir = hub_dir / "snakers4_silero-models_master"
+    torch.hub.get_dir = lambda: str(hub_dir)
+    calls = {"online": 0, "offline": 0}
 
-    def fake_load(*args, **kwargs):
-        calls["n"] += 1
+    def online_load(*args, **kwargs):
+        calls["online"] += 1
         cache_dir.mkdir(parents=True, exist_ok=True)
         return DummyModel(), "hi"
 
-    torch.hub.load = fake_load
-
+    torch.hub.load = online_load
     SileroTTS._model = None
     SileroTTS(tmp_path, auto_download=True).tts("hi", "baya", sr=16000)
+    assert calls["online"] == 1
+
+    def offline_load(*args, **kwargs):
+        calls["offline"] += 1
+        if not cache_dir.exists():
+            raise RuntimeError("missing")
+        return DummyModel(), "hi"
+
+    torch.hub.load = offline_load
     SileroTTS._model = None
     SileroTTS(tmp_path, auto_download=False).tts("hi", "baya", sr=16000)
-    assert calls["n"] == 2
+    assert calls["offline"] == 1
 
 
 def test_silero_no_cache(monkeypatch, tmp_path):

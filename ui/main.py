@@ -46,9 +46,8 @@ from core.pipeline import (
     transcribe_whisper, merge_into_phrases, ensure_ffmpeg
 )
 from core.model_manager import list_models
+from core.tts_adapters import SILERO_VOICES
 
-# Предустановленные голоса
-SILERO_PRESETS = ["baya", "kseniya", "aidar", "eugene", "random"]
 YANDEX_VOICES = ["ermil","filipp","alena","jane","oksana","zahar","omazh","madirus"]
 
 class MainWindow(QtWidgets.QMainWindow):
@@ -62,6 +61,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.out_dir = str(OUTPUT_DIR)
         self.tts_engine = "silero"
         self.voice_id = "baya"
+        self.language = "ru"
 
         self.speed_pct = 100
         self.min_gap_ms = 350
@@ -126,6 +126,14 @@ class MainWindow(QtWidgets.QMainWindow):
         self.lbl_voice = QtWidgets.QLabel("Голос:")
         self.cmb_voice = QtWidgets.QComboBox()
         grid.addWidget(self.lbl_voice, row, 2); grid.addWidget(self.cmb_voice, row, 3)
+
+        row += 1
+        self.lbl_language = QtWidgets.QLabel("Язык:")
+        self.cmb_language = QtWidgets.QComboBox()
+        self.cmb_language.addItems(sorted(SILERO_VOICES))
+        self.cmb_language.setCurrentText(self.language)
+        self.cmb_language.currentTextChanged.connect(self._on_language_change)
+        grid.addWidget(self.lbl_language, row, 0); grid.addWidget(self.cmb_language, row, 1)
 
         row += 1
         self.cmb_whisper = QtWidgets.QComboBox()
@@ -215,22 +223,40 @@ class MainWindow(QtWidgets.QMainWindow):
         if engine == "silero":
             self.lbl_voice.setText("Silero голос:")
             self.cmb_voice.setEditable(False)
-            self.cmb_voice.addItems(SILERO_PRESETS)
+            self.lbl_language.show()
+            self.cmb_language.show()
+            self._on_language_change(self.cmb_language.currentText())
         elif engine == "yandex":
             self.lbl_voice.setText("Yandex голос:")
             self.cmb_voice.setEditable(False)
             self.cmb_voice.addItems(YANDEX_VOICES)
+            self.lbl_language.hide()
+            self.cmb_language.hide()
         elif engine == "coqui_xtts":
             self.lbl_voice.setText("Coqui speaker:")
             # Allow manual entry of speaker reference folder
             self.cmb_voice.setEditable(True)
+            self.lbl_language.hide()
+            self.cmb_language.hide()
         elif engine == "gtts":
             # gTTS has no preset voices, so hide the selector
             self.lbl_voice.hide()
             self.cmb_voice.hide()
+            self.lbl_language.hide()
+            self.cmb_language.hide()
         else:
             self.lbl_voice.setText("Голос:")
             self.cmb_voice.setEditable(True)
+            self.lbl_language.hide()
+            self.cmb_language.hide()
+        self.cmb_voice.blockSignals(False)
+
+    def _on_language_change(self, lang: str):
+        self.language = lang
+        voices = SILERO_VOICES.get(lang, [])
+        self.cmb_voice.blockSignals(True)
+        self.cmb_voice.clear()
+        self.cmb_voice.addItems(voices)
         self.cmb_voice.blockSignals(False)
 
     # ---------- Хелперы ----------
@@ -352,7 +378,7 @@ class MainWindow(QtWidgets.QMainWindow):
         try:
             if not self.inp_video.text().strip():
                 QtWidgets.QMessageBox.warning(self,"Нет видео","Укажи путь к видео."); return
-            engine = self.cmb_engine.currentText(); voice = self.cmb_voice.currentText()
+            engine = self.cmb_engine.currentText(); voice = self.cmb_voice.currentText(); language = self.cmb_language.currentText()
             self.log_print(f"Озвучиваю… (engine={engine}, voice={voice})")
             # Forward engine choice (incl. coqui_xtts) to the synthesis pipeline
             out, fb_reason = revoice_video(
@@ -365,6 +391,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 spell_latin=self.chk_latin.isChecked(), music_path=(self.ed_music.text().strip() or None),
                 music_db=float(self.ed_music_db.text() or "-18"), duck_ratio=float(self.ed_duck_ratio.text() or "8.0"),
                 duck_thresh=float(self.ed_duck_thresh.text() or "0.05"), tts_engine=engine,
+                language=language,
                 yandex_key=self.yandex_key, yandex_voice=voice,
                 speed_jitter=float(self.ed_jitter.text() or "0.03"),
                 allow_beep_fallback=self.allow_beep_fallback,

@@ -313,6 +313,7 @@ def synth_chunk(
     speaker: str,
     tmpdir: Path,
     tts_engine: str | None,
+    language: str = "ru",
     read_numbers: bool = False,
     spell_latin: bool = False,
     yandex_key: str | None = None,
@@ -353,6 +354,7 @@ def synth_chunk(
             elif engine_name == "silero":
                 wav = SileroTTS(
                     auto_download=auto_download_models,
+                    language=language,
                 ).tts(text, speaker, sr=sr)
                 model_sr = sr
             elif engine_name == "beep":
@@ -419,6 +421,7 @@ def synth_natural(
     speaker: str,
     tmpdir: Path,
     tts_engine: str | None,
+    language: str = "ru",
     yandex_key: str | None = None,
     yandex_voice: str | None = None,
     min_gap_sec: float = 0.30,
@@ -450,6 +453,7 @@ def synth_natural(
                     speaker,
                     tmpdir,
                     tts_engine,
+                    language,
                     read_numbers=read_numbers,
                     spell_latin=spell_latin,
                     yandex_key=yandex_key,
@@ -497,6 +501,7 @@ def revoice_video(
     duck_ratio: float = 8.0,
     duck_thresh: float = 0.05,
     tts_engine: str | None = None,
+    language: str = "ru",
     yandex_key: str | None = None,
     yandex_voice: str | None = None,
     speed_jitter: float = 0.03,
@@ -564,6 +569,7 @@ def revoice_video(
                 speaker,
                 tmp,
                 tts_engine,
+                language,
                 yandex_key=yandex_key,
                 yandex_voice=yandex_voice,
                 min_gap_sec=max(0, min_gap_ms) / 1000.0,

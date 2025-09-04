@@ -5,6 +5,7 @@
     "whisper": "models/whisper",
     "tts": {
       "engine": "silero",
+      "language": "ru",
       "coqui_xtts_path": "models/tts/coqui_xtts",
       "dia_path": "models/tts/dia",
       "mars5_path": "models/tts/mars5",

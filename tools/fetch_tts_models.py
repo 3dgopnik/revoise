@@ -1,46 +1,54 @@
-"""
-Download TTS models into the portable cache and place them in
-D:\\RevoicePortable\\models\\tts\\...
-- Coqui XTTS v2 (multi-language)
-"""
+"""Prefetch TTS models for offline use."""
 
-import os
+from __future__ import annotations
+
+import argparse
+import logging
+import sys
 from pathlib import Path
 
-HF_REPOS = {
-    # XTTS v2 — offline checkpoint (Coqui)
-    "coqui_xtts": "coqui/XTTS-v2",  # can be replaced with an alternative fork if desired
-}
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
 
-def main():
-    root = Path(__file__).resolve().parent.parent
-    models_dir = root / "models" / "tts"
-    models_dir.mkdir(parents=True, exist_ok=True)
+from core.model_manager import DownloadError, ensure_model, list_models
 
-    # HF cache in portable
-    hf_home = root / "hf_cache"
-    os.environ.setdefault("HF_HOME", str(hf_home))
-    os.environ.setdefault("HUGGINGFACE_HUB_CACHE", str(hf_home))
-    os.environ.setdefault("TRANSFORMERS_CACHE", str(hf_home))
 
-    print("HF cache:", hf_home)
+def fetch(models: list[str]) -> None:
+    for name in models:
+        target = ROOT / "models" / "tts" / name
+        cached = target.exists()
+        try:
+            path = ensure_model(name, "tts", auto_download=True)
+        except DownloadError as exc:  # pragma: no cover - network errors
+            logging.error("%s: download failed: %s", name, exc)
+            continue
+        action = "cached" if cached else "downloaded"
+        logging.info("%s: %s at %s", name, action, path)
 
-    from huggingface_hub import snapshot_download
 
-    for name, repo in HF_REPOS.items():
-        target = models_dir / name
-        target.mkdir(parents=True, exist_ok=True)
-        print(f"Downloading {name}: {repo} -> {target}")
-        local = snapshot_download(
-            repo_id=repo,
-            local_dir=target,
-            local_dir_use_symlinks=False,
-            revision="main",
-            ignore_patterns=["*.md", "*.png", "*.jpg", "*.gif", "*.ipynb"],
-        )
-        print("  done:", local)
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Fetch TTS models")
+    available = sorted(list_models("tts"))
+    parser.add_argument(
+        "--engine",
+        action="append",
+        choices=available,
+        help="Engine to prefetch",
+    )
+    parser.add_argument("--all", action="store_true", help="Fetch all TTS models")
+    args = parser.parse_args()
 
-    print("OK. Models downloaded.")
+    if args.all:
+        engines = available
+    elif args.engine:
+        engines = args.engine
+    else:  # pragma: no cover - argument parsing safeguard
+        parser.error("Specify --engine or --all")
 
-if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
+    fetch(list(engines))
+
+
+if __name__ == "__main__":  # pragma: no cover
     main()
+

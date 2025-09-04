@@ -33,9 +33,9 @@ def test_coqui_ensure_model_no_qmessagebox(monkeypatch, tmp_path: Path):
 
     captured: dict[str, bool] = {}
 
-    def fake_get_model_path(name, category, *, parent=None, auto_download=False):
+    def fake_get_model_path(name, category, *, parent=None, auto_download=None):
         captured["auto_download"] = auto_download
-        if not auto_download:
+        if auto_download is False:
             model_manager.QMessageBox.question(None, "", "", 0, 0)
         return tmp_path
 
@@ -56,6 +56,6 @@ def test_coqui_ensure_model_no_qmessagebox(monkeypatch, tmp_path: Path):
     monkeypatch.setattr(CoquiXTTS, "_model", None)
     CoquiXTTS(tmp_path)._ensure_model()
 
-    assert captured["auto_download"] is True
+    assert captured["auto_download"] is None
     assert msg_calls["question"] == 0
     assert msg_calls["warning"] == 0

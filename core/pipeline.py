@@ -17,14 +17,7 @@ from tqdm import tqdm
 
 from . import model_service
 from .model_manager import DownloadError
-from .tts_adapters import (
-    GTTSTTS,
-    BeepTTS,
-    CoquiXTTS,
-    SileroTTS,
-    YandexTTS,
-    resolve_model_path,
-)
+from .tts_adapters import GTTSTTS, BeepTTS, CoquiXTTS, SileroTTS, YandexTTS
 from .tts_dependencies import ensure_tts_dependencies
 from .tts_registry import get_engine
 
@@ -42,17 +35,14 @@ def check_engine_available(engine_name: str) -> None:
             ensure_tts_dependencies("silero")
             if importlib.util.find_spec("torch") is None:
                 raise ImportError("torch not installed")
-            if not resolve_model_path().exists():
-                raise FileNotFoundError("Silero model not found")
+            model_service.get_model_path("silero", "tts")
         elif engine_name == "coqui_xtts":
             if (
                 importlib.util.find_spec("TTS") is None
                 or importlib.util.find_spec("torch") is None
             ):
                 raise ImportError("TTS or torch not installed")
-            model_dir = Path(__file__).resolve().parent.parent / "models" / "tts" / "coqui_xtts"
-            if not model_dir.exists():
-                raise FileNotFoundError("Coqui XTTS model not found")
+            model_service.get_model_path("coqui_xtts", "tts")
         elif engine_name == "gtts":
             if importlib.util.find_spec("gtts") is None:
                 raise ImportError("gtts not installed")
@@ -64,6 +54,7 @@ def check_engine_available(engine_name: str) -> None:
         ImportError,
         ModuleNotFoundError,
         FileNotFoundError,
+        DownloadError,
     ) as e:
         raise TTSEngineError(str(e)) from e
 
@@ -126,7 +117,6 @@ def transcribe_whisper(
                     model_size,
                     "stt",
                     parent=parent,
-                    auto_download=True,
                 )
             except FileNotFoundError as exc:
                 logger.error("Model download declined: %s", exc)

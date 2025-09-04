@@ -28,25 +28,31 @@ def _get_cipher() -> Fernet | None:
     return Fernet(key)
 
 
-def load_config() -> tuple[str, str, bool]:
+def load_config() -> tuple[str, str, bool, bool]:
     """Load API keys and options from the config file."""
     if not CONFIG_FILE.exists():
-        return "", "", False
+        return "", "", False, True
     data = json.loads(CONFIG_FILE.read_text(encoding="utf-8"))
     cipher = _get_cipher()
     yandex_enc = data.get("yandex_key", "")
     chatgpt_enc = data.get("chatgpt_key", "")
     allow_beep = bool(data.get("allow_beep_fallback", False))
+    auto_download = bool(data.get("auto_download_models", True))
     if cipher:
         yandex_key = cipher.decrypt(yandex_enc.encode()).decode() if yandex_enc else ""
         chatgpt_key = cipher.decrypt(chatgpt_enc.encode()).decode() if chatgpt_enc else ""
     else:
         yandex_key = base64.b64decode(yandex_enc).decode() if yandex_enc else ""
         chatgpt_key = base64.b64decode(chatgpt_enc).decode() if chatgpt_enc else ""
-    return yandex_key, chatgpt_key, allow_beep
+    return yandex_key, chatgpt_key, allow_beep, auto_download
 
 
-def save_config(yandex_key: str, chatgpt_key: str, allow_beep_fallback: bool) -> None:
+def save_config(
+    yandex_key: str,
+    chatgpt_key: str,
+    allow_beep_fallback: bool,
+    auto_download_models: bool,
+) -> None:
     """Encrypt and save API keys and options to the config file."""
     cipher = _get_cipher()
     if cipher:
@@ -54,11 +60,13 @@ def save_config(yandex_key: str, chatgpt_key: str, allow_beep_fallback: bool) ->
             "yandex_key": cipher.encrypt(yandex_key.encode()).decode() if yandex_key else "",
             "chatgpt_key": cipher.encrypt(chatgpt_key.encode()).decode() if chatgpt_key else "",
             "allow_beep_fallback": allow_beep_fallback,
+            "auto_download_models": auto_download_models,
         }
     else:
         data = {
             "yandex_key": base64.b64encode(yandex_key.encode()).decode() if yandex_key else "",
             "chatgpt_key": base64.b64encode(chatgpt_key.encode()).decode() if chatgpt_key else "",
             "allow_beep_fallback": allow_beep_fallback,
+            "auto_download_models": auto_download_models,
         }
     CONFIG_FILE.write_text(json.dumps(data, indent=2), encoding="utf-8")

@@ -1,5 +1,6 @@
 {
   "ffmpeg_path": "bin/ffmpeg.exe",
+  "auto_download_models": true,
   "models": {
     "whisper": "models/whisper",
     "tts": {

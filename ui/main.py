@@ -82,7 +82,13 @@ class MainWindow(QtWidgets.QMainWindow):
         self.yandex_key = ""
         self.chatgpt_key = ""
         self.allow_beep_fallback = False
-        self.yandex_key, self.chatgpt_key, self.allow_beep_fallback = load_config()
+        self.auto_download_models = True
+        (
+            self.yandex_key,
+            self.chatgpt_key,
+            self.allow_beep_fallback,
+            self.auto_download_models,
+        ) = load_config()
 
         log.info("UI start. Version=%s", APP_VER)
         self._build_ui()
@@ -263,10 +269,21 @@ class MainWindow(QtWidgets.QMainWindow):
             self.yandex_key,
             self.chatgpt_key,
             self.allow_beep_fallback,
+            self.auto_download_models,
         )
         if dlg.exec() == QtWidgets.QDialog.Accepted:
-            self.yandex_key, self.chatgpt_key, self.allow_beep_fallback = dlg.get_keys()
-            save_config(self.yandex_key, self.chatgpt_key, self.allow_beep_fallback)
+            (
+                self.yandex_key,
+                self.chatgpt_key,
+                self.allow_beep_fallback,
+                self.auto_download_models,
+            ) = dlg.get_keys()
+            save_config(
+                self.yandex_key,
+                self.chatgpt_key,
+                self.allow_beep_fallback,
+                self.auto_download_models,
+            )
 
     def show_help(self):
         """Show instructions for connecting Yandex API."""

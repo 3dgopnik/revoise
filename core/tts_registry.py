@@ -6,14 +6,13 @@ import os
 import wave
 from collections.abc import Callable
 from io import BytesIO
-from pathlib import Path
 
 import numpy as np
 
-from .tts_adapters import SileroTTS, synthesize_beep as _synthesize_beep
+from .tts_adapters import SileroTTS
+from .tts_adapters import synthesize_beep as _synthesize_beep
 
 logger = logging.getLogger(__name__)
-
 
 
 def synthesize_beep(text: str, speaker: str, sr: int) -> bytes:
@@ -22,7 +21,7 @@ def synthesize_beep(text: str, speaker: str, sr: int) -> bytes:
 
 
 def synthesize_silero(text: str, speaker: str, sr: int) -> bytes:
-    wav = SileroTTS(Path(__file__).resolve().parent.parent).tts(text, speaker, sr)
+    wav = SileroTTS().tts(text, speaker, sr)
     pcm16 = (np.clip(wav, -1.0, 1.0) * 32767).astype("<i2")
     buf = BytesIO()
     with wave.open(buf, "wb") as wf:

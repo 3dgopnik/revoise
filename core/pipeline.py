@@ -36,10 +36,7 @@ def check_engine_available(engine_name: str) -> None:
             if importlib.util.find_spec("torch") is None:
                 raise ImportError("torch not installed")
         elif engine_name == "coqui_xtts":
-            if (
-                importlib.util.find_spec("TTS") is None
-                or importlib.util.find_spec("torch") is None
-            ):
+            if importlib.util.find_spec("TTS") is None or importlib.util.find_spec("torch") is None:
                 raise ImportError("TTS or torch not installed")
             model_service.get_model_path("coqui_xtts", "tts")
         elif engine_name == "gtts":
@@ -56,6 +53,7 @@ def check_engine_available(engine_name: str) -> None:
         DownloadError,
     ) as e:
         raise TTSEngineError(str(e)) from e
+
 
 # ===================== Global =====================
 FWHISPER: Any | None = None
@@ -337,9 +335,7 @@ def synth_chunk(
     else:
         try:
             if engine_name == "coqui_xtts":
-                wav = CoquiXTTS(Path(__file__).resolve().parent.parent).tts(
-                    text, speaker, sr=24000
-                )
+                wav = CoquiXTTS(Path(__file__).resolve().parent.parent).tts(text, speaker, sr=24000)
                 model_sr = 24000
             elif engine_name == "gtts":
                 wav = GTTSTTS().tts(text, speaker, sr=sr)
@@ -352,7 +348,6 @@ def synth_chunk(
                 model_sr = sr
             elif engine_name == "silero":
                 wav = SileroTTS(
-                    Path(__file__).resolve().parent.parent,
                     auto_download=auto_download_models,
                 ).tts(text, speaker, sr=sr)
                 model_sr = sr
@@ -376,13 +371,9 @@ def synth_chunk(
             ModuleNotFoundError,
         ) as e:
             if not allow_beep_fallback:
-                logger.info(
-                    "tts.engine=%s fallback=false reason=\"%s\"", engine_name, e
-                )
+                logger.info("tts.engine=%s fallback=false reason=\"%s\"", engine_name, e)
                 raise TTSEngineError(str(e)) from e
-            logger.info(
-                "tts.engine=%s fallback=true reason=\"%s\"", engine_name, e
-            )
+            logger.info("tts.engine=%s fallback=true reason=\"%s\"", engine_name, e)
             wav = BeepTTS().tts(text, speaker, sr=sr)
             model_sr = sr
             fallback_reason = str(e)
@@ -412,9 +403,7 @@ def synth_chunk(
     if not fallback_reason:
         peak = float(np.max(np.abs(wav_out)))
         rms = float(np.sqrt(np.mean(np.square(wav_out))))
-        logger.info(
-            "tts.engine=%s fallback=false peak=%.4f rms=%.4f", engine_name, peak, rms
-        )
+        logger.info("tts.engine=%s fallback=false peak=%.4f rms=%.4f", engine_name, peak, rms)
     logger.debug("synth_chunk produced %d samples", len(wav_out))
     return wav_out, fallback_reason
 
@@ -447,9 +436,7 @@ def synth_natural(
     cur_tail = 0.0
     try:
         fallback_reason: str | None = None
-        for i, (start, _end, txt) in enumerate(
-            tqdm(phrases, desc="TTS", unit="phr"), start=1
-        ):
+        for i, (start, _end, txt) in enumerate(tqdm(phrases, desc="TTS", unit="phr"), start=1):
             logger.debug("Synthesizing phrase %d", i)
             try:
                 wav, reason = synth_chunk(

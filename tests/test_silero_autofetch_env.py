@@ -39,10 +39,9 @@ def test_env_restored(monkeypatch, tmp_path, original):
         monkeypatch.setenv("TORCH_HUB_DISABLE_AUTOFETCH", original)
 
     SileroTTS._model = None
-    SileroTTS(tmp_path, auto_download=False)._ensure_model()
+    SileroTTS(auto_download=False)._ensure_model()
 
     if original is None:
         assert "TORCH_HUB_DISABLE_AUTOFETCH" not in os.environ
     else:
         assert os.environ["TORCH_HUB_DISABLE_AUTOFETCH"] == original
-

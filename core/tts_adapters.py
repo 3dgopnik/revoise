@@ -99,8 +99,7 @@ class SileroTTS:
     _model = None
     _status: str | None = None
 
-    def __init__(self, root: Path, auto_download: bool = True):
-        self.root = Path(root)
+    def __init__(self, auto_download: bool = True):
         self.auto_download = auto_download
 
     def _ensure_model(
@@ -153,12 +152,8 @@ class SileroTTS:
     def tts(
         self, text: str, speaker: str, sr: int = 48000, *, parent: Any | None = None
     ) -> np.ndarray:
-        model = self._ensure_model(
-            auto_download=self.auto_download, parent=parent
-        )
-        wav = model.apply_tts(
-            text=text or "", speaker=speaker or "baya", sample_rate=sr
-        )
+        model = self._ensure_model(auto_download=self.auto_download, parent=parent)
+        wav = model.apply_tts(text=text or "", speaker=speaker or "baya", sample_rate=sr)
         if isinstance(wav, np.ndarray):
             arr = wav
         else:

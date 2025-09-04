@@ -1,7 +1,6 @@
 import logging
 import sys
 import types
-from pathlib import Path
 
 import pytest
 
@@ -29,7 +28,8 @@ def test_silero_logs_torch_version(monkeypatch):
 
     monkeypatch.setattr(logging, "info", fake_info)
 
-    tts = SileroTTS(Path("."))
+    SileroTTS._model = None
+    tts = SileroTTS()
     with pytest.raises(RuntimeError, match="stop"):
         tts._ensure_model()
 

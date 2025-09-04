@@ -8,7 +8,6 @@ import wave
 from io import BytesIO
 from pathlib import Path
 from typing import Any
-from zipfile import ZipFile
 
 import numpy as np
 import requests
@@ -24,110 +23,8 @@ __all__ = [
     "BeepTTS",
     "YandexTTS",
     "GTTSTTS",
-    "resolve_model_path",
-    "load_silero_model",
-    "synthesize_silero",
     "synthesize_beep",
 ]
-
-
-def resolve_model_path(*, parent: Any | None = None) -> Path:
-    """Determine path to Silero model, downloading if necessary."""
-
-    env_path = os.getenv("SILERO_MODEL")
-    if env_path:
-        p = Path(env_path)
-        if p.exists():
-            return p
-
-    cfg = Path("config.json")
-    if cfg.exists():
-        try:
-            with open(cfg, encoding="utf-8") as f:
-                data = json.load(f)
-            model_path = data.get("tts", {}).get("silero", {}).get("model_path")
-            if model_path:
-                p = Path(model_path)
-                if p.exists():
-                    return p
-        except Exception:
-            pass
-
-    return model_service.get_model_path("silero", "tts", parent=parent)
-
-
-def load_silero_model(model_path: str) -> tuple[Any, list[str], str]:
-    """Load Silero model from ``model_path``.
-
-    Returns a tuple ``(model, speakers, mode)``.
-    """
-
-    import torch
-
-    model = torch.jit.load(model_path, map_location="cpu")
-    if hasattr(model, "eval"):
-        model.eval()
-
-    speakers: list[str] = []
-    mode = ""
-    try:
-        with ZipFile(model_path) as zf:
-            if "speakers.json" in zf.namelist():
-                speakers = json.loads(zf.read("speakers.json").decode("utf-8"))
-            if "metadata.json" in zf.namelist():
-                meta = json.loads(zf.read("metadata.json").decode("utf-8"))
-                mode = meta.get("mode", "")
-    except Exception:
-        pass
-
-    return model, speakers, mode
-
-
-def synthesize_silero(
-    text: str,
-    speaker: str | None,
-    sample_rate: int,
-) -> bytes:
-    """Synthesize speech with Silero TTS and return WAV bytes."""
-
-    model_path = resolve_model_path()
-    model, speakers, _ = load_silero_model(str(model_path))
-
-    resolved = speaker or os.getenv("SILERO_SPEAKER")
-    if resolved is None:
-        cfg = Path("config.json")
-        if cfg.exists():
-            try:
-                with open(cfg, encoding="utf-8") as f:
-                    data = json.load(f)
-                resolved = data.get("tts", {}).get("silero", {}).get("speaker")
-            except Exception:
-                resolved = None
-    resolved = resolved or "aidar"
-    if speakers and resolved not in speakers:
-        resolved = speakers[0]
-
-    try:
-        wav = model.apply_tts(
-            text=text or "",
-            speaker=resolved,
-            sample_rate=sample_rate,
-        )
-    except TypeError:
-        wav = model.apply_tts(text or "", resolved, sample_rate)
-
-    if not isinstance(wav, np.ndarray):
-        wav = np.array(wav, dtype=np.float32)
-    wav = wav.astype(np.float32)
-    pcm16 = (np.clip(wav, -1.0, 1.0) * 32767).astype("<i2")
-
-    buffer = BytesIO()
-    with wave.open(buffer, "wb") as wf:
-        wf.setnchannels(1)
-        wf.setsampwidth(2)
-        wf.setframerate(sample_rate)
-        wf.writeframes(pcm16.tobytes())
-    return buffer.getvalue()
 
 
 def synthesize_beep(
@@ -201,28 +98,53 @@ class CoquiXTTS:
 class SileroTTS:
     _model = None
 
-    def __init__(self, root: Path):
+    def __init__(self, root: Path, auto_download: bool = True):
         self.root = Path(root)
+        self.auto_download = auto_download
 
-    def _ensure_model(self, parent: Any | None = None):
+    def _ensure_model(
+        self, auto_download: bool = True, parent: Any | None = None
+    ):
         if SileroTTS._model is None:
             ensure_tts_dependencies("silero")
             import torch
+
+            torch.set_num_threads(max(1, os.cpu_count() // 2))
+            if not auto_download:
+                os.environ["TORCH_HUB_DISABLE_AUTOFETCH"] = "1"
+            hub_dir = Path(torch.hub.get_dir())
+            cache_dir = hub_dir / "snakers4_silero-models_master"
+            cached_before = cache_dir.exists()
+            if not auto_download and not cached_before:
+                raise RuntimeError(
+                    "Silero model cache not found. Enable 'Auto-download models' in Settings or prefetch via CLI."
+                )
             logging.info("Using torch %s for Silero TTS", torch.__version__)
-            model_path = resolve_model_path(parent=parent)
-            model, speakers, mode = load_silero_model(str(model_path))
+            model, _ = torch.hub.load(
+                repo_or_dir="snakers4/silero-models",
+                model="silero_tts",
+                language="ru",
+                speaker="v4_ru",
+                trust_repo=True,
+                force_reload=False,
+            )
+            model.to(torch.device("cpu"))
             SileroTTS._model = model
-            SileroTTS._speakers = speakers
-            SileroTTS._mode = mode
-        if SileroTTS._model is None:
-            raise RuntimeError("Failed to load Silero TTS model")
+            SileroTTS._speakers = getattr(model, "speakers", [])
+            SileroTTS._mode = "offline"
+            status = "cached" if cached_before else "downloaded"
+            logging.info("tts.silero ensure status=%s cache_dir=%s", status, cache_dir)
         return SileroTTS._model
 
     def tts(
         self, text: str, speaker: str, sr: int = 48000, *, parent: Any | None = None
     ) -> np.ndarray:
-        model = self._ensure_model(parent=parent)
-        wav = model.apply_tts(text=text or "", speaker=speaker or "baya", sample_rate=sr)
+        model = self._ensure_model(
+            auto_download=self.auto_download, parent=parent
+        )
+        wav = model.apply_tts(
+            text=text or "", speaker=speaker or "baya", sample_rate=sr
+        )
         if isinstance(wav, np.ndarray):
             arr = wav
         else:

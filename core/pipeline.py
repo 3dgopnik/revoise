@@ -35,7 +35,6 @@ def check_engine_available(engine_name: str) -> None:
             ensure_tts_dependencies("silero")
             if importlib.util.find_spec("torch") is None:
                 raise ImportError("torch not installed")
-            model_service.get_model_path("silero", "tts")
         elif engine_name == "coqui_xtts":
             if (
                 importlib.util.find_spec("TTS") is None
@@ -317,6 +316,7 @@ def synth_chunk(
     yandex_key: str | None = None,
     yandex_voice: str | None = None,
     allow_beep_fallback: bool = False,
+    auto_download_models: bool = True,
 ) -> tuple[np.ndarray, str | None]:
     """Generate an audio fragment for a single phrase."""
 
@@ -351,9 +351,10 @@ def synth_chunk(
                 wav = YandexTTS().tts(text, voice, sr=sr, key=yandex_key)
                 model_sr = sr
             elif engine_name == "silero":
-                wav = SileroTTS(Path(__file__).resolve().parent.parent).tts(
-                    text, speaker, sr=sr
-                )
+                wav = SileroTTS(
+                    Path(__file__).resolve().parent.parent,
+                    auto_download=auto_download_models,
+                ).tts(text, speaker, sr=sr)
                 model_sr = sr
             elif engine_name == "beep":
                 wav = BeepTTS().tts(text, speaker, sr=sr)
@@ -433,6 +434,7 @@ def synth_natural(
     spell_latin: bool = False,
     speed_jitter: float = 0.03,
     allow_beep_fallback: bool = False,
+    auto_download_models: bool = True,
 ) -> tuple[Path, str | None]:
     """
     Simple synthesis: calls synth_chunk for each phrase.
@@ -462,6 +464,7 @@ def synth_natural(
                     yandex_key=yandex_key,
                     yandex_voice=yandex_voice,
                     allow_beep_fallback=allow_beep_fallback,
+                    auto_download_models=auto_download_models,
                 )
                 if reason and not fallback_reason:
                     fallback_reason = reason
@@ -507,6 +510,7 @@ def revoice_video(
     yandex_voice: str | None = None,
     speed_jitter: float = 0.03,
     allow_beep_fallback: bool = False,
+    auto_download_models: bool = True,
 ) -> tuple[str, str | None]:
     """Main revoicing function: transcribes, synthesizes speech, and mixes."""
     logger.info("Starting revoice_video for %s", video)
@@ -575,6 +579,7 @@ def revoice_video(
                 spell_latin=spell_latin,
                 speed_jitter=speed_jitter,
                 allow_beep_fallback=allow_beep_fallback,
+                auto_download_models=auto_download_models,
             )
         except Exception:
             logger.exception("synth_natural failed in revoice_video")

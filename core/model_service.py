@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Dict, Tuple
+from typing import Any
 
 from .model_manager import ensure_model
 
-_MODEL_PATH_CACHE: Dict[Tuple[str, str], Path] = {}
+_MODEL_PATH_CACHE: dict[tuple[str, str], Path] = {}
 
 
 def get_model_path(

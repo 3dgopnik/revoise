@@ -20,7 +20,10 @@ TTS_DEPENDENCIES: Mapping[str, dict[str, str]] = {
 
 
 def ensure_tts_dependencies(engine: str) -> None:
-    """Ensure that required packages for a TTS engine are installed."""
+    """Ensure that required packages for a TTS engine are installed and importable.
+
+    For example, ``ensure_tts_dependencies("silero")`` installs ``torch`` and ``omegaconf``.
+    """
     deps = TTS_DEPENDENCIES.get(engine, {})
     for module_name, install_cmd in deps.items():
         try:

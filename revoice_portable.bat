@@ -16,6 +16,33 @@ if /I "%TTS_ENGINE%"=="beep" (
 
 echo Starting RevoicePortable...
 
+:: Ensure llama_cpp is installed (requires internet access and sufficient disk space)
+uv run python - <<EOF
+try:
+    import llama_cpp  # type: ignore
+except Exception:
+    raise SystemExit(1)
+EOF
+if errorlevel 1 (
+    uv add llama_cpp
+    if errorlevel 1 (
+        set "EXITCODE=%ERRORLEVEL%"
+        echo Failed to install llama_cpp; AI editor won't work
+        exit /b %EXITCODE%
+    )
+    uv run python - <<EOF
+try:
+    import llama_cpp  # type: ignore
+except Exception:
+    raise SystemExit(1)
+EOF
+    if errorlevel 1 (
+        set "EXITCODE=%ERRORLEVEL%"
+        echo Failed to install llama_cpp; AI editor won't work
+        exit /b %EXITCODE%
+    )
+)
+
 uv run python -m ui.main %*
 
 set "EXITCODE=%ERRORLEVEL%"

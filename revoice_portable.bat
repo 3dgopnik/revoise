@@ -23,17 +23,17 @@ if exist "%LLAMA_DIR%" (
 )
 uv run python -c "import llama_cpp  # type: ignore"
 if errorlevel 1 (
-    uv pip install llama_cpp --target "%LLAMA_DIR%"
+    uv pip install llama-cpp-python --target "%LLAMA_DIR%"
     if errorlevel 1 (
         set "EXITCODE=%ERRORLEVEL%"
-        echo Failed to install llama_cpp; AI editor won't work
+        echo Failed to install llama-cpp-python; AI editor won't work
         exit /b %EXITCODE%
     )
     set "PYTHONPATH=%LLAMA_DIR%;%PYTHONPATH%"
     uv run python -c "import llama_cpp  # type: ignore"
     if errorlevel 1 (
         set "EXITCODE=%ERRORLEVEL%"
-        echo Failed to install llama_cpp; AI editor won't work
+        echo Failed to install llama-cpp-python; AI editor won't work
         exit /b %EXITCODE%
     )
 )

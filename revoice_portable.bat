@@ -20,11 +20,7 @@ if /I "%TTS_ENGINE%"=="beep" (
 
 echo Starting RevoicePortable...
 
-if exist ui\main.py (
-    python -m ui.main %*
-) else (
-    python main.py %*
-)
+python -m ui.main %*
 
 set "EXITCODE=%ERRORLEVEL%"
 if not "%EXITCODE%"=="0" (

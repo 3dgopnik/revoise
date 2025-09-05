@@ -49,6 +49,13 @@ from core.pipeline import (
 )
 from core.model_manager import list_models
 from core.tts_adapters import SILERO_VOICES
+try:
+    from core.qwen_editor import QwenEditor  # type: ignore
+except Exception as e:  # pragma: no cover - optional dependency
+    QwenEditor = None  # type: ignore[assignment]
+    _QWEN_IMPORT_ERROR = e
+else:
+    _QWEN_IMPORT_ERROR = None
 from core.qwen_editor import QwenEditor
 
 YANDEX_VOICES = ["ermil","filipp","alena","jane","oksana","zahar","omazh","madirus"]
@@ -83,6 +90,12 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.project_path = None
         self.segments = []
+        self.qwen_editor = None
+        if QwenEditor is not None:
+            try:
+                self.qwen_editor = QwenEditor()
+            except Exception as err:
+                log.warning("QwenEditor init failed: %s", err)
         self.qwen_editor = QwenEditor()
 
         # API keys for external services
@@ -99,6 +112,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
         log.info("UI start. Version=%s", APP_VER)
         self._build_ui()
+
+        if self.qwen_editor is None:
+            self.ai_edit_btn.setEnabled(False)
 
         self.status = self.statusBar()
         self.status.showMessage("Ready")

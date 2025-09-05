@@ -5,4 +5,4 @@
 - Add guidance for installing optional 'torch' dependency for Silero engine.
 - Add shfmt configuration to enforce shell script style.
 - Cover `bootstrap_portable.py` with basic tests for STT model selection.
-- Make `QwenEditor` initialization optional in `ui/main.py`.
+- Notify users in the UI when `QwenEditor` is unavailable.

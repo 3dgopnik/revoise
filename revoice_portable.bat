@@ -38,6 +38,7 @@ if errorlevel 1 (
     )
 )
 
+uv run python tools/bootstrap_portable.py || exit /b %ERRORLEVEL%
 uv run python -m ui.main %*
 
 set "EXITCODE=%ERRORLEVEL%"

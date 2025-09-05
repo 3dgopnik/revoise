@@ -49,7 +49,7 @@
 - Установка зависимостей и запуск UI:
 ```bash
 uv sync --all-extras --frozen || uv sync
-uv run python -m ui.main_window
+uv run python -m ui.main
 ```
 - Проверки качества:
 ```bash
@@ -178,7 +178,7 @@ uv run pytest -q
 uv sync
 # 3) (Опционально) положить ffmpeg в ./bin или поставить в PATH
 # 4) Запуск UI
-uv run python -m ui.main_window
+uv run python -m ui.main
 ```
 
 ## Лицензия

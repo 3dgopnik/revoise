@@ -2,13 +2,9 @@
 chcp 65001 > nul
 cd /d %~dp0
 
-@if exist ".venv\Scripts\activate.bat" (
-    call ".venv\Scripts\activate.bat"
-) else if exist "venv\Scripts\activate.bat" (
-    call "venv\Scripts\activate.bat"
-) else (
-    echo Virtual environment not found ^& exit /b 1
-)
+where uv >nul 2>&1 || (echo uv not found. Please install uv and try again. & exit /b 1)
+
+uv sync || exit /b %ERRORLEVEL%
 
 if exist "%CD%\bin" (
     set "PATH=%CD%\bin;%PATH%"
@@ -20,7 +16,7 @@ if /I "%TTS_ENGINE%"=="beep" (
 
 echo Starting RevoicePortable...
 
-python -m ui.main %*
+uv run python -m ui.main %*
 
 set "EXITCODE=%ERRORLEVEL%"
 if not "%EXITCODE%"=="0" (

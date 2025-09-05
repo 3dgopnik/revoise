@@ -95,7 +95,6 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.qwen_editor = QwenEditor()
             except Exception as err:
                 log.warning("QwenEditor init failed: %s", err)
-        self.qwen_editor = QwenEditor()
 
         # API keys for external services
         self.yandex_key = ""

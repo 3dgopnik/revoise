@@ -33,15 +33,16 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    engines = sorted({*list_models("tts"), "silero", "gtts"})
-    for engine in engines:
+    tts_models = sorted({*list_models("tts"), "silero"})
+    for engine in (*tts_models, "gtts"):
+
         try:
             ensure_tts_dependencies(engine)
         except RuntimeError as exc:  # pragma: no cover - optional deps
             print(f"Skipping {engine} dependencies: {exc}")
-    fetch(list(engines))
 
-    stt_models: list[str] = []
+    fetch(tts_models)
+   stt_models: list[str] = []
     if args.all_stt:
         stt_models = available_stt
     elif args.stt:

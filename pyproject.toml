@@ -12,6 +12,7 @@ dependencies = [
     "gtts>=2.5",
     "tqdm>=4.66",
     "num2words>=0.5",
+    "omegaconf>=2.3",
     "faster-whisper>=1.0",
     "rich>=13.7",
     "python-ffmpeg>=2.0",

@@ -5,4 +5,5 @@ if ! command -v uv >/dev/null 2>&1; then
   exit 1
 fi
 uv sync
+uv run python tools/bootstrap_portable.py
 uv run python -m ui.main

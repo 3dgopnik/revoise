@@ -59,7 +59,8 @@ uv run mypy .
 uv run pytest -q
 ```
 
- - При первом запуске `revoice_portable.bat` пакет `llama-cpp-python` (модуль `llama_cpp`) автоматически устанавливается в папку программы (нужны интернет и свободное место на диске).
+- При первом запуске `revoice_portable.bat` пакет `llama-cpp-python` (модуль `llama_cpp`) автоматически устанавливается в папку программы (нужны интернет и свободное место на диске).
+- Скрипт `tools/bootstrap_portable.py` загружает TTS/STT модели и зависимости в локальные каталоги и вызывается из `revoice_portable.*`.
 - Windows: запустить `revoice_portable.bat`, Linux/macOS: `./revoice_portable.sh`.
 
 ---

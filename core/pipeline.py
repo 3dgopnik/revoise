@@ -30,6 +30,7 @@ class TTSEngineError(RuntimeError):
 
 def check_engine_available(engine_name: str, auto_download_models: bool = True) -> None:
     """Validate that the requested TTS engine can run."""
+    global torch_unavailable
     try:
         if engine_name == "silero":
             ensure_tts_dependencies("silero")
@@ -56,12 +57,19 @@ def check_engine_available(engine_name: str, auto_download_models: bool = True) 
         DownloadError,
         RuntimeError,
     ) as e:
+        if isinstance(e, ImportError) and "torch" in str(e).lower():
+            torch_unavailable = True
+            raise TTSEngineError(TORCH_MISSING_MSG) from e
         raise TTSEngineError(str(e)) from e
 
 
 # ===================== Global =====================
 FWHISPER: Any | None = None
 TTS_MODEL = None
+torch_unavailable = False
+TORCH_MISSING_MSG = (
+    "Torch is unavailable. Steps: check Python version, reinstall torch CPU, clear uv cache."
+)
 
 MULTISPACE = re.compile(r"\s+")
 PAUSE_TAG = re.compile(r"\[\[\s*PAUSE\s*=\s*(\d+)\s*\]\]", re.IGNORECASE)
@@ -430,46 +438,62 @@ def synth_chunk(
     auto_download_models: bool = True,
 ) -> tuple[Any, str | None]:
     """Generate audio for one or multiple language variants."""
+    global torch_unavailable
 
-    if isinstance(text, Mapping):
-        wavs: dict[str, np.ndarray] = {}
-        fallback_reason: str | None = None
-        for lang, variant in text.items():
-            wav, reason = _synth_chunk_single(
-                ffmpeg,
-                variant,
-                sr,
-                speaker,
-                tmpdir,
-                tts_engine,
-                language=lang,
-                read_numbers=read_numbers,
-                spell_latin=spell_latin,
-                yandex_key=yandex_key,
-                yandex_voice=yandex_voice,
-                allow_beep_fallback=allow_beep_fallback,
-                auto_download_models=auto_download_models,
-            )
-            wavs[lang] = wav
-            if reason and not fallback_reason:
-                fallback_reason = reason
-        return wavs, fallback_reason
+    def _beep_response(txt: str | Mapping[str, str]) -> Any:
+        if isinstance(txt, Mapping):
+            return {lang: BeepTTS().tts(v, speaker, sr=sr) for lang, v in txt.items()}
+        return BeepTTS().tts(txt, speaker, sr=sr)
 
-    return _synth_chunk_single(
-        ffmpeg,
-        text,
-        sr,
-        speaker,
-        tmpdir,
-        tts_engine,
-        language=language,
-        read_numbers=read_numbers,
-        spell_latin=spell_latin,
-        yandex_key=yandex_key,
-        yandex_voice=yandex_voice,
-        allow_beep_fallback=allow_beep_fallback,
-        auto_download_models=auto_download_models,
-    )
+    if torch_unavailable:
+        logger.warning("GPU acceleration unavailable")
+        return _beep_response(text), TORCH_MISSING_MSG
+
+    try:
+        if isinstance(text, Mapping):
+            wavs: dict[str, np.ndarray] = {}
+            fallback_reason: str | None = None
+            for lang, variant in text.items():
+                wav, reason = _synth_chunk_single(
+                    ffmpeg,
+                    variant,
+                    sr,
+                    speaker,
+                    tmpdir,
+                    tts_engine,
+                    language=lang,
+                    read_numbers=read_numbers,
+                    spell_latin=spell_latin,
+                    yandex_key=yandex_key,
+                    yandex_voice=yandex_voice,
+                    allow_beep_fallback=allow_beep_fallback,
+                    auto_download_models=auto_download_models,
+                )
+                wavs[lang] = wav
+                if reason and not fallback_reason:
+                    fallback_reason = reason
+            return wavs, fallback_reason
+
+        return _synth_chunk_single(
+            ffmpeg,
+            text,
+            sr,
+            speaker,
+            tmpdir,
+            tts_engine,
+            language=language,
+            read_numbers=read_numbers,
+            spell_latin=spell_latin,
+            yandex_key=yandex_key,
+            yandex_voice=yandex_voice,
+            allow_beep_fallback=allow_beep_fallback,
+            auto_download_models=auto_download_models,
+        )
+    except TTSEngineError as e:
+        if torch_unavailable:
+            logger.warning("GPU acceleration unavailable")
+            return _beep_response(text), str(e)
+        raise
 
 
 def synth_natural(

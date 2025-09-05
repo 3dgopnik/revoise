@@ -56,7 +56,6 @@ except Exception as e:  # pragma: no cover - optional dependency
     _QWEN_IMPORT_ERROR = e
 else:
     _QWEN_IMPORT_ERROR = None
-from core.qwen_editor import QwenEditor
 
 YANDEX_VOICES = ["ermil","filipp","alena","jane","oksana","zahar","omazh","madirus"]
 

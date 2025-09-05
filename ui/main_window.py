@@ -1,6 +1,9 @@
+import json
+import pathlib
+import sys
+
 from PySide6 import QtCore, QtGui, QtWidgets
-from PySide6.QtWidgets import QMainWindow, QFileDialog, QMessageBox, QTableWidgetItem
-import json, sys, pathlib
+from PySide6.QtWidgets import QFileDialog, QMainWindow, QMessageBox, QTableWidgetItem
 
 # Default project directories
 BASE_DIR = pathlib.Path(__file__).resolve().parent.parent
@@ -25,10 +28,20 @@ class MainWindow(QMainWindow):
         self.table.horizontalHeader().setStretchLastSection(True)
         splitter.addWidget(self.table)
 
-        # Right: editor
+        # Right panel with editor and language selector
+        right_panel = QtWidgets.QWidget(self)
+        right_layout = QtWidgets.QVBoxLayout(right_panel)
+
         self.editor = QtWidgets.QPlainTextEdit(self)
         self.editor.setPlaceholderText("Полноэкранный редактор — редактируйте выделенный сегмент...")
-        splitter.addWidget(self.editor)
+        right_layout.addWidget(self.editor)
+
+        self.lang_list = QtWidgets.QListWidget(self)
+        self.lang_list.setSelectionMode(QtWidgets.QAbstractItemView.MultiSelection)
+        self.lang_list.addItems(["ru", "en", "de", "fr"])
+        right_layout.addWidget(self.lang_list)
+
+        splitter.addWidget(right_panel)
 
         # Status bar
         self.status = self.statusBar()
@@ -96,11 +109,14 @@ class MainWindow(QMainWindow):
             QMessageBox.critical(self, "Ошибка сохранения", str(e))
 
     def export_media(self):
-        """Placeholder export using default output directory."""
-        path, _ = QFileDialog.getSaveFileName(self, "Экспорт", str(OUTPUT_DIR / "output.mp4"), "Video (*.mp4 *.mov *.mkv)")
-        if not path:
+        """Export one file per selected language."""
+        out_dir = QFileDialog.getExistingDirectory(self, "Экспорт", str(OUTPUT_DIR))
+        if not out_dir:
             return
-        QMessageBox.information(self, "Экспорт", f"Видео будет сохранено: {path}")
+        langs = [item.text() for item in self.lang_list.selectedItems()] or ["ru"]
+        for lang in langs:
+            target = pathlib.Path(out_dir) / f"output_{lang}.mp4"
+            QMessageBox.information(self, "Экспорт", f"Видео будет сохранено: {target}")
 
     def undo(self): pass
     def redo(self): pass
@@ -121,7 +137,8 @@ class MainWindow(QMainWindow):
         reset_edit = menu.addAction("Сбросить правки")
         act = menu.exec(self.table.viewport().mapToGlobal(pos))
         row = self.table.currentRow()
-        if row < 0: return
+        if row < 0:
+            return
         if act == copy_orig:
             orig = self.table.item(row, 2).text() if self.table.item(row,2) else ""
             self.table.setItem(row, 3, QTableWidgetItem(orig))

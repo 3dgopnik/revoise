@@ -34,10 +34,9 @@ def main() -> None:
     args = parser.parse_args()
 
     engines = sorted({*list_models("tts"), "silero"})
-    fetch(list(engines))
-
     for engine in ("silero", "coqui_xtts", "gtts"):
         ensure_tts_dependencies(engine)
+    fetch(list(engines))
 
     stt_models: list[str] = []
     if args.all_stt:

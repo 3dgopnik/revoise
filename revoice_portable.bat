@@ -4,7 +4,7 @@ cd /d %~dp0
 
 where uv >nul 2>&1 || (echo uv not found. Please install uv and try again. & exit /b 1)
 
-uv sync || exit /b %ERRORLEVEL%
+uv sync --frozen --no-dev || exit /b %ERRORLEVEL%
 
 if exist "%CD%\bin" (
     set "PATH=%CD%\bin;%PATH%"

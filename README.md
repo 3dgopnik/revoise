@@ -46,9 +46,18 @@
 
 ## Сборка окружения (uv)
 - Требуется Python 3.10–3.12 и [uv](https://docs.astral.sh/uv/).
-- Установка зависимостей и запуск UI:
+- Установка зависимостей и запуск UI выполняются скриптами:
 ```bash
-uv sync --all-extras --frozen || uv sync
+# Windows
+revoice_portable.bat
+
+# Linux/macOS
+./revoice_portable.sh
+```
+Скрипты используют `uv sync --frozen --no-dev` и автоматически удаляют лишние пакеты.
+Для ручной сборки окружения:
+```bash
+uv sync --all-extras --frozen
 uv run python -m ui.main
 ```
 - Проверки качества:
@@ -177,11 +186,9 @@ uv run pytest -q
 ## Быстрый старт
 ```bash
 # 1) Установить uv и Python 3.10–3.12
-# 2) Синхронизировать зависимости
-uv sync
+# 2) Запустить скрипт (установит зависимости по uv.lock)
+./revoice_portable.sh  # или revoice_portable.bat
 # 3) (Опционально) положить ffmpeg в ./bin или поставить в PATH
-# 4) Запуск UI
-uv run python -m ui.main
 ```
 
 ## Лицензия

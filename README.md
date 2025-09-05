@@ -58,6 +58,8 @@ uv run ruff format --check .
 uv run mypy .
 uv run pytest -q
 ```
+
+- При первом запуске `revoice_portable.bat` библиотека `llama_cpp` автоматически устанавливается в папку программы (нужны интернет и свободное место на диске).
 - Windows: запустить `revoice_portable.bat`, Linux/macOS: `./revoice_portable.sh`.
 
 ---

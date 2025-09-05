@@ -8,7 +8,7 @@ import subprocess
 import tempfile
 from itertools import zip_longest
 from pathlib import Path
-from typing import Any, List, Optional, Tuple
+from typing import Any, List, Mapping, Optional, Tuple
 
 import numpy as np
 import soundfile as sf
@@ -306,7 +306,7 @@ def normalize_text(text: str, *, read_numbers: bool = False, spell_latin: bool =
 # Если используется Silero/Yandex/XTTS — они будут вызывать normalize_text с read_numbers/spell_latin.
 
 
-def synth_chunk(
+def _synth_chunk_single(
     ffmpeg: str,
     text: str,
     sr: int,
@@ -321,7 +321,7 @@ def synth_chunk(
     allow_beep_fallback: bool = False,
     auto_download_models: bool = True,
 ) -> tuple[np.ndarray, str | None]:
-    """Generate an audio fragment for a single phrase."""
+    """Internal helper that synthesizes a single phrase."""
 
     text = normalize_text(text, read_numbers=read_numbers, spell_latin=spell_latin)
     engine_name = (tts_engine or "silero").lower()
@@ -412,6 +412,64 @@ def synth_chunk(
         logger.info("tts.engine=%s fallback=false peak=%.4f rms=%.4f", engine_name, peak, rms)
     logger.debug("synth_chunk produced %d samples", len(wav_out))
     return wav_out, fallback_reason
+
+
+def synth_chunk(
+    ffmpeg: str,
+    text: str | Mapping[str, str],
+    sr: int,
+    speaker: str,
+    tmpdir: Path,
+    tts_engine: str | None,
+    language: str = "ru",
+    read_numbers: bool = False,
+    spell_latin: bool = False,
+    yandex_key: str | None = None,
+    yandex_voice: str | None = None,
+    allow_beep_fallback: bool = False,
+    auto_download_models: bool = True,
+) -> tuple[Any, str | None]:
+    """Generate audio for one or multiple language variants."""
+
+    if isinstance(text, Mapping):
+        wavs: dict[str, np.ndarray] = {}
+        fallback_reason: str | None = None
+        for lang, variant in text.items():
+            wav, reason = _synth_chunk_single(
+                ffmpeg,
+                variant,
+                sr,
+                speaker,
+                tmpdir,
+                tts_engine,
+                language=lang,
+                read_numbers=read_numbers,
+                spell_latin=spell_latin,
+                yandex_key=yandex_key,
+                yandex_voice=yandex_voice,
+                allow_beep_fallback=allow_beep_fallback,
+                auto_download_models=auto_download_models,
+            )
+            wavs[lang] = wav
+            if reason and not fallback_reason:
+                fallback_reason = reason
+        return wavs, fallback_reason
+
+    return _synth_chunk_single(
+        ffmpeg,
+        text,
+        sr,
+        speaker,
+        tmpdir,
+        tts_engine,
+        language=language,
+        read_numbers=read_numbers,
+        spell_latin=spell_latin,
+        yandex_key=yandex_key,
+        yandex_voice=yandex_voice,
+        allow_beep_fallback=allow_beep_fallback,
+        auto_download_models=auto_download_models,
+    )
 
 
 def synth_natural(

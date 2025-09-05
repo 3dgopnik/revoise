@@ -42,7 +42,7 @@ def main() -> None:
             print(f"Skipping {engine} dependencies: {exc}")
 
     fetch(tts_models)
-   stt_models: list[str] = []
+    stt_models: list[str] = []
     if args.all_stt:
         stt_models = available_stt
     elif args.stt:

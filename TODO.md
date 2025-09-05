@@ -4,3 +4,4 @@
 - Allow selecting a subset of TTS engines in `revoice_portable` scripts.
 - Add guidance for installing optional 'torch' dependency for Silero engine.
 - Add shfmt configuration to enforce shell script style.
+- Cover `bootstrap_portable.py` with basic tests for STT model selection.

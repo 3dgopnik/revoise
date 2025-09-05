@@ -9,14 +9,14 @@ from pathlib import Path
 
 TTS_DEPENDENCIES: Mapping[str, dict[str, str]] = {
     "silero": {
-        "torch": "pip install torch --index-url https://download.pytorch.org/whl/cpu",
-        "omegaconf": "pip install omegaconf",
+        "torch": "uv pip install torch --index-url https://download.pytorch.org/whl/cu118",
+        "omegaconf": "uv pip install omegaconf",
     },
     "coqui_xtts": {
-        "TTS": "pip install TTS",
+        "TTS": "uv pip install TTS",
     },
     "gtts": {
-        "gtts": "pip install gTTS",
+        "gtts": "uv pip install gTTS",
     },
 }
 
@@ -38,14 +38,53 @@ def ensure_tts_dependencies(engine: str) -> None:
         except ModuleNotFoundError as exc:
             try:
                 TTS_PKG_DIR.mkdir(parents=True, exist_ok=True)
-                cmd_parts = install_cmd.split()
-                insert_at = cmd_parts.index("install") + 1
-                cmd_parts.insert(insert_at, f"--target={TTS_PKG_DIR}")
-                subprocess.run(
-                    [sys.executable, "-m", *cmd_parts],
-                    check=True,
-                    capture_output=True,
-                )
+                if module_name == "torch":
+                    try:
+                        subprocess.run(
+                            [
+                                sys.executable,
+                                "-m",
+                                "uv",
+                                "pip",
+                                "install",
+                                "torch",
+                                "--index-url",
+                                "https://download.pytorch.org/whl/cu118",
+                                f"--target={TTS_PKG_DIR}",
+                            ],
+                            check=True,
+                            capture_output=True,
+                        )
+                    except Exception:
+                        try:
+                            subprocess.run(
+                                [
+                                    sys.executable,
+                                    "-m",
+                                    "uv",
+                                    "pip",
+                                    "install",
+                                    "torch",
+                                    "--index-url",
+                                    "https://download.pytorch.org/whl/cpu",
+                                    f"--target={TTS_PKG_DIR}",
+                                ],
+                                check=True,
+                                capture_output=True,
+                            )
+                        except Exception:
+                            raise RuntimeError(
+                                "Failed to install torch. Check your Python version, reinstall the torch CPU package, or clear the uv cache."
+                            ) from exc
+                else:
+                    cmd_parts = install_cmd.split()
+                    insert_at = cmd_parts.index("install") + 1
+                    cmd_parts.insert(insert_at, f"--target={TTS_PKG_DIR}")
+                    subprocess.run(
+                        [sys.executable, "-m", *cmd_parts],
+                        check=True,
+                        capture_output=True,
+                    )
                 if str(TTS_PKG_DIR) not in sys.path:
                     sys.path.insert(0, str(TTS_PKG_DIR))
                 importlib.import_module(module_name)

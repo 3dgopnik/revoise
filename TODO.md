@@ -7,3 +7,4 @@
 - Cover `bootstrap_portable.py` with basic tests for STT model selection.
 - Notify users in the UI when `QwenEditor` is unavailable.
 - Add optional cleanup of Hugging Face cache directory on exit.
+- Add unit tests for torch installation fallback logic in `ensure_tts_dependencies`.

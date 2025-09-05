@@ -110,6 +110,9 @@ Missing Python packages are installed automatically for TTS engines:
 - Coqui XTTS: `TTS`
 - gTTS: `gTTS`
 
+Если установка не удалась, движок пропускается. Чтобы включить его позднее,
+установите пакет вручную, например: `pip install TTS`.
+
 
 - gTTS: выберите движок `gtts` в UI. Сервис не предлагает голоса и требует интернет.
 

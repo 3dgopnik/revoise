@@ -5,6 +5,8 @@ import sys
 from PySide6 import QtCore, QtGui, QtWidgets
 from PySide6.QtWidgets import QFileDialog, QMainWindow, QMessageBox, QTableWidgetItem
 
+from core.qwen_editor import QwenEditor
+
 # Default project directories
 BASE_DIR = pathlib.Path(__file__).resolve().parent.parent
 INPUT_DIR = BASE_DIR / "input"
@@ -40,6 +42,9 @@ class MainWindow(QMainWindow):
         self.lang_list.setSelectionMode(QtWidgets.QAbstractItemView.MultiSelection)
         self.lang_list.addItems(["ru", "en", "de", "fr"])
         right_layout.addWidget(self.lang_list)
+
+        self.ai_edit_btn = QtWidgets.QPushButton("AI Edit", self)
+        right_layout.addWidget(self.ai_edit_btn)
 
         splitter.addWidget(right_panel)
 
@@ -83,6 +88,9 @@ class MainWindow(QMainWindow):
         # basic data
         self.project_path = None
         self.segments = []
+        self.qwen_editor = QwenEditor()
+
+        self.ai_edit_btn.clicked.connect(self.ai_edit_current_segment)
 
     # --- basic ops ---
     def open_video(self):
@@ -130,6 +138,22 @@ class MainWindow(QMainWindow):
     def play_pause(self):
         # TODO: play/pause preview
         pass
+
+    def ai_edit_current_segment(self):
+        row = self.table.currentRow()
+        if row < 0:
+            return
+        text = self.editor.toPlainText().strip()
+        if not text:
+            return
+        langs = [item.text() for item in self.lang_list.selectedItems()] or ["ru"]
+        result = self.qwen_editor.edit_text(text, langs)
+        new_text = result.get("source", "")
+        self.table.setItem(row, 3, QTableWidgetItem(new_text))
+        self.editor.setPlainText(new_text)
+        self.segments[row]["edited_text"] = new_text
+        for lang in langs:
+            self.segments[row][lang] = result.get(lang, "")
 
     def show_table_menu(self, pos):
         menu = QtWidgets.QMenu(self)

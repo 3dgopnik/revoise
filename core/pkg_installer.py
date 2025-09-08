@@ -1,12 +1,10 @@
 from __future__ import annotations
 
 import importlib
-import logging
+import importlib.metadata as metadata
 import subprocess
 import sys
-from collections.abc import Sequence
-
-logger = logging.getLogger(__name__)
+from pathlib import Path
 
 
 def ensure_uv() -> None:
@@ -17,75 +15,64 @@ def ensure_uv() -> None:
         return
     except ModuleNotFoundError:  # pragma: no cover - optional dependency
         pass
-    try:
-        subprocess.run(
-            [sys.executable, "-m", "ensurepip", "--upgrade"],
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-        subprocess.run(
-            [sys.executable, "-m", "pip", "install", "uv"],
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-    except subprocess.CalledProcessError as err:  # pragma: no cover - error path
-        logger.error("Failed to install uv\nstdout:%s\nstderr:%s", err.stdout, err.stderr)
-        raise
+    subprocess.run(
+        [sys.executable, "-m", "ensurepip", "--upgrade"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    subprocess.run(
+        [sys.executable, "-m", "pip", "install", "uv"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
 
 
-def ensure_package(
-    module_name: str,
-    *,
-    package: str | None = None,
-    install_args: Sequence[str] | None = None,
-    fallback_args: Sequence[str] | None = None,
-) -> None:
-    """Ensure *module_name* is importable, installing via uv if missing."""
+def _module_from_spec(pkg_spec: str) -> str:
+    """Derive an importable module name from *pkg_spec*."""
+    name = pkg_spec.split("==", 1)[0].split("[", 1)[0]
+    return name.replace("-", "_").replace(".", "_").lower()
+
+
+def ensure_package(pkg_spec: str, message: str, ask_to_pin: bool = True) -> None:
+    """Ensure *pkg_spec* is installed and importable.
+
+    Prompts the user to install the package and optionally pin it to
+    ``requirements.txt``. The import name is derived from ``pkg_spec``.
+    """
+
+    module_name = _module_from_spec(pkg_spec)
     try:
         importlib.import_module(module_name)
         return
     except ModuleNotFoundError:
         pass
 
-    ensure_uv()
-    pkg = package or module_name
-    cmd = [sys.executable, "-m", "uv", "pip", "install", pkg]
-    if install_args:
-        cmd.extend(install_args)
+    print(message)
+    install = input(f"Install {pkg_spec}? [Y/n]: ").strip().lower()
+    if install not in {"", "y", "yes"}:
+        raise ModuleNotFoundError(module_name)
 
-    try:
-        subprocess.run(cmd, check=True, capture_output=True, text=True)
-    except subprocess.CalledProcessError as err:
-        if fallback_args:
-            fallback_cmd = [
-                sys.executable,
-                "-m",
-                "uv",
-                "pip",
-                "install",
-                pkg,
-                *fallback_args,
-            ]
-            try:
-                subprocess.run(fallback_cmd, check=True, capture_output=True, text=True)
-            except subprocess.CalledProcessError as err2:
-                logger.error(
-                    "Failed to install %s\nstdout:%s\nstderr:%s",
-                    pkg,
-                    err2.stdout,
-                    err2.stderr,
-                )
-                raise RuntimeError(f"Failed to install package '{pkg}'") from err2
-        else:
-            logger.error(
-                "Failed to install %s\nstdout:%s\nstderr:%s",
-                pkg,
-                err.stdout,
-                err.stderr,
-            )
-            raise RuntimeError(f"Failed to install package '{pkg}'") from err
+    ensure_uv()
+    subprocess.run([sys.executable, "-m", "uv", "pip", "install", pkg_spec], check=True)
 
     importlib.invalidate_caches()
     importlib.import_module(module_name)
+
+    if not ask_to_pin:
+        return
+
+    pin = input("Pin to requirements.txt? [y/N]: ").strip().lower()
+    if pin in {"y", "yes"}:
+        pkg_name = pkg_spec.split("==", 1)[0]
+        try:
+            version = metadata.version(pkg_name)
+            line = f"{pkg_name}=={version}\n"
+        except metadata.PackageNotFoundError:  # pragma: no cover - fallback path
+            line = f"{pkg_spec}\n"
+        req_file = Path("requirements.txt")
+        req_file.parent.mkdir(parents=True, exist_ok=True)
+        with req_file.open("a", encoding="utf-8") as fh:
+            fh.write(line)
+

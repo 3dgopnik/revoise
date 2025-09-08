@@ -22,3 +22,4 @@
 - Offer heavier STT/TTS packages as optional extras instead of core dependencies.
 - Format remaining source files with `ruff format`.
 - Add a pre-commit config to streamline linting and formatting.
+- Add validation for `llm` and `tts_engine` configuration blocks.

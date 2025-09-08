@@ -1,10 +1,18 @@
 {
   "ffmpeg_path": "bin/ffmpeg.exe",
   "auto_download_models": true,
+  "llm": {
+    "family": "qwen2.5",
+    "model_path": "models/llm/qwen2.5/qwen.bin",
+    "auto_download": true
+  },
+  "tts_engine": "silero",
+  "preferences": {
+    "pin_dependencies": false
+  },
   "models": {
     "whisper": "models/whisper",
     "tts": {
-      "engine": "silero",
       "language": "ru",
       "coqui_xtts_path": "models/tts/coqui_xtts",
       "dia_path": "models/tts/dia",

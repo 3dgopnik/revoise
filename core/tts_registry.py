@@ -46,7 +46,7 @@ def get_engine(name: str | None = None) -> Callable[[str, str, int], bytes]:
             try:
                 with open("config.json", encoding="utf-8") as fh:
                     cfg = json.load(fh)
-                name = cfg.get("tts", {}).get("engine")
+                name = cfg.get("tts_engine") or cfg.get("tts", {}).get("engine")
             except Exception:
                 name = None
         name = name or "silero"

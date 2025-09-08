@@ -15,3 +15,4 @@
 - Add unit tests for `pkg_installer.ensure_package` import retry logic.
 - Add tests for interactive pinning in `pkg_installer.ensure_package`.
 - Provide a cross-platform wrapper script for launching with `uv`.
+- Add tests for QwenEditor model loading and dependency installation.

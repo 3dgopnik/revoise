@@ -2,10 +2,13 @@ from __future__ import annotations
 
 import json
 import logging
-
-from llama_cpp import Llama
+from typing import TYPE_CHECKING
 
 from . import model_service
+from .pkg_installer import ensure_package
+
+if TYPE_CHECKING:  # pragma: no cover - type checking only
+    from llama_cpp import Llama
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +22,15 @@ class QwenEditor:
     def _ensure_model(self) -> None:
         """Lazy-load the Qwen model via llama.cpp."""
         if self._llm is None:
-            path = model_service.get_model_path("qwen2.5", "llm")
+            try:
+                from llama_cpp import Llama
+            except ImportError:
+                ensure_package(
+                    "llama-cpp-python",
+                    "llama-cpp-python is required for QwenEditor.",
+                )
+                from llama_cpp import Llama
+            path = model_service.ensure_model("qwen2.5", "llm")
             logger.info("Loading Qwen model from %s", path)
             self._llm = Llama(model_path=str(path), n_ctx=4096, verbose=False)
 
@@ -57,4 +68,3 @@ class QwenEditor:
 
 
 __all__ = ["QwenEditor"]
-

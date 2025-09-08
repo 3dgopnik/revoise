@@ -32,6 +32,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Removed portable mode.
 - Removed lazy install support.
 
+### Fixed
+- Tests mock package installs and model downloads, dropping portable bootstrap assumptions.
+
 ### Docs
 - Documented installation with `uv pip`, lazy dependency/model downloads,
   launch via `uv run python -m ui.main`, and `tools/freeze_reqs.py`.

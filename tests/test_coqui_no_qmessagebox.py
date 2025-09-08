@@ -6,7 +6,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from core import model_manager, model_service
+from core import model_manager
 from core.tts_adapters import CoquiXTTS
 
 
@@ -32,13 +32,13 @@ def test_coqui_ensure_model_no_qmessagebox(monkeypatch, tmp_path: Path):
 
     captured: dict[str, bool] = {}
 
-    def fake_get_model_path(name, category, *, parent=None, auto_download=None):
+    def fake_ensure_model(name, category, *, parent=None, auto_download=False):
         captured["auto_download"] = auto_download
         if auto_download is False:
             model_manager.QMessageBox.question(None, "", "", 0, 0)
         return tmp_path
 
-    monkeypatch.setattr(model_service, "get_model_path", fake_get_model_path)
+    monkeypatch.setattr(model_manager, "ensure_model", fake_ensure_model)
 
     api_module = types.ModuleType("api")
 

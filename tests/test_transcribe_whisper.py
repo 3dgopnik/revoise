@@ -3,7 +3,7 @@ import types
 
 import pytest
 
-from core import model_service, pipeline
+from core import model_manager, model_service, pipeline
 from core.model_manager import DownloadError
 
 
@@ -14,11 +14,11 @@ def test_transcribe_whisper_download_refused(tmp_path, monkeypatch):
 
     captured: dict[str, bool] = {}
 
-    def fake_get_model_path(name, category, *, parent=None, auto_download=None):
+    def fake_ensure_model(name, category, *, parent=None, auto_download=False):
         captured["auto_download"] = auto_download
         raise FileNotFoundError("missing")
 
-    monkeypatch.setattr(model_service, "get_model_path", fake_get_model_path)
+    monkeypatch.setattr(model_manager, "ensure_model", fake_ensure_model)
     monkeypatch.setattr(pipeline, "FWHISPER", None)
     monkeypatch.setattr(model_service, "_MODEL_PATH_CACHE", {})
 
@@ -43,7 +43,7 @@ def test_transcribe_whisper_loads_existing_model(tmp_path, monkeypatch):
     monkeypatch.setitem(sys.modules, "faster_whisper", fake_module)
 
     monkeypatch.setattr(
-        model_service, "get_model_path", lambda name, category, **kwargs: dummy_path
+        model_manager, "ensure_model", lambda name, category, **kwargs: dummy_path
     )
     monkeypatch.setattr(pipeline, "FWHISPER", None)
     monkeypatch.setattr(model_service, "_MODEL_PATH_CACHE", {})
@@ -69,22 +69,23 @@ def test_transcribe_whisper_uses_model_cache(tmp_path, monkeypatch):
 
     calls = {"count": 0}
 
-    def fake_ensure_model(kind, name, dest_dir, url, sha256=None):
+    def fake_ensure_model(name, category, *, parent=None, auto_download=False):
         calls["count"] += 1
-        return dest_dir / name
+        return tmp_path / name
 
-    monkeypatch.setattr(model_service, "ensure_model", fake_ensure_model)
+    monkeypatch.setattr(model_manager, "ensure_model", fake_ensure_model)
     monkeypatch.setattr(model_service, "_MODEL_PATH_CACHE", {})
 
     monkeypatch.setattr(pipeline, "FWHISPER", None)
     pipeline.transcribe_whisper(tmp_path / "first.wav")
-    assert calls["count"] == 4
+    first_count = calls["count"]
+    assert first_count > 0
 
     monkeypatch.setattr(pipeline, "FWHISPER", None)
     pipeline.transcribe_whisper(tmp_path / "second.wav")
 
     # ensure no additional downloads on second run
-    assert calls["count"] == 4
+    assert calls["count"] == first_count
 
 
 def test_transcribe_whisper_download_failure(tmp_path, monkeypatch):
@@ -94,11 +95,11 @@ def test_transcribe_whisper_download_failure(tmp_path, monkeypatch):
 
     captured: dict[str, bool] = {}
 
-    def fake_get_model_path(name, category, *, parent=None, auto_download=None):
+    def fake_ensure_model(name, category, *, parent=None, auto_download=False):
         captured["auto_download"] = auto_download
         raise DownloadError("failed")
 
-    monkeypatch.setattr(model_service, "get_model_path", fake_get_model_path)
+    monkeypatch.setattr(model_manager, "ensure_model", fake_ensure_model)
     monkeypatch.setattr(pipeline, "FWHISPER", None)
     monkeypatch.setattr(model_service, "_MODEL_PATH_CACHE", {})
 

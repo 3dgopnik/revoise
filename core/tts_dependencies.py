@@ -4,6 +4,7 @@ import importlib
 import importlib.util
 import logging
 import os
+import shutil
 import subprocess
 import sys
 from collections.abc import Mapping
@@ -29,11 +30,18 @@ if str(TTS_PKG_DIR) not in sys.path:
 logger = logging.getLogger(__name__)
 
 
+def ensure_uv() -> None:
+    """Ensure the uv CLI is installed."""
+    if shutil.which("uv") is None:
+        subprocess.run([sys.executable, "-m", "pip", "install", "uv"], check=True)
+
+
 def ensure_tts_dependencies(engine: str) -> None:
     """Ensure that required packages for a TTS engine are installed and importable.
 
     For example, ``ensure_tts_dependencies("silero")`` installs ``torch`` and ``omegaconf``.
     """
+    ensure_uv()
     deps = TTS_DEPENDENCIES.get(engine, {})
     for module_name, install_cmd in deps.items():
         try:

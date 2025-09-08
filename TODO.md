@@ -12,3 +12,4 @@
 - Provide a UI warning banner when GPU acceleration is unavailable.
 - Add tests for skipping Silero when torch is missing in `fetch_tts_models`.
 - Add unit tests for `ensure_uv` helper.
+- Provide clearer feedback when `uv` installation fails in `ensure_uv`.

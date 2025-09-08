@@ -13,3 +13,4 @@
 - Add tests for skipping Silero when torch is missing in `fetch_tts_models`.
 - Add unit tests for `ensure_uv` helper.
 - Provide clearer feedback when `uv` installation fails in `ensure_uv`.
+- Provide offline installation support for `uv` in `ensure_uv`.

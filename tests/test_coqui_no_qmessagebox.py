@@ -7,7 +7,6 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from core import model_manager, model_service
-# Import the XTTS adapter used in this test
 from core.tts_adapters import CoquiXTTS
 
 

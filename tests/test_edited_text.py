@@ -1,6 +1,6 @@
+import re
 import sys
 import types
-import re
 from pathlib import Path
 
 import pytest
@@ -90,4 +90,3 @@ def test_revoice_video_out_path_includes_engine_and_speaker(monkeypatch, tmp_pat
     safe_voice = re.sub(r"[^\w.-]", "", "spk!")
     assert safe_engine in out
     assert safe_voice in out
-

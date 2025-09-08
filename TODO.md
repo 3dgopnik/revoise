@@ -18,3 +18,4 @@
 - Add tests for QwenEditor model loading and dependency installation.
 - Remove legacy `ensure_tts_dependencies` once all engines use `ensure_package` directly.
 - Integrate GUI dialogs for `pkg_installer.ensure_package` failures.
+- Populate model registry with SHA256 hashes for integrity checks.

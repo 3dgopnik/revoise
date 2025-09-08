@@ -34,7 +34,25 @@ def ensure_uv() -> None:
     try:
         import uv  # noqa: F401
     except ModuleNotFoundError:
-        subprocess.run([sys.executable, "-m", "pip", "install", "uv"], check=True)
+        try:
+            subprocess.run(
+                [sys.executable, "-m", "ensurepip", "--upgrade"],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            subprocess.run(
+                [sys.executable, "-m", "pip", "install", "uv"],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+        except subprocess.CalledProcessError as err:
+            logger.error(
+                "Failed to install uv\nstdout:%s\nstderr:%s",
+                err.stdout,
+                err.stderr,
+            )
 
 
 def ensure_tts_dependencies(engine: str) -> None:

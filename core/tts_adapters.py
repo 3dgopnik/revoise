@@ -15,7 +15,8 @@ import soundfile as sf
 from pydub import AudioSegment
 
 from . import model_service
-from .tts_dependencies import ensure_tts_dependencies
+from .model_manager import QMessageBox
+from .pkg_installer import ensure_package
 
 SILERO_LANG_MODELS = {
     "ru": "v4_ru",
@@ -78,8 +79,15 @@ class CoquiXTTS:
 
     def _ensure_model(self, parent: Any | None = None):
         if CoquiXTTS._model is None:
-            ensure_tts_dependencies("coqui_xtts")
-            from TTS.api import TTS
+            try:
+                ensure_package("TTS", "TTS is required for coqui_xtts.")
+                from TTS.api import TTS
+            except ModuleNotFoundError as exc:  # pragma: no cover - user interaction
+                QMessageBox.warning(parent, "Missing dependency", "TTS is required for coqui_xtts.")
+                raise RuntimeError("TTS is required for coqui_xtts") from exc
+            except ImportError as exc:  # pragma: no cover - defensive
+                QMessageBox.warning(parent, "Import error", str(exc))
+                raise RuntimeError(f"Failed to import TTS: {exc}") from exc
 
             model_dir = model_service.get_model_path("coqui_xtts", "tts", parent=parent)
             # Load locally (offline)
@@ -136,8 +144,16 @@ class SileroTTS:
     ):
         lang = self.language
         if lang not in SileroTTS._models:
-            ensure_tts_dependencies("silero")
-            import torch
+            try:
+                ensure_package("torch", "torch is required for Silero TTS.")
+                ensure_package("omegaconf", "omegaconf is required for Silero TTS.")
+                import torch
+            except ModuleNotFoundError as exc:  # pragma: no cover - user interaction
+                QMessageBox.warning(parent, "Missing dependency", str(exc))
+                raise RuntimeError(str(exc)) from exc
+            except ImportError as exc:  # pragma: no cover - defensive
+                QMessageBox.warning(parent, "Import error", str(exc))
+                raise RuntimeError(str(exc)) from exc
 
             torch.set_num_threads(max(1, os.cpu_count() // 2))
             torch_home = Path("models") / "torch_hub"
@@ -262,8 +278,15 @@ class GTTSTTS:
 
     def tts(self, text: str, speaker: str, sr: int = 48000) -> np.ndarray:
         """Synthesize speech via gTTS and resample to the desired rate."""
-        ensure_tts_dependencies("gtts")
-        from gtts import gTTS
+        try:
+            ensure_package("gTTS", "gTTS is required for gTTS engine.")
+            from gtts import gTTS
+        except ModuleNotFoundError as exc:  # pragma: no cover - user interaction
+            QMessageBox.warning(None, "Missing dependency", "gTTS is required for gTTS engine.")
+            raise RuntimeError("gTTS is required for gTTS") from exc
+        except ImportError as exc:  # pragma: no cover - defensive
+            QMessageBox.warning(None, "Import error", str(exc))
+            raise RuntimeError(f"Failed to import gTTS: {exc}") from exc
 
         buf = BytesIO()
         gTTS(text=text or "", lang="ru").write_to_fp(buf)

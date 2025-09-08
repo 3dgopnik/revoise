@@ -16,3 +16,5 @@
 - Add tests for interactive pinning in `pkg_installer.ensure_package`.
 - Provide a cross-platform wrapper script for launching with `uv`.
 - Add tests for QwenEditor model loading and dependency installation.
+- Remove legacy `ensure_tts_dependencies` once all engines use `ensure_package` directly.
+- Integrate GUI dialogs for `pkg_installer.ensure_package` failures.

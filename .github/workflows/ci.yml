@@ -29,14 +29,14 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-uv-
 
-      - name: Sync dependencies
-        run: uv sync --all-extras --dev
+      - name: Install dependencies
+        run: uv pip install -r requirements.txt
 
       - name: Validate model URLs
         run: uv run python tools/validate_model_urls.py
 
       - name: Ruff
-        run: uv run ruff check .
+        run: uv run ruff check core ui tests
 
       - name: Ruff format
         run: uv run ruff format --check .

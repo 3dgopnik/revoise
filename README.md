@@ -59,6 +59,10 @@ uv run ruff format --check .
 uv run mypy .
 uv run pytest -q
 ```
+- Обновление списка зависимостей:
+```bash
+uv run python tools/freeze_reqs.py
+```
 
 ---
 

@@ -1,0 +1,12 @@
+cryptography==45.0.7
+gtts==2.5.4
+num2words==0.5.14
+numpy==2.3.2
+pydantic==2.11.7
+pydub==0.25.1
+pyside6==6.9.2
+python-dateutil==2.9.0.post0
+python-ffmpeg==2.0.12
+rich==14.1.0
+soundfile==0.13.1
+tqdm==4.67.1

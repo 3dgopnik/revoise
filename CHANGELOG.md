@@ -11,15 +11,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial changelog.
 - Interactive package installer with optional requirements pinning.
 - Unified `ensure_model` downloader with progress, retries and optional SHA256 validation.
+- `requirements.txt` capturing essential runtime dependencies.
+- `tools/freeze_reqs.py` script to regenerate pinned requirements.
 
 ### Changed
 - Install TTS dependencies into .venv using shared pkg_installer.
 - Lazily import `llama-cpp` in `QwenEditor` and ensure required model files.
 - Replace `ensure_tts_dependencies` calls with direct `ensure_package` usage and lazy heavy imports.
 - Model loading now routes through the new `ensure_model` helper.
+- Trim default `project.dependencies` to essential packages only.
 
 ### Removed
 - Removed portable bootstrap and launcher scripts.
+- Removed `faster-whisper` and `omegaconf` from core dependencies.
 
 ### Docs
 - Updated launch instructions to use `uv run python -m ui.main`.
+- Documented requirement freezing in README.

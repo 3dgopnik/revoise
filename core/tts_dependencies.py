@@ -4,7 +4,6 @@ import importlib
 import importlib.util
 import logging
 import os
-import shutil
 import subprocess
 import sys
 from collections.abc import Mapping
@@ -32,7 +31,9 @@ logger = logging.getLogger(__name__)
 
 def ensure_uv() -> None:
     """Ensure the uv CLI is installed."""
-    if shutil.which("uv") is None:
+    try:
+        import uv  # noqa: F401
+    except ModuleNotFoundError:
         subprocess.run([sys.executable, "-m", "pip", "install", "uv"], check=True)
 
 

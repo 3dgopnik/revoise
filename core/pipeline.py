@@ -1,5 +1,4 @@
 # ruff: noqa: UP006,UP007,UP022,UP035,UP045
-import importlib.util
 import inspect
 import logging
 import re
@@ -16,9 +15,9 @@ from num2words import num2words
 from tqdm import tqdm
 
 from . import model_service
-from .model_manager import DownloadError
+from .model_manager import DownloadError, QMessageBox
+from .pkg_installer import ensure_package
 from .tts_adapters import GTTSTTS, BeepTTS, CoquiXTTS, SileroTTS, YandexTTS
-from .tts_dependencies import ensure_tts_dependencies
 from .tts_registry import get_engine
 
 logger = logging.getLogger(__name__)
@@ -33,33 +32,33 @@ def check_engine_available(engine_name: str, auto_download_models: bool = True) 
     global torch_unavailable
     try:
         if engine_name == "silero":
-            ensure_tts_dependencies("silero")
-            if importlib.util.find_spec("torch") is None:
-                raise ImportError("torch not installed")
+            ensure_package("torch", "torch is required for silero.")
+            ensure_package("omegaconf", "omegaconf is required for silero.")
             SileroTTS(auto_download=auto_download_models)._ensure_model(
                 auto_download=auto_download_models
             )
         elif engine_name == "coqui_xtts":
-            if importlib.util.find_spec("TTS") is None or importlib.util.find_spec("torch") is None:
-                raise ImportError("TTS or torch not installed")
+            ensure_package("TTS", "TTS is required for coqui_xtts.")
+            ensure_package("torch", "torch is required for coqui_xtts.")
             model_service.get_model_path("coqui_xtts", "tts")
         elif engine_name == "gtts":
-            if importlib.util.find_spec("gtts") is None:
-                raise ImportError("gtts not installed")
+            ensure_package("gTTS", "gTTS is required for gtts.")
         elif engine_name == "yandex":
             pass
         else:
-            ensure_tts_dependencies(engine_name)
+            ensure_package(engine_name, f"{engine_name} is required.")
+    except ModuleNotFoundError as e:
+        if "torch" in str(e).lower():
+            torch_unavailable = True
+            QMessageBox.warning(None, "Missing dependency", TORCH_MISSING_MSG)
+            raise TTSEngineError(TORCH_MISSING_MSG) from e
+        QMessageBox.warning(None, "Missing dependency", str(e))
+        raise TTSEngineError(str(e)) from e
     except (
-        ImportError,
-        ModuleNotFoundError,
         FileNotFoundError,
         DownloadError,
         RuntimeError,
     ) as e:
-        if isinstance(e, ImportError) and "torch" in str(e).lower():
-            torch_unavailable = True
-            raise TTSEngineError(TORCH_MISSING_MSG) from e
         raise TTSEngineError(str(e)) from e
 
 
@@ -116,6 +115,7 @@ def transcribe_whisper(
     global FWHISPER
     logger.debug("Starting transcribe_whisper for %s", audio_wav)
     try:
+        ensure_package("faster-whisper", "faster-whisper is required for transcription.")
         from faster_whisper import WhisperModel
 
         need_load = (FWHISPER is None) or getattr(FWHISPER, "_name", "") != model_size
@@ -148,6 +148,10 @@ def transcribe_whisper(
         result = [(s.start, s.end, s.text.strip()) for s in segments]
         logger.debug("Finished transcribe_whisper with %d segments", len(result))
         return result
+    except ModuleNotFoundError as exc:  # pragma: no cover - user interaction
+        QMessageBox.warning(parent, "Missing dependency", "faster-whisper is required for transcription.")
+        logger.exception("Whisper transcription failed")
+        raise RuntimeError("faster-whisper is required") from exc
     except Exception:
         logger.exception("Whisper transcription failed")
         raise

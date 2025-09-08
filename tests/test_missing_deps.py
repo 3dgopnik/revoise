@@ -10,7 +10,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from core import pipeline
+from core import pipeline, pkg_installer
 from core.pipeline import synth_chunk
 from core.tts_adapters import BeepTTS, CoquiXTTS, SileroTTS
 from core.tts_dependencies import ensure_tts_dependencies
@@ -118,10 +118,10 @@ def test_synth_chunk_fallback_silero(monkeypatch, tmp_path):
 
     monkeypatch.setattr(builtins, "__import__", fake_import)
 
-    def fake_ensure(engine):
-        raise ModuleNotFoundError("No module named 'torch'")
+    def fake_ensure(*args, **kwargs):
+        raise ModuleNotFoundError("torch")
 
-    monkeypatch.setattr(pipeline, "ensure_tts_dependencies", fake_ensure)
+    monkeypatch.setattr(pkg_installer, "ensure_package", fake_ensure)
 
     expected = np.array([0.1, -0.1], dtype=np.float32)
     _setup_synth(monkeypatch, expected)
@@ -142,10 +142,10 @@ def test_synth_chunk_fallback_silero_warns(monkeypatch, tmp_path, caplog):
 
     monkeypatch.setattr(builtins, "__import__", fake_import)
 
-    def fake_ensure(engine):
-        raise ModuleNotFoundError("No module named 'torch'")
+    def fake_ensure(*args, **kwargs):
+        raise ModuleNotFoundError("torch")
 
-    monkeypatch.setattr(pipeline, "ensure_tts_dependencies", fake_ensure)
+    monkeypatch.setattr(pkg_installer, "ensure_package", fake_ensure)
 
     _setup_synth(monkeypatch, np.array([0.1, -0.1], dtype=np.float32))
     with caplog.at_level(logging.INFO):
@@ -162,6 +162,12 @@ def test_synth_chunk_fallback_coqui(monkeypatch, tmp_path):
         return original_find_spec(name, *args, **kwargs)
 
     monkeypatch.setattr(imp_util, "find_spec", fake_find_spec)
+
+    def fake_ensure(*args, **kwargs):
+        raise ModuleNotFoundError("TTS")
+
+    monkeypatch.setattr(pkg_installer, "ensure_package", fake_ensure)
+
     expected = np.array([0.2, -0.2], dtype=np.float32)
     _setup_synth(monkeypatch, expected)
     wav, reason = synth_chunk(

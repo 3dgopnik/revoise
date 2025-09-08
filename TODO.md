@@ -11,3 +11,4 @@
 - Add unit tests for omegaconf retry and import spec checks in `ensure_tts_dependencies`.
 - Provide a UI warning banner when GPU acceleration is unavailable.
 - Add tests for skipping Silero when torch is missing in `fetch_tts_models`.
+- Add unit tests for `ensure_uv` helper.

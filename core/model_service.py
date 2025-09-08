@@ -14,6 +14,7 @@ from .model_manager import DownloadError
 _MODEL_PATH_CACHE: dict[tuple[str, str], Path] = {}
 _MODEL_REGISTRY: dict[str, dict[str, Any]] | None = None
 _AUTO_DOWNLOAD_OVERRIDE: bool | None = None
+_CONFIG_CACHE: dict[str, Any] | None = None
 
 
 def _load_registry() -> dict[str, dict[str, Any]]:
@@ -25,15 +26,26 @@ def _load_registry() -> dict[str, dict[str, Any]]:
     return _MODEL_REGISTRY
 
 
+def _load_config() -> dict[str, Any]:
+    global _CONFIG_CACHE
+    if _CONFIG_CACHE is None:
+        try:
+            with open("config.json", encoding="utf-8") as fh:
+                _CONFIG_CACHE = json.load(fh)
+        except Exception:
+            _CONFIG_CACHE = {}
+    return _CONFIG_CACHE
+
+
+def get_llm_config() -> dict[str, Any]:
+    """Return LLM configuration block."""
+    return _load_config().get("llm", {})
+
+
 def _auto_download_enabled() -> bool:
     if _AUTO_DOWNLOAD_OVERRIDE is not None:
         return _AUTO_DOWNLOAD_OVERRIDE
-    try:
-        with open("config.json", encoding="utf-8") as fh:
-            data = json.load(fh)
-        return bool(data.get("auto_download_models", True))
-    except Exception:
-        return True
+    return bool(_load_config().get("auto_download_models", True))
 
 
 def _file_sha256(path: Path) -> str:
@@ -123,10 +135,21 @@ def get_model_path(
     parent: Any | None = None,
     auto_download: bool | None = None,
 ) -> Path:
+    if category == "llm":
+        cfg = get_llm_config()
+        name = cfg.get("family", name)
+        custom_path = cfg.get("model_path")
+    else:
+        custom_path = None
     key = (name, category)
     cached = _MODEL_PATH_CACHE.get(key)
     if cached is not None:
         return cached
+    path: Path | None = None
+    if custom_path:
+        path = Path(custom_path)
+        _MODEL_PATH_CACHE[key] = path
+        return path
     registry = _load_registry()
     entry = registry.get(category, {}).get(name)
     if entry is None:
@@ -167,6 +190,7 @@ def get_model_path(
                     continue
             if path is None:
                 raise DownloadError(f"Failed to download model '{name}'")
+        assert path is not None
         _MODEL_PATH_CACHE[key] = path
         return path
     finally:

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 from . import model_service
@@ -22,6 +23,8 @@ class QwenEditor:
     def _ensure_model(self) -> None:
         """Lazy-load the Qwen model via llama.cpp."""
         if self._llm is None:
+            cfg = model_service.get_llm_config()
+            model_name = cfg.get("family", "qwen2.5")
             try:
                 from llama_cpp import Llama
             except ImportError:
@@ -30,9 +33,14 @@ class QwenEditor:
                     "llama-cpp-python is required for QwenEditor.",
                 )
                 from llama_cpp import Llama
-            path = model_service.get_model_path("qwen2.5", "llm")
-            logger.info("Loading Qwen model from %s", path)
-            self._llm = Llama(model_path=str(path), n_ctx=4096, verbose=False)
+            path = cfg.get("model_path")
+            if path:
+                model_path = Path(path)
+            else:
+                auto_dl = cfg.get("auto_download", True)
+                model_path = model_service.get_model_path(model_name, "llm", auto_download=auto_dl)
+            logger.info("Loading Qwen model from %s", model_path)
+            self._llm = Llama(model_path=str(model_path), n_ctx=4096, verbose=False)
 
     def edit_text(self, text: str, target_languages: list[str]) -> dict[str, str]:
         """Correct text, insert stress markers/pauses and translate it."""

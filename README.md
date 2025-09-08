@@ -45,6 +45,17 @@ uv run pytest -q
 uv run python tools/freeze_reqs.py
 ```
 
+### Config
+
+Копируйте `config.example.json` в `config.json` и при необходимости правьте.
+Доступные ключи:
+
+- `llm.family` — семейство локальной LLM.
+- `llm.model_path` — путь к файлу модели, если она уже скачана.
+- `llm.auto_download` — автоматически загружать недостающую LLM.
+- `tts_engine` — движок TTS по умолчанию.
+- `preferences.pin_dependencies` — предлагать фиксировать версии в `requirements.txt`.
+
 ---
 
 ## Новая оболочка UI (Qt / PySide6)

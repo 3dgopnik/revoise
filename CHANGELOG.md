@@ -29,6 +29,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 - Removed legacy bootstrap and launcher scripts.
 - Removed `faster-whisper` and `omegaconf` from core dependencies.
+- Removed portable mode.
+- Removed lazy install support.
 
 ### Docs
 - Documented installation with `uv pip`, lazy dependency/model downloads,

@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Model loading now routes through the new `ensure_model` helper.
 - Trim default `project.dependencies` to essential packages only.
 - Rename project package to `revoice`.
+- CI installs dependencies with `uv pip install -r requirements.txt` and runs Ruff on `core`, `ui`, and `tests`.
 
 ### Removed
 - Removed legacy bootstrap and launcher scripts.

@@ -1,7 +1,7 @@
 [project]
-name = "revoiceportable"
+name = "revoice"
 version = "0.1.0"
-description = "Portable STT/TTS pipeline with PySide6 UI"
+description = "STT/TTS pipeline with PySide6 UI"
 readme = "README.md"
 requires-python = ">=3.10,<3.13"
 dependencies = [

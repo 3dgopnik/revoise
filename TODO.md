@@ -20,3 +20,4 @@
 - Integrate GUI dialogs for `pkg_installer.ensure_package` failures.
 - Populate model registry with SHA256 hashes for integrity checks.
 - Offer heavier STT/TTS packages as optional extras instead of core dependencies.
+- Format remaining source files with `ruff format`.

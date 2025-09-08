@@ -25,3 +25,4 @@
 - Add validation for `llm` and `tts_engine` configuration blocks.
 - Support optional indices for package mirrors.
 - Add advanced cache cleanup options.
+- Add unit tests for error handling in `model_manager.ensure_model`.

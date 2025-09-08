@@ -46,16 +46,7 @@
 
 ## Сборка окружения (uv)
 - Требуется Python 3.10–3.12 и [uv](https://docs.astral.sh/uv/).
-- Установка зависимостей и запуск UI выполняются скриптами:
-```bash
-# Windows
-revoice_portable.bat
-
-# Linux/macOS
-./revoice_portable.sh
-```
-Скрипты используют `uv sync --frozen --no-dev` и автоматически удаляют лишние пакеты.
-Для ручной сборки окружения:
+- Установка зависимостей и запуск UI:
 ```bash
 uv sync --all-extras --frozen
 uv run python -m ui.main
@@ -67,10 +58,6 @@ uv run ruff format --check .
 uv run mypy .
 uv run pytest -q
 ```
-
-- При первом запуске `revoice_portable.bat` пакет `llama-cpp-python` (модуль `llama_cpp`) автоматически устанавливается в папку программы (нужны интернет и свободное место на диске).
-- Скрипт `tools/bootstrap_portable.py` загружает TTS/STT модели и зависимости в локальные каталоги и вызывается из `revoice_portable.*`.
-- Windows: запустить `revoice_portable.bat`, Linux/macOS: `./revoice_portable.sh`.
 
 ---
 
@@ -122,7 +109,7 @@ Missing Python packages are installed automatically into `.venv` for TTS engines
 - `SILERO_SPEAKER` — имя диктора
 
 ```bash
-python -m ui.main --say "text"
+uv run python -m ui.main --say "text"
 # появится output/tts_test.wav
 ```
 
@@ -189,9 +176,11 @@ uv run pytest -q
 ## Быстрый старт
 ```bash
 # 1) Установить uv и Python 3.10–3.12
-# 2) Запустить скрипт (установит зависимости по uv.lock)
-./revoice_portable.sh  # или revoice_portable.bat
-# 3) (Опционально) положить ffmpeg в ./bin или поставить в PATH
+# 2) Установить зависимости
+uv sync --all-extras --frozen
+# 3) Запустить UI
+uv run python -m ui.main
+# 4) (Опционально) положить ffmpeg в ./bin или поставить в PATH
 ```
 
 ## Лицензия

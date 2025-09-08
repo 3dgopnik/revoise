@@ -12,3 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Install TTS dependencies into .venv using shared pkg_installer.
+
+### Removed
+- Removed portable bootstrap and launcher scripts.
+
+### Docs
+- Updated launch instructions to use `uv run python -m ui.main`.

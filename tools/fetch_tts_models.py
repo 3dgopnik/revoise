@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import logging
 import sys
 from pathlib import Path
@@ -17,6 +18,9 @@ def fetch(models: list[str]) -> None:
     ok = True
     for name in models:
         if name == "silero":
+            if importlib.util.find_spec("torch") is None:
+                logging.warning("silero: torch not installed, skipping")
+                continue
             import torch
 
             hub_dir = Path(torch.hub.get_dir())
@@ -53,13 +57,15 @@ def fetch(models: list[str]) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Fetch TTS models")
+    parser = argparse.ArgumentParser(
+        description="Fetch TTS models (install torch to enable silero)"
+    )
     available = sorted({*list_models("tts"), "silero"})
     parser.add_argument(
         "--engine",
         action="append",
         choices=available,
-        help="Engine to prefetch",
+        help="Engine to prefetch (silero requires torch)",
     )
     parser.add_argument("--all", action="store_true", help="Fetch all TTS models")
     args = parser.parse_args()
@@ -77,4 +83,3 @@ def main() -> None:
 
 if __name__ == "__main__":  # pragma: no cover
     main()
-

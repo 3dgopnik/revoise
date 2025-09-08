@@ -13,4 +13,5 @@
 - Provide clearer feedback when `uv` installation fails in `ensure_uv`.
 - Provide offline installation support for `uv` in `ensure_uv`.
 - Add unit tests for `pkg_installer.ensure_package` import retry logic.
+- Add tests for interactive pinning in `pkg_installer.ensure_package`.
 - Provide a cross-platform wrapper script for launching with `uv`.

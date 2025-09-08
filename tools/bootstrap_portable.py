@@ -35,10 +35,12 @@ def main() -> None:
 
     tts_models = sorted({*list_models("tts"), "silero"})
     for engine in (*tts_models, "gtts"):
-
         try:
             ensure_tts_dependencies(engine)
         except RuntimeError as exc:  # pragma: no cover - optional deps
+            if engine == "silero":
+                print(f"Failed to prepare silero dependencies: {exc}", file=sys.stderr)
+                raise SystemExit(1) from exc
             print(f"Skipping {engine} dependencies: {exc}")
 
     fetch(tts_models)

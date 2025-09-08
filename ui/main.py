@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# PySide6 UI — RevoicePortable alpha3
+# PySide6 UI — Revoice alpha3
 # Voice auto-detection removed
 # Logs: BASE_DIR / logs / log_version_alpha3.txt
 
@@ -31,24 +31,30 @@ logging.basicConfig(
     filename=str(LOG_FILE),
     level=logging.DEBUG,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-    encoding="utf-8"
+    encoding="utf-8",
 )
 log = logging.getLogger("ui")
+
 
 def handle_exception(exc_type, exc, tb):
     """Log uncaught exceptions before the application exits."""
     log.critical("Unhandled exception", exc_info=(exc_type, exc, tb))
+
 
 # Register global exception hook
 sys.excepthook = handle_exception
 
 # Импорт пайплайна
 from core.pipeline import (
-    revoice_video, phrases_to_marked_text,
-    transcribe_whisper, merge_into_phrases, ensure_ffmpeg
+    revoice_video,
+    phrases_to_marked_text,
+    transcribe_whisper,
+    merge_into_phrases,
+    ensure_ffmpeg,
 )
 from core.model_manager import list_models
 from core.tts_adapters import SILERO_VOICES
+
 try:
     from core.qwen_editor import QwenEditor  # type: ignore
 except Exception as e:  # pragma: no cover - optional dependency
@@ -57,12 +63,13 @@ except Exception as e:  # pragma: no cover - optional dependency
 else:
     _QWEN_IMPORT_ERROR = None
 
-YANDEX_VOICES = ["ermil","filipp","alena","jane","oksana","zahar","omazh","madirus"]
+YANDEX_VOICES = ["ermil", "filipp", "alena", "jane", "oksana", "zahar", "omazh", "madirus"]
+
 
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle(f"RevoicePortable — {APP_VER}")
+        self.setWindowTitle(f"Revoice — {APP_VER}")
         self.resize(1024, 680)
 
         # Состояние
@@ -155,13 +162,19 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Видео и папка вывода
         self.inp_video = QtWidgets.QLineEdit()
-        btn_vid = QtWidgets.QPushButton("Обзор…"); btn_vid.clicked.connect(self.pick_video)
-        h = QtWidgets.QHBoxLayout(); h.addWidget(self.inp_video); h.addWidget(btn_vid)
+        btn_vid = QtWidgets.QPushButton("Обзор…")
+        btn_vid.clicked.connect(self.pick_video)
+        h = QtWidgets.QHBoxLayout()
+        h.addWidget(self.inp_video)
+        h.addWidget(btn_vid)
         form.addRow("Видео (MP4):", h)
 
         self.inp_out = QtWidgets.QLineEdit(self.out_dir)
-        btn_out = QtWidgets.QPushButton("Обзор…"); btn_out.clicked.connect(self.pick_outdir)
-        h2 = QtWidgets.QHBoxLayout(); h2.addWidget(self.inp_out); h2.addWidget(btn_out)
+        btn_out = QtWidgets.QPushButton("Обзор…")
+        btn_out.clicked.connect(self.pick_outdir)
+        h2 = QtWidgets.QHBoxLayout()
+        h2.addWidget(self.inp_out)
+        h2.addWidget(btn_out)
         form.addRow("Папка вывода:", h2)
 
         # Блок TTS и Whisper
@@ -172,11 +185,13 @@ class MainWindow(QtWidgets.QMainWindow):
         # Include gTTS among available engines
         self.cmb_engine.addItems(["silero", "yandex", "coqui_xtts", "gtts"])
         self.cmb_engine.currentTextChanged.connect(self._on_engine_change)
-        grid.addWidget(QtWidgets.QLabel("Движок TTS:"), row, 0); grid.addWidget(self.cmb_engine, row, 1)
+        grid.addWidget(QtWidgets.QLabel("Движок TTS:"), row, 0)
+        grid.addWidget(self.cmb_engine, row, 1)
 
         self.lbl_voice = QtWidgets.QLabel("Голос:")
         self.cmb_voice = QtWidgets.QComboBox()
-        grid.addWidget(self.lbl_voice, row, 2); grid.addWidget(self.cmb_voice, row, 3)
+        grid.addWidget(self.lbl_voice, row, 2)
+        grid.addWidget(self.cmb_voice, row, 3)
 
         row += 1
         self.lbl_language = QtWidgets.QLabel("Язык:")
@@ -184,25 +199,33 @@ class MainWindow(QtWidgets.QMainWindow):
         self.cmb_language.addItems(sorted(SILERO_VOICES))
         self.cmb_language.setCurrentText(self.language)
         self.cmb_language.currentTextChanged.connect(self._on_language_change)
-        grid.addWidget(self.lbl_language, row, 0); grid.addWidget(self.cmb_language, row, 1)
+        grid.addWidget(self.lbl_language, row, 0)
+        grid.addWidget(self.cmb_language, row, 1)
 
         row += 1
         self.cmb_whisper = QtWidgets.QComboBox()
         self._populate_whisper_models()
-        grid.addWidget(QtWidgets.QLabel("Whisper:"), row, 0); grid.addWidget(self.cmb_whisper, row, 1)
+        grid.addWidget(QtWidgets.QLabel("Whisper:"), row, 0)
+        grid.addWidget(self.cmb_whisper, row, 1)
         self.ed_speed = QtWidgets.QLineEdit(str(self.speed_pct))
-        grid.addWidget(QtWidgets.QLabel("Скорость, %:"), row, 2); grid.addWidget(self.ed_speed, row, 3)
+        grid.addWidget(QtWidgets.QLabel("Скорость, %:"), row, 2)
+        grid.addWidget(self.ed_speed, row, 3)
 
         row += 1
         self.ed_mingap = QtWidgets.QLineEdit(str(self.min_gap_ms))
-        grid.addWidget(QtWidgets.QLabel("Мин. пауза, мс:"), row, 0); grid.addWidget(self.ed_mingap, row, 1)
+        grid.addWidget(QtWidgets.QLabel("Мин. пауза, мс:"), row, 0)
+        grid.addWidget(self.ed_mingap, row, 1)
         self.ed_jitter = QtWidgets.QLineEdit(str(self.speed_jitter))
-        grid.addWidget(QtWidgets.QLabel("Speed jitter:"), row, 2); grid.addWidget(self.ed_jitter, row, 3)
+        grid.addWidget(QtWidgets.QLabel("Speed jitter:"), row, 2)
+        grid.addWidget(self.ed_jitter, row, 3)
 
         row += 1
-        self.chk_numbers = QtWidgets.QCheckBox("Числа словами"); self.chk_numbers.setChecked(self.read_numbers)
-        self.chk_latin = QtWidgets.QCheckBox("Латиница по буквам"); self.chk_latin.setChecked(self.spell_latin)
-        grid.addWidget(self.chk_numbers, row, 0); grid.addWidget(self.chk_latin, row, 1)
+        self.chk_numbers = QtWidgets.QCheckBox("Числа словами")
+        self.chk_numbers.setChecked(self.read_numbers)
+        self.chk_latin = QtWidgets.QCheckBox("Латиница по буквам")
+        self.chk_latin.setChecked(self.spell_latin)
+        grid.addWidget(self.chk_numbers, row, 0)
+        grid.addWidget(self.chk_latin, row, 1)
 
         layout.addLayout(grid)
 
@@ -210,14 +233,20 @@ class MainWindow(QtWidgets.QMainWindow):
         group = QtWidgets.QGroupBox("Музыка (опционально)")
         g = QtWidgets.QGridLayout(group)
         self.ed_music = QtWidgets.QLineEdit()
-        btn_ms = QtWidgets.QPushButton("Выбрать…"); btn_ms.clicked.connect(self.pick_music)
-        g.addWidget(QtWidgets.QLabel("Файл:"), 0, 0); g.addWidget(self.ed_music, 0, 1); g.addWidget(btn_ms, 0, 2)
+        btn_ms = QtWidgets.QPushButton("Выбрать…")
+        btn_ms.clicked.connect(self.pick_music)
+        g.addWidget(QtWidgets.QLabel("Файл:"), 0, 0)
+        g.addWidget(self.ed_music, 0, 1)
+        g.addWidget(btn_ms, 0, 2)
         self.ed_music_db = QtWidgets.QLineEdit(str(self.music_db))
         self.ed_duck_ratio = QtWidgets.QLineEdit(str(self.duck_ratio))
         self.ed_duck_thresh = QtWidgets.QLineEdit(str(self.duck_thresh))
-        g.addWidget(QtWidgets.QLabel("Громкость, dB:"), 1, 0); g.addWidget(self.ed_music_db, 1, 1)
-        g.addWidget(QtWidgets.QLabel("Duck ratio:"), 1, 2); g.addWidget(self.ed_duck_ratio, 1, 3)
-        g.addWidget(QtWidgets.QLabel("Thresh:"), 1, 4); g.addWidget(self.ed_duck_thresh, 1, 5)
+        g.addWidget(QtWidgets.QLabel("Громкость, dB:"), 1, 0)
+        g.addWidget(self.ed_music_db, 1, 1)
+        g.addWidget(QtWidgets.QLabel("Duck ratio:"), 1, 2)
+        g.addWidget(self.ed_duck_ratio, 1, 3)
+        g.addWidget(QtWidgets.QLabel("Thresh:"), 1, 4)
+        g.addWidget(self.ed_duck_thresh, 1, 5)
         layout.addWidget(group)
 
         # Кнопки
@@ -229,8 +258,14 @@ class MainWindow(QtWidgets.QMainWindow):
         self.btn_open = QtWidgets.QPushButton("Открыть выход…")
         self.btn_help = QtWidgets.QPushButton("Помощь")
         self.btn_settings = QtWidgets.QPushButton("Настройки")
-        hb.addWidget(self.btn_rec); hb.addWidget(self.btn_edit); hb.addWidget(self.btn_run)
-        hb.addStretch(1); hb.addWidget(self.btn_help); hb.addWidget(self.btn_settings); hb.addWidget(self.btn_reset); hb.addWidget(self.btn_open)
+        hb.addWidget(self.btn_rec)
+        hb.addWidget(self.btn_edit)
+        hb.addWidget(self.btn_run)
+        hb.addStretch(1)
+        hb.addWidget(self.btn_help)
+        hb.addWidget(self.btn_settings)
+        hb.addWidget(self.btn_reset)
+        hb.addWidget(self.btn_open)
         layout.addLayout(hb)
 
         # Segments editor
@@ -246,7 +281,9 @@ class MainWindow(QtWidgets.QMainWindow):
         right_layout = QtWidgets.QVBoxLayout(right_panel)
 
         self.editor = QtWidgets.QPlainTextEdit(self)
-        self.editor.setPlaceholderText("Полноэкранный редактор — редактируйте выделенный сегмент...")
+        self.editor.setPlaceholderText(
+            "Полноэкранный редактор — редактируйте выделенный сегмент..."
+        )
         right_layout.addWidget(self.editor)
 
         self.lang_list = QtWidgets.QListWidget(self)
@@ -264,7 +301,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ai_edit_btn.clicked.connect(self.ai_edit_current_segment)
 
         # Log
-        self.log = QtWidgets.QPlainTextEdit(); self.log.setReadOnly(True)
+        self.log = QtWidgets.QPlainTextEdit()
+        self.log.setReadOnly(True)
         layout.addWidget(self.log, 1)
 
         # Привязка действий
@@ -345,23 +383,42 @@ class MainWindow(QtWidgets.QMainWindow):
         log.info(msg)
 
     def pick_video(self):
-        p, _ = QtWidgets.QFileDialog.getOpenFileName(self, "Выбрать видео", str(INPUT_DIR), "Video (*.mp4 *.mkv *.mov)")
-        if p: self.video_path = p; self.inp_video.setText(p); self.reset_state(); self.log_print(f"Выбрано видео: {p}")
+        p, _ = QtWidgets.QFileDialog.getOpenFileName(
+            self, "Выбрать видео", str(INPUT_DIR), "Video (*.mp4 *.mkv *.mov)"
+        )
+        if p:
+            self.video_path = p
+            self.inp_video.setText(p)
+            self.reset_state()
+            self.log_print(f"Выбрано видео: {p}")
 
     def pick_outdir(self):
-        p = QtWidgets.QFileDialog.getExistingDirectory(self, "Папка вывода", self.inp_out.text() or str(OUTPUT_DIR))
-        if p: self.out_dir = p; self.inp_out.setText(p); self.log_print(f"Папка вывода: {p}")
+        p = QtWidgets.QFileDialog.getExistingDirectory(
+            self, "Папка вывода", self.inp_out.text() or str(OUTPUT_DIR)
+        )
+        if p:
+            self.out_dir = p
+            self.inp_out.setText(p)
+            self.log_print(f"Папка вывода: {p}")
 
     def pick_music(self):
-        p, _ = QtWidgets.QFileDialog.getOpenFileName(self, "Файл музыки", "", "Audio (*.mp3 *.wav *.flac *.m4a *.ogg)")
-        if p: self.music_path = p; self.ed_music.setText(p); self.log_print(f"Музыка: {p}")
+        p, _ = QtWidgets.QFileDialog.getOpenFileName(
+            self, "Файл музыки", "", "Audio (*.mp3 *.wav *.flac *.m4a *.ogg)"
+        )
+        if p:
+            self.music_path = p
+            self.ed_music.setText(p)
+            self.log_print(f"Музыка: {p}")
 
     def open_outdir(self):
         p = Path(self.inp_out.text() or ".").resolve()
-        if p.exists(): os.startfile(str(p))
+        if p.exists():
+            os.startfile(str(p))
 
     def reset_state(self):
-        self.last_phrases = []; self.edited_text = None; self.use_markers = True
+        self.last_phrases = []
+        self.edited_text = None
+        self.use_markers = True
         self.log_print("Состояние сброшено. Готово к новому видео.")
 
     # ---------- Действия ----------
@@ -417,59 +474,117 @@ class MainWindow(QtWidgets.QMainWindow):
     def recognize_only(self):
         try:
             if not self.inp_video.text().strip():
-                QtWidgets.QMessageBox.warning(self, "Нет видео", "Укажи путь к видео."); return
-            ffmpeg = ensure_ffmpeg(); self.log_print(f"FFmpeg: {ffmpeg}"); self.log_print("Распознаю речь…")
+                QtWidgets.QMessageBox.warning(self, "Нет видео", "Укажи путь к видео.")
+                return
+            ffmpeg = ensure_ffmpeg()
+            self.log_print(f"FFmpeg: {ffmpeg}")
+            self.log_print("Распознаю речь…")
             with tempfile.TemporaryDirectory() as td:
-                wav = Path(td)/"orig.wav"
-                cmd = [ffmpeg,"-y","-i",self.inp_video.text(),"-vn","-ac","1","-ar","48000","-acodec","pcm_s16le",str(wav)]
-                log.debug("Extract WAV cmd: %s"," ".join(map(str,cmd)))
-                subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+                wav = Path(td) / "orig.wav"
+                cmd = [
+                    ffmpeg,
+                    "-y",
+                    "-i",
+                    self.inp_video.text(),
+                    "-vn",
+                    "-ac",
+                    "1",
+                    "-ar",
+                    "48000",
+                    "-acodec",
+                    "pcm_s16le",
+                    str(wav),
+                ]
+                log.debug("Extract WAV cmd: %s", " ".join(map(str, cmd)))
+                subprocess.run(
+                    cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+                )
                 segs = transcribe_whisper(
                     wav, language="ru", model_size=self.cmb_whisper.currentData(), device="cuda"
                 )
                 self.last_phrases = merge_into_phrases(segs)
-            txt = " ".join(t for _,_,t in self.last_phrases)
-            self.log_print("Текст:", txt[:700]+"..." if len(txt)>700 else txt); self.log_print("ГОТОВО. Правка (txt).")
+            txt = " ".join(t for _, _, t in self.last_phrases)
+            self.log_print("Текст:", txt[:700] + "..." if len(txt) > 700 else txt)
+            self.log_print("ГОТОВО. Правка (txt).")
         except Exception as e:
-            self.log_print(f"Ошибка распознавания: {e}"); log.error("Traceback:\n%s",traceback.format_exc())
+            self.log_print(f"Ошибка распознавания: {e}")
+            log.error("Traceback:\n%s", traceback.format_exc())
             QtWidgets.QMessageBox.critical(self, "Ошибка", str(e))
 
     def open_editor(self):
-        if not self.last_phrases: self.recognize_only()
-        if not self.last_phrases: return
-        src = phrases_to_marked_text(self.last_phrases) if self.use_markers else " ".join(t for _,_,t in self.last_phrases)
-        dlg = QtWidgets.QDialog(self); dlg.setWindowTitle("Правка текста"); dlg.resize(1000,640)
-        v = QtWidgets.QVBoxLayout(dlg); v.addWidget(QtWidgets.QLabel("Редактируй. [[#i]] сохраняют тайминги. [[PAUSE=300]] пауза."))
-        txt = QtWidgets.QPlainTextEdit(); txt.setPlainText(self.edited_text if self.edited_text else src); v.addWidget(txt,1)
-        hb = QtWidgets.QHBoxLayout(); btn_toggle = QtWidgets.QPushButton("Маркеры: ВКЛ")
+        if not self.last_phrases:
+            self.recognize_only()
+        if not self.last_phrases:
+            return
+        src = (
+            phrases_to_marked_text(self.last_phrases)
+            if self.use_markers
+            else " ".join(t for _, _, t in self.last_phrases)
+        )
+        dlg = QtWidgets.QDialog(self)
+        dlg.setWindowTitle("Правка текста")
+        dlg.resize(1000, 640)
+        v = QtWidgets.QVBoxLayout(dlg)
+        v.addWidget(QtWidgets.QLabel("Редактируй. [[#i]] сохраняют тайминги. [[PAUSE=300]] пауза."))
+        txt = QtWidgets.QPlainTextEdit()
+        txt.setPlainText(self.edited_text if self.edited_text else src)
+        v.addWidget(txt, 1)
+        hb = QtWidgets.QHBoxLayout()
+        btn_toggle = QtWidgets.QPushButton("Маркеры: ВКЛ")
+
         def toggle():
             self.use_markers = not self.use_markers
             btn_toggle.setText("Маркеры: ВКЛ" if self.use_markers else "Маркеры: ВЫКЛ")
-            txt.setPlainText(phrases_to_marked_text(self.last_phrases) if self.use_markers else " ".join(t for _,_,t in self.last_phrases))
+            txt.setPlainText(
+                phrases_to_marked_text(self.last_phrases)
+                if self.use_markers
+                else " ".join(t for _, _, t in self.last_phrases)
+            )
+
         btn_toggle.clicked.connect(toggle)
-        btn_save = QtWidgets.QPushButton("Сохранить"); btn_save.clicked.connect(lambda: (setattr(self,"edited_text",txt.toPlainText().strip()),dlg.accept()))
-        hb.addWidget(btn_toggle); hb.addStretch(1); hb.addWidget(btn_save); v.addLayout(hb)
-        dlg.exec(); self.log_print("Правки сохранены.")
+        btn_save = QtWidgets.QPushButton("Сохранить")
+        btn_save.clicked.connect(
+            lambda: (setattr(self, "edited_text", txt.toPlainText().strip()), dlg.accept())
+        )
+        hb.addWidget(btn_toggle)
+        hb.addStretch(1)
+        hb.addWidget(btn_save)
+        v.addLayout(hb)
+        dlg.exec()
+        self.log_print("Правки сохранены.")
 
     def start_render(self):
         try:
             if not self.inp_video.text().strip():
-                QtWidgets.QMessageBox.warning(self,"Нет видео","Укажи путь к видео."); return
-            engine = self.cmb_engine.currentText(); voice = self.cmb_voice.currentText(); language = self.cmb_language.currentText()
+                QtWidgets.QMessageBox.warning(self, "Нет видео", "Укажи путь к видео.")
+                return
+            engine = self.cmb_engine.currentText()
+            voice = self.cmb_voice.currentText()
+            language = self.cmb_language.currentText()
             self.log_print(f"Озвучиваю… (engine={engine}, voice={voice})")
             # Forward engine choice (incl. coqui_xtts) to the synthesis pipeline
             out, fb_reason = revoice_video(
-                self.inp_video.text(), self.inp_out.text(),
-                speaker=voice, whisper_size=self.cmb_whisper.currentData(), device="cuda",
-                sr=48000, min_gap_ms=int(self.ed_mingap.text() or "350"),
-                speed_pct=max(50,min(200,int(self.ed_speed.text() or "100"))),
-                edited_text=self.edited_text, phrases_cache=self.last_phrases if self.last_phrases else None,
-                use_markers=self.use_markers, read_numbers=self.chk_numbers.isChecked(),
-                spell_latin=self.chk_latin.isChecked(), music_path=(self.ed_music.text().strip() or None),
-                music_db=float(self.ed_music_db.text() or "-18"), duck_ratio=float(self.ed_duck_ratio.text() or "8.0"),
-                duck_thresh=float(self.ed_duck_thresh.text() or "0.05"), tts_engine=engine,
+                self.inp_video.text(),
+                self.inp_out.text(),
+                speaker=voice,
+                whisper_size=self.cmb_whisper.currentData(),
+                device="cuda",
+                sr=48000,
+                min_gap_ms=int(self.ed_mingap.text() or "350"),
+                speed_pct=max(50, min(200, int(self.ed_speed.text() or "100"))),
+                edited_text=self.edited_text,
+                phrases_cache=self.last_phrases if self.last_phrases else None,
+                use_markers=self.use_markers,
+                read_numbers=self.chk_numbers.isChecked(),
+                spell_latin=self.chk_latin.isChecked(),
+                music_path=(self.ed_music.text().strip() or None),
+                music_db=float(self.ed_music_db.text() or "-18"),
+                duck_ratio=float(self.ed_duck_ratio.text() or "8.0"),
+                duck_thresh=float(self.ed_duck_thresh.text() or "0.05"),
+                tts_engine=engine,
                 language=language,
-                yandex_key=self.yandex_key, yandex_voice=voice,
+                yandex_key=self.yandex_key,
+                yandex_voice=voice,
                 speed_jitter=float(self.ed_jitter.text() or "0.03"),
                 allow_beep_fallback=self.allow_beep_fallback,
                 auto_download_models=self.auto_download_models,
@@ -479,24 +594,31 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.log_print(warn)
                 QtWidgets.QMessageBox.warning(self, "Предупреждение", warn)
             self.log_print("Готово:", out)
-            QtWidgets.QMessageBox.information(self,"Готово",f"Сохранено:\n{out}")
+            QtWidgets.QMessageBox.information(self, "Готово", f"Сохранено:\n{out}")
         except Exception as e:
-            self.log_print(f"Ошибка озвучивания: {e}"); log.error("Traceback:\n%s",traceback.format_exc())
-            QtWidgets.QMessageBox.critical(self,"Ошибка",str(e))
+            self.log_print(f"Ошибка озвучивания: {e}")
+            log.error("Traceback:\n%s", traceback.format_exc())
+            QtWidgets.QMessageBox.critical(self, "Ошибка", str(e))
 
     # --- Segment editor methods ---
     def open_video(self):
-        path, _ = QFileDialog.getOpenFileName(self, "Выберите видео", str(INPUT_DIR), "Video (*.mp4 *.mov *.mkv)")
+        path, _ = QFileDialog.getOpenFileName(
+            self, "Выберите видео", str(INPUT_DIR), "Video (*.mp4 *.mov *.mkv)"
+        )
         if not path:
             return
         self.status.showMessage(f"Видео выбрано: {path}")
         # TODO: extract audio and run STT
-        self.segments = [{"start": 0.0, "end": 2.0, "original_text": "Пример", "edited_text": "Пример"}]
+        self.segments = [
+            {"start": 0.0, "end": 2.0, "original_text": "Пример", "edited_text": "Пример"}
+        ]
         self.reload_table()
 
     def save_project(self):
         if not self.project_path:
-            path, _ = QFileDialog.getSaveFileName(self, "Сохранить проект", "projects/untitled.rvproj", "Revoice Project (*.rvproj)")
+            path, _ = QFileDialog.getSaveFileName(
+                self, "Сохранить проект", "projects/untitled.rvproj", "Revoice Project (*.rvproj)"
+            )
             if not path:
                 return
             self.project_path = path
@@ -561,7 +683,11 @@ class MainWindow(QtWidgets.QMainWindow):
             orig = self.table.item(row, 2).text() if self.table.item(row, 2) else ""
             self.table.setItem(row, 3, QTableWidgetItem(orig))
         elif act == reset_edit:
-            self.table.setItem(row, 3, QTableWidgetItem(self.table.item(row, 2).text() if self.table.item(row, 2) else ""))
+            self.table.setItem(
+                row,
+                3,
+                QTableWidgetItem(self.table.item(row, 2).text() if self.table.item(row, 2) else ""),
+            )
 
     def reload_table(self):
         self.table.setRowCount(0)
@@ -571,10 +697,11 @@ class MainWindow(QtWidgets.QMainWindow):
             for col, key in enumerate(["start", "end", "original_text", "edited_text"]):
                 self.table.setItem(row, col, QTableWidgetItem(str(seg.get(key, ""))))
 
+
 def main():
     """Run application or synthesize text via CLI."""
 
-    parser = argparse.ArgumentParser(description="RevoicePortable UI")
+    parser = argparse.ArgumentParser(description="Revoice UI")
     parser.add_argument("--say", help="Text to synthesize and exit")
     args = parser.parse_args()
 
@@ -604,6 +731,7 @@ def main():
     exit_code = app.exec()
     logging.shutdown()
     return exit_code
+
 
 if __name__ == "__main__":
     sys.exit(main())

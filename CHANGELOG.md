@@ -20,11 +20,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Replace `ensure_tts_dependencies` calls with direct `ensure_package` usage and lazy heavy imports.
 - Model loading now routes through the new `ensure_model` helper.
 - Trim default `project.dependencies` to essential packages only.
+- Rename project package to `revoice`.
 
 ### Removed
-- Removed portable bootstrap and launcher scripts.
+- Removed legacy bootstrap and launcher scripts.
 - Removed `faster-whisper` and `omegaconf` from core dependencies.
 
 ### Docs
-- Updated launch instructions to use `uv run python -m ui.main`.
-- Documented requirement freezing in README.
+- Documented installation with `uv pip`, lazy dependency/model downloads,
+  launch via `uv run python -m ui.main`, and `tools/freeze_reqs.py`.

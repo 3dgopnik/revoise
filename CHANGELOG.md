@@ -10,3 +10,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - AI edit dialog for custom instructions and language selection.
 - Initial changelog.
 
+### Changed
+- Install TTS dependencies into .venv using shared pkg_installer.

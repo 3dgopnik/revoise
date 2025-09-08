@@ -99,19 +99,19 @@ uv run pytest -q
 ### Silero requirements
 Silero TTS requires `torch` and `torchaudio`. Install them to avoid a BeepTTS fallback:
 ```bash
-pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu121
+uv pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu121
 ```
 If these packages are missing, the pipeline falls back to BeepTTS with an audible beep.
 
 ### TTS dependencies
-Missing Python packages are installed automatically for TTS engines:
+Missing Python packages are installed automatically into `.venv` for TTS engines:
 
-- Silero: `torch` and `torchaudio` (`pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu121`)
+- Silero: `torch` and `torchaudio` (`uv pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu121`)
 - Coqui XTTS: `TTS`
 - gTTS: `gTTS`
 
 Если установка не удалась, движок пропускается. Чтобы включить его позднее,
-установите пакет вручную, например: `pip install TTS`.
+установите пакет вручную, например: `uv pip install TTS`.
 
 
 - gTTS: выберите движок `gtts` в UI. Сервис не предлагает голоса и требует интернет.

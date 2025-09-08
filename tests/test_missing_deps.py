@@ -38,7 +38,7 @@ def test_silero_ensure_model_missing_torch(monkeypatch):
     SileroTTS._model = None
     with pytest.raises(RuntimeError) as excinfo:
         SileroTTS()._ensure_model()
-    assert "pip install torch --index-url https://download.pytorch.org/whl/cpu" in str(
+    assert "uv pip install torch --index-url https://download.pytorch.org/whl/cpu" in str(
         excinfo.value
     )
     assert calls and "torch" in " ".join(calls[0])
@@ -63,7 +63,7 @@ def test_silero_missing_omegaconf(monkeypatch):
 
     monkeypatch.setattr(subprocess, "run", fake_run)
 
-    with pytest.raises(RuntimeError, match="pip install omegaconf"):
+    with pytest.raises(RuntimeError, match="uv pip install omegaconf"):
         ensure_tts_dependencies("silero")
     assert calls and "omegaconf" in " ".join(calls[0])
 
@@ -87,7 +87,7 @@ def test_coqui_ensure_model_missing_tts(monkeypatch):
 
     monkeypatch.setattr(subprocess, "run", fake_run)
 
-    with pytest.raises(RuntimeError, match="pip install TTS"):
+    with pytest.raises(RuntimeError, match="uv pip install TTS"):
         CoquiXTTS(Path("."))._ensure_model()
     assert calls and "TTS" in calls[0]
 

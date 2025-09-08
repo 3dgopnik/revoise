@@ -16,3 +16,4 @@
 - Add unit tests for `ensure_uv` helper.
 - Provide clearer feedback when `uv` installation fails in `ensure_uv`.
 - Provide offline installation support for `uv` in `ensure_uv`.
+- Add unit tests for `pkg_installer.ensure_package` import retry logic.

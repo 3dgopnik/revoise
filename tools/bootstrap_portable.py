@@ -3,14 +3,12 @@
 from __future__ import annotations
 
 import argparse
-import os
 import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-os.environ.setdefault("REVOISE_TTS_PKG_DIR", str(ROOT / ".portable_pkgs"))
 
 from core.model_manager import ensure_model, list_models  # noqa: E402
 from core.tts_dependencies import ensure_tts_dependencies  # noqa: E402

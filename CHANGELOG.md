@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Install TTS dependencies into .venv using shared pkg_installer.
+- Lazily import `llama-cpp` in `QwenEditor` and ensure required model files.
 
 ### Removed
 - Removed portable bootstrap and launcher scripts.

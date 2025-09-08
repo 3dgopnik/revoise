@@ -42,7 +42,9 @@ def test_transcribe_whisper_loads_existing_model(tmp_path, monkeypatch):
     fake_module.WhisperModel = DummyWhisperModel
     monkeypatch.setitem(sys.modules, "faster_whisper", fake_module)
 
-    monkeypatch.setattr(model_service, "get_model_path", lambda name, category, **kwargs: dummy_path)
+    monkeypatch.setattr(
+        model_service, "get_model_path", lambda name, category, **kwargs: dummy_path
+    )
     monkeypatch.setattr(pipeline, "FWHISPER", None)
     monkeypatch.setattr(model_service, "_MODEL_PATH_CACHE", {})
 
@@ -54,8 +56,6 @@ def test_transcribe_whisper_loads_existing_model(tmp_path, monkeypatch):
 
 
 def test_transcribe_whisper_uses_model_cache(tmp_path, monkeypatch):
-    dummy_path = tmp_path / "dummy"
-
     class DummyWhisperModel:
         def __init__(self, model_path, *args, **kwargs):
             self.model_path = model_path
@@ -69,20 +69,22 @@ def test_transcribe_whisper_uses_model_cache(tmp_path, monkeypatch):
 
     calls = {"count": 0}
 
-    def fake_ensure_model(name, category, **kwargs):
+    def fake_ensure_model(kind, name, dest_dir, url, sha256=None):
         calls["count"] += 1
-        return dummy_path
+        return dest_dir / name
 
     monkeypatch.setattr(model_service, "ensure_model", fake_ensure_model)
     monkeypatch.setattr(model_service, "_MODEL_PATH_CACHE", {})
 
     monkeypatch.setattr(pipeline, "FWHISPER", None)
     pipeline.transcribe_whisper(tmp_path / "first.wav")
+    assert calls["count"] == 4
 
     monkeypatch.setattr(pipeline, "FWHISPER", None)
     pipeline.transcribe_whisper(tmp_path / "second.wav")
 
-    assert calls["count"] == 1
+    # ensure no additional downloads on second run
+    assert calls["count"] == 4
 
 
 def test_transcribe_whisper_download_failure(tmp_path, monkeypatch):
@@ -104,4 +106,3 @@ def test_transcribe_whisper_download_failure(tmp_path, monkeypatch):
         pipeline.transcribe_whisper(tmp_path / "dummy.wav")
 
     assert captured["auto_download"] is None
-

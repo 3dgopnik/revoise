@@ -30,7 +30,7 @@ class QwenEditor:
                     "llama-cpp-python is required for QwenEditor.",
                 )
                 from llama_cpp import Llama
-            path = model_service.ensure_model("qwen2.5", "llm")
+            path = model_service.get_model_path("qwen2.5", "llm")
             logger.info("Loading Qwen model from %s", path)
             self._llm = Llama(model_path=str(path), n_ctx=4096, verbose=False)
 

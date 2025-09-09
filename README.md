@@ -55,6 +55,8 @@ uv run python tools/freeze_reqs.py
 - `llm.auto_download` — автоматически загружать недостающую LLM.
 - `tts_engine` — движок TTS по умолчанию.
 - `preferences.pin_dependencies` — предлагать фиксировать версии в `requirements.txt`.
+- `use_imageio_ffmpeg` — использовать пакет `imageio-ffmpeg` для автоматической установки FFmpeg.
+- `externals.ffmpeg` — путь к бинарю FFmpeg, если хотите использовать свой экземпляр.
 
 ---
 
@@ -177,7 +179,7 @@ uv run pytest -q
 uv sync --all-extras --frozen
 # 3) Запустить UI
 uv run python -m ui.main
-# 4) (Опционально) положить ffmpeg в ./bin или поставить в PATH — при отсутствии скачивается автоматически
+# 4) (Опционально) установить imageio-ffmpeg или положить ffmpeg в ./bin либо PATH — при отсутствии скачивается автоматически
 ```
 
 ## Лицензия

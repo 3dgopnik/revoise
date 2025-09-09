@@ -98,7 +98,7 @@ def ensure_ffmpeg() -> str:
     if cfg_path.exists():
         with open(cfg_path, encoding="utf-8") as fh:
             config = json.load(fh)
-    config["ffmpeg_path"] = str(path)
+    config.setdefault("externals", {})["ffmpeg"] = str(path)
     config["ffmpeg_version"] = version
     with open(cfg_path, "w", encoding="utf-8") as fh:
         json.dump(config, fh, indent=2)

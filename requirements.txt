@@ -7,6 +7,7 @@ pydub==0.25.1
 pyside6==6.9.2
 python-dateutil==2.9.0.post0
 python-ffmpeg==2.0.12
+imageio-ffmpeg==0.5.1  # optional: provides automatic ffmpeg downloads
 rich==14.1.0
 soundfile==0.13.1
 tqdm==4.67.1

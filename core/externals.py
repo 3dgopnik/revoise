@@ -58,17 +58,38 @@ def download_and_extract(url: str, sha256: str, archive: Mapping[str, str], dest
 
 def ensure_ffmpeg(manifest_path: Path | None = None) -> tuple[Path, str]:
     """Ensure ffmpeg exists and return (path, version)."""
-    existing = find_ffmpeg()
-    if existing:
-        path = existing
+    use_imageio = False
+    configured: str | None = None
+    try:
+        with open("config.json", encoding="utf-8") as fh:
+            cfg = json.load(fh)
+        use_imageio = bool(cfg.get("use_imageio_ffmpeg", False))
+        configured = cfg.get("externals", {}).get("ffmpeg")
+    except Exception:
+        pass
+
+    if configured:
+        path = Path(configured)
+        if not path.exists():
+            raise RuntimeError(f"ffmpeg not found at {path}")
+    elif use_imageio:
+        try:
+            import imageio_ffmpeg  # type: ignore
+            path = Path(imageio_ffmpeg.get_ffmpeg_exe())
+        except Exception as exc:  # pragma: no cover - optional dependency
+            raise RuntimeError("imageio-ffmpeg is required for auto ffmpeg download") from exc
     else:
-        manifest_path = manifest_path or Path("tools/externals_manifest.json")
-        with open(manifest_path, encoding="utf-8") as fh:
-            manifest = json.load(fh)
-        system = platform.system().lower()
-        entry = manifest["ffmpeg"]["windows" if system.startswith("win") else "linux"]
-        path = download_and_extract(entry["url"], entry["sha256"], entry.get("archive", {}), Path("bin"))
-        path.chmod(path.stat().st_mode | 0o111)
+        existing = find_ffmpeg()
+        if existing:
+            path = existing
+        else:
+            manifest_path = manifest_path or Path("tools/externals_manifest.json")
+            with open(manifest_path, encoding="utf-8") as fh:
+                manifest = json.load(fh)
+            system = platform.system().lower()
+            entry = manifest["ffmpeg"]["windows" if system.startswith("win") else "linux"]
+            path = download_and_extract(entry["url"], entry["sha256"], entry.get("archive", {}), Path("bin"))
+            path.chmod(path.stat().st_mode | 0o111)
     result = subprocess.run([str(path), "-version"], stdout=subprocess.PIPE, text=True, check=True)
     version_line = result.stdout.splitlines()[0]
     version = version_line.split()[2]

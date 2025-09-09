@@ -1,7 +1,8 @@
+# ruff: noqa: I001
+from pathlib import Path
 import re
 import sys
 import types
-from pathlib import Path
 
 import pytest
 

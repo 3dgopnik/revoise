@@ -30,3 +30,4 @@
 - Integrate `ExternalsDialog` into FFmpeg setup to replace blocking downloads.
 - Regenerate `uv.lock` to capture optional dependencies like `imageio-ffmpeg`.
 - Enable automated import sorting via Ruff to avoid manual fixes.
+- Consider using `uv pip sync` for reproducibility.

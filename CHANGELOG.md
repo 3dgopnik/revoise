@@ -47,3 +47,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Documented installation with `uv pip`, lazy dependency/model downloads,
   launch via `uv run python -m ui.main`, and `tools/freeze_reqs.py`.
 - Clarified dev dependency installation for quality checks.
+- Explain manual Silero model fetch.

@@ -104,6 +104,14 @@ uv pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu1
 ```
 If these packages are missing, the pipeline falls back to BeepTTS with an audible beep.
 
+### Manual Silero model fetch
+Download models for offline use:
+```bash
+python tools/fetch_tts_models.py --engine silero
+```
+The download may fail with SSL certificate errors; ensure your system certificates
+are installed or set `SSL_CERT_FILE` to a valid bundle.
+
 ### TTS dependencies
 Missing Python packages are installed automatically into `.venv` for TTS engines:
 

@@ -34,3 +34,4 @@
 
 - Package `run_ui` scripts as a Python entry point for unified CLI launch.
 - Make Silero TTS retry attempts configurable and add exponential backoff.
+- Document troubleshooting for SSL certificate errors during model downloads.

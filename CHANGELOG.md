@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Configurable LLM block (`llm.family`, `llm.model_path`, `llm.auto_download`).
 - Top-level `tts_engine` and `preferences.pin_dependencies` settings.
 - Manifest-driven FFmpeg downloader storing path and version in config.
+- GUI dialog for external binary downloads with cancelable progress bar.
 
 ### Changed
 - Install TTS dependencies into .venv using shared pkg_installer.

@@ -27,3 +27,4 @@
 - Add advanced cache cleanup options.
 - Add unit tests for error handling in `model_manager.ensure_model`.
 - Expand externals manifest to cover macOS builds and signature verification.
+- Integrate `ExternalsDialog` into FFmpeg setup to replace blocking downloads.

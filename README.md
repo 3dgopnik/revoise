@@ -177,7 +177,7 @@ uv run pytest -q
 uv sync --all-extras --frozen
 # 3) Запустить UI
 uv run python -m ui.main
-# 4) (Опционально) положить ffmpeg в ./bin или поставить в PATH
+# 4) (Опционально) положить ffmpeg в ./bin или поставить в PATH — при отсутствии скачивается автоматически
 ```
 
 ## Лицензия

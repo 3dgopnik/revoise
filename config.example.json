@@ -1,5 +1,6 @@
 {
   "ffmpeg_path": "bin/ffmpeg.exe",
+  "ffmpeg_version": "",
   "auto_download_models": true,
   "llm": {
     "family": "qwen2.5",

@@ -1,8 +1,8 @@
 # ruff: noqa: UP006,UP007,UP022,UP035,UP045
 import inspect
+import json
 import logging
 import re
-import shutil
 import subprocess
 import tempfile
 from itertools import zip_longest
@@ -14,7 +14,7 @@ import soundfile as sf
 from num2words import num2words
 from tqdm import tqdm
 
-from . import model_service
+from . import externals, model_service
 from .model_manager import DownloadError, QMessageBox
 from .pkg_installer import ensure_package
 from .tts_adapters import GTTSTTS, BeepTTS, CoquiXTTS, SileroTTS, YandexTTS
@@ -92,15 +92,17 @@ def run(cmd: List[str]):
 
 
 def ensure_ffmpeg() -> str:
-    exe = shutil.which("ffmpeg")
-    if exe:
-        return exe
-    local_dir = Path(__file__).resolve().parent.parent / "bin"
-    for candidate in ("ffmpeg", "ffmpeg.exe"):
-        path = local_dir / candidate
-        if path.exists():
-            return str(path)
-    raise RuntimeError("ffmpeg не найден. Положите ffmpeg в bin/ или добавьте в PATH.")
+    path, version = externals.ensure_ffmpeg()
+    cfg_path = Path("config.json")
+    config: dict = {}
+    if cfg_path.exists():
+        with open(cfg_path, encoding="utf-8") as fh:
+            config = json.load(fh)
+    config["ffmpeg_path"] = str(path)
+    config["ffmpeg_version"] = version
+    with open(cfg_path, "w", encoding="utf-8") as fh:
+        json.dump(config, fh, indent=2)
+    return str(path)
 
 
 # ===================== Whisper =====================

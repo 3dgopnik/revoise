@@ -1,0 +1,18 @@
+{
+  "ffmpeg": {
+    "linux": {
+      "url": "https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz",
+      "sha256": "abda8d77ce8309141f83ab8edf0596834087c52467f6badf376a6a2a4c87cf67",
+      "archive": {
+        "binary": "ffmpeg-*/ffmpeg"
+      }
+    },
+    "windows": {
+      "url": "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip",
+      "sha256": "647e467caf82b9fa200a562769b5ff4d736aaf725804ed2c64ea9752106fa569",
+      "archive": {
+        "binary": "ffmpeg-*/bin/ffmpeg.exe"
+      }
+    }
+  }
+}

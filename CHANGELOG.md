@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Manifest-driven FFmpeg downloader storing path and version in config.
 - GUI dialog for external binary downloads with cancelable progress bar.
 - Optional `imageio-ffmpeg` integration via `use_imageio_ffmpeg` and `externals.ffmpeg` settings for automatic FFmpeg setup.
+- `run_ui.sh` and `run_ui.bat` helper scripts for launching the UI with uv.
 
 ### Changed
 - Install TTS dependencies into .venv using shared pkg_installer.

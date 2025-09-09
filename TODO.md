@@ -14,7 +14,6 @@
 - Provide offline installation support for `uv` in `ensure_uv`.
 - Add unit tests for `pkg_installer.ensure_package` import retry logic.
 - Add tests for interactive pinning in `pkg_installer.ensure_package`.
-- Provide a cross-platform wrapper script for launching with `uv`.
 - Add tests for QwenEditor model loading and dependency installation.
 - Remove legacy `ensure_tts_dependencies` once all engines use `ensure_package` directly.
 - Integrate GUI dialogs for `pkg_installer.ensure_package` failures.
@@ -31,3 +30,5 @@
 - Regenerate `uv.lock` to capture optional dependencies like `imageio-ffmpeg`.
 - Enable automated import sorting via Ruff to avoid manual fixes.
 - Consider using `uv pip sync` for reproducibility.
+
+- Package `run_ui` scripts as a Python entry point for unified CLI launch.

@@ -4,10 +4,13 @@ import base64
 import json
 import logging
 import os
+import ssl
+import time
 import wave
 from io import BytesIO
 from pathlib import Path
 from typing import Any
+from urllib.error import URLError
 
 import numpy as np
 import requests
@@ -171,23 +174,39 @@ class SileroTTS:
                         "Silero model cache not found. Enable 'Auto-download models' in Settings or prefetch via CLI."
                     )
                 logging.info("Using torch %s for Silero TTS", torch.__version__)
-                try:
-                    model, _ = torch.hub.load(
-                        repo_or_dir="snakers4/silero-models",
-                        model="silero_tts",
-                        language=lang,
-                        speaker=SILERO_LANG_MODELS.get(lang, "v4_ru"),
-                        trust_repo=True,
-                        force_reload=False,
-                    )
-                except Exception as e:
-                    logging.info("torch.hub.load failed: %s", e)
-                    logging.debug("Silero download failed", exc_info=True)
+                attempts = 3
+                for attempt in range(1, attempts + 1):
                     try:
-                        from .pipeline import TTSEngineError  # type: ignore
-                    except Exception:
-                        raise RuntimeError(f"Silero download failed: {e}") from e
-                    raise TTSEngineError(f"Silero download failed: {e}") from e
+                        model, _ = torch.hub.load(
+                            repo_or_dir="snakers4/silero-models",
+                            model="silero_tts",
+                            language=lang,
+                            speaker=SILERO_LANG_MODELS.get(lang, "v4_ru"),
+                            trust_repo=True,
+                            force_reload=False,
+                        )
+                        break
+                    except (URLError, ssl.SSLError) as e:
+                        logging.warning("torch.hub.load failed (%s/%s): %s", attempt, attempts, e)
+                        if attempt == attempts:
+                            msg = "Silero download failed: Run `python tools/fetch_tts_models.py --engine silero` or check internet connection."
+                            logging.debug("Silero download failed", exc_info=True)
+                            try:
+                                from .pipeline import TTSEngineError  # type: ignore
+                            except Exception:
+                                raise RuntimeError(msg) from e
+                            raise TTSEngineError(msg) from e
+                        time.sleep(1)
+                    except Exception as e:
+                        logging.info("torch.hub.load failed: %s", e)
+                        logging.debug("Silero download failed", exc_info=True)
+                        try:
+                            from .pipeline import TTSEngineError  # type: ignore
+                        except Exception:
+                            raise RuntimeError(f"Silero download failed: {e}") from e
+                        raise TTSEngineError(f"Silero download failed: {e}") from e
+                else:  # pragma: no cover - defensive
+                    raise RuntimeError("Silero model load unexpectedly failed without exception")
                 model.to(torch.device("cpu"))
                 SileroTTS._models[lang] = model
                 SileroTTS._speakers[lang] = getattr(model, "speakers", [])

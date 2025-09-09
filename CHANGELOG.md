@@ -37,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Tests mock package installs and model downloads, dropping portable bootstrap assumptions.
+- Sorted standard library imports in `tests/test_coqui_no_qmessagebox.py`.
 
 ### Docs
 - Documented installation with `uv pip`, lazy dependency/model downloads,

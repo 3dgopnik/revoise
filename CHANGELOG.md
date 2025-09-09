@@ -39,6 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Tests mock package installs and model downloads, dropping portable bootstrap assumptions.
 - Sorted standard library imports in `tests/test_coqui_no_qmessagebox.py`.
 - Sorted standard library imports in `tests/test_edited_text.py`.
+- CI now sets up a uv virtual environment before installing dependencies.
 
 ### Docs
 - Documented installation with `uv pip`, lazy dependency/model downloads,

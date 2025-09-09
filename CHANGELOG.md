@@ -45,3 +45,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Docs
 - Documented installation with `uv pip`, lazy dependency/model downloads,
   launch via `uv run python -m ui.main`, and `tools/freeze_reqs.py`.
+- Clarified dev dependency installation for quality checks.

@@ -48,3 +48,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   launch via `uv run python -m ui.main`, and `tools/freeze_reqs.py`.
 - Clarified dev dependency installation for quality checks.
 - Explain manual Silero model fetch.
+- Track VibeVoice TTS integration in TODO.

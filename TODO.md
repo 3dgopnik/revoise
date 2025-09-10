@@ -35,3 +35,12 @@
 - Package `run_ui` scripts as a Python entry point for unified CLI launch.
 - Make Silero TTS retry attempts configurable and add exponential backoff.
 - Document troubleshooting for SSL certificate errors during model downloads.
+- Integrate VibeVoice TTS engine from Microsoft.
+  - Verify compatibility with current architecture.
+  - Prepare uv-based installation in a dedicated virtual environment.
+  - Add VibeVoice as a selectable engine alongside Silero and Kokoro.
+  - Implement multilingual support (Russian and English).
+  - Provide dialogue narration for up to four characters.
+  - Account for high VRAM requirements (Large model ~9.5GB).
+  - Consider using quantized weights to reduce resource usage.
+  - Clarify how built-in watermarks impact usage.

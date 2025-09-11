@@ -46,6 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Silero engine now checks for `torchaudio` alongside `torch`.
 - Configuration now uses `tts.default_engine` instead of top-level `tts_engine`.
 - Silero TTS now uses the local torch hub cache when available and disables autofetch to avoid network access.
+- Silero TTS now verifies cached `.pt` files and loads directly from the local cache, prompting for manual download when missing.
 
 ### Removed
 - Removed legacy bootstrap and launcher scripts.

@@ -46,6 +46,8 @@ def test_silero_download_and_cache(monkeypatch, tmp_path, caplog):
     def online_load(*args, **kwargs):
         calls["online"] += 1
         cache_dir.mkdir(parents=True, exist_ok=True)
+        (cache_dir / "src/silero/model").mkdir(parents=True, exist_ok=True)
+        (cache_dir / "src/silero/model/v4_ru.pt").touch()
         return DummyModel(), "hi"
 
     torch.hub.load = online_load
@@ -58,6 +60,7 @@ def test_silero_download_and_cache(monkeypatch, tmp_path, caplog):
 
     def offline_load(*args, **kwargs):
         calls["offline"] += 1
+        assert kwargs.get("repo_or_dir") == str(cache_dir)
         if not cache_dir.exists():
             raise RuntimeError("missing")
         return DummyModel(), "hi"

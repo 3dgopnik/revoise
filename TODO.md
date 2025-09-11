@@ -33,6 +33,7 @@
 - Add preset editor and saving UI for `.rvpreset` files.
 
 - Allow configuring custom torch hub cache locations for TTS models.
+- Auto-detect required Silero `.pt` files per language instead of hardcoding names.
 
 - Package `run_ui` scripts as a Python entry point for unified CLI launch.
 - Make Silero TTS retry attempts configurable and add exponential backoff.

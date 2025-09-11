@@ -49,3 +49,5 @@
 - Support more than four speakers in script parser.
 - Persist checkpoints per project instead of single file.
 - Add CI coverage for VibeVoice GPU integration test.
+- Add screenshots or diagrams to timeline guide.
+- Automate VRAM usage benchmarking for VibeVoice models.

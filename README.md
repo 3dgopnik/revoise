@@ -117,13 +117,13 @@ If these packages are missing, the pipeline falls back to BeepTTS with an audibl
 Download models for offline use:
 ```bash
 # Silero voice pack
-python tools/fetch_tts_models.py silero --language en
+uv run python tools/fetch_tts_models.py silero --language en
 
 # VibeVoice weights
-python tools/fetch_tts_models.py vibevoice --model 1.5b
+uv run python tools/fetch_tts_models.py vibevoice --model 1.5b
 
 # Models from registry (e.g. Coqui XTTS)
-python tools/fetch_tts_models.py registry --engine coqui_xtts
+uv run python tools/fetch_tts_models.py registry --engine coqui_xtts
 ```
 Downloads use local cache and show progress bars. If a fetch fails with SSL
 errors, ensure your system certificates are installed or set `SSL_CERT_FILE` to a
@@ -148,8 +148,10 @@ Missing Python packages are installed automatically into `.venv` for TTS engines
 - `SILERO_SPEAKER` — имя диктора
 
 ```bash
-uv run python -m ui.main --say "text"
-# появится output/tts_test.wav
+uv run python -m ui.main --say "text"                     # default engine
+TTS_ENGINE=silero   uv run python -m ui.main --say "Hello"
+TTS_ENGINE=vibevoice uv run python -m ui.main --say "Hello"
+# output: output/tts_test.wav
 ```
 
 ---
@@ -217,10 +219,15 @@ uv run pytest -q
 ```bash
 # 1) Установить uv и Python 3.10–3.12
 # 2) Установить зависимости
-uv sync --all-extras --frozen
-# 3) Запустить UI
+uv pip install -r requirements.txt
+# 3) Скачать модель TTS (пример: VibeVoice 1.5B)
+uv run python tools/fetch_tts_models.py vibevoice --model 1.5b
+# 4) Запустить UI
 uv run python -m ui.main
-# 4) (Опционально) установить imageio-ffmpeg или положить ffmpeg в ./bin либо PATH — при отсутствии скачивается автоматически
+# 5) Переключить движок из CLI
+TTS_ENGINE=silero   uv run python -m ui.main --say "Hello"
+TTS_ENGINE=vibevoice uv run python -m ui.main --say "Hello"
+# 6) (Опционально) imageio-ffmpeg или свой ffmpeg в ./bin либо PATH
 ```
 
 ## Лицензия

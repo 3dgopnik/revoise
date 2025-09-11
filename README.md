@@ -130,7 +130,8 @@ uv run python tools/fetch_tts_models.py registry --engine coqui_xtts
 ```
 Downloads use local cache and show progress bars. If a fetch fails with SSL
 errors, ensure your system certificates are installed or set `SSL_CERT_FILE` to a
-valid bundle.
+valid bundle. Behind a proxy, configure `HTTPS_PROXY`. As a last resort, set
+`NO_SSL_VERIFY=1` to skip certificate verification.
 
 ### Offline use
 Run fully offline by prefetching models and disabling automatic downloads:

@@ -170,6 +170,8 @@ class SileroTTS:
             torch_home.mkdir(parents=True, exist_ok=True)
             torch.hub.set_dir(str(torch_home))
             hub_dir = Path(torch.hub.get_dir())
+            if os.environ.get("NO_SSL_VERIFY") == "1":
+                ssl._create_default_https_context = ssl._create_unverified_context
             cache_dir = hub_dir / "snakers4_silero-models_master"
             pt_name = SILERO_PT_FILES.get(lang)
             model_path = cache_dir / "src" / "silero" / "model" / pt_name if pt_name else None
@@ -199,7 +201,10 @@ class SileroTTS:
                     except (URLError, ssl.SSLError) as e:
                         logging.warning("torch.hub.load failed (%s/%s): %s", attempt, attempts, e)
                         if attempt == attempts:
-                            msg = "Silero download failed: Run `python tools/fetch_tts_models.py --engine silero` or check internet connection."
+                            msg = (
+                                "Silero download failed: Run `python tools/fetch_tts_models.py --engine silero` or check internet connection. "
+                                "Check SSL_CERT_FILE, HTTPS_PROXY, or set NO_SSL_VERIFY=1 to disable SSL verification."
+                            )
                             logging.debug("Silero download failed", exc_info=True)
                             try:
                                 from .pipeline import TTSEngineError  # type: ignore

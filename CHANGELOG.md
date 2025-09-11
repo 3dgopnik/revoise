@@ -32,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Optional GPU offload with peak VRAM/time logging.
 - Tests for dialogue parsing, Russian text segmentation, and TTS engine registry with GPU VibeVoice integration test.
 - VibeVoice engine selectable in UI with dynamic speaker listing and missing binary warning.
+- Support for `NO_SSL_VERIFY=1` to disable SSL certificate verification during Silero downloads.
 
 ### Changed
 - Install TTS dependencies into .venv using shared pkg_installer.
@@ -47,6 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Configuration now uses `tts.default_engine` instead of top-level `tts_engine`.
 - Silero TTS now uses the local torch hub cache when available and disables autofetch to avoid network access.
 - Silero TTS now verifies cached `.pt` files and loads directly from the local cache, prompting for manual download when missing.
+- Silero download errors now reference `SSL_CERT_FILE`, `HTTPS_PROXY`, and `NO_SSL_VERIFY` for troubleshooting.
 
 ### Removed
 - Removed legacy bootstrap and launcher scripts.
@@ -73,3 +75,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Mention script parser, autosave and offload options in README.
 - Added VibeVoice and timeline guides; expanded README with uv quick start, model fetch commands, and engine toggle examples.
 - Document VibeVoice binary and model installation.
+- Documented troubleshooting with `SSL_CERT_FILE`, `HTTPS_PROXY`, and `NO_SSL_VERIFY`.

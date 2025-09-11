@@ -30,6 +30,23 @@ run_ui.bat    # Windows
 
 Оба выполняют `uv run python -m ui.main`.
 
+### Web timeline (SPA)
+
+- Запустить FastAPI сервер:
+  ```bash
+  uv run python -m server.main
+  ```
+- Открыть [http://localhost:8000](http://localhost:8000) в браузере, либо использовать нативную оболочку:
+  ```bash
+  uv run python -m ui.spa_shell
+  ```
+  Оболочка использует `QWebEngineView` и подключается к серверу автоматически.
+
+Сервер предоставляет WebSocket эндпоинты:
+
+- `/ws/progress` — текстовые обновления прогресса задач.
+- `/ws/preview` — бинарный буфер для быстрой предпрослушки.
+
 ## Сборка окружения (uv)
 - Требуется Python 3.10–3.12 и [uv](https://docs.astral.sh/uv/).
 - Установка зависимостей:

@@ -46,3 +46,5 @@
   - Clarify how built-in watermarks impact usage.
 - Port remaining TTS engines to the new `TTSEngineBase` architecture.
 - Extend Silero registry to cover more languages and voices.
+- Streamline React build with bundler and component tests.
+- Implement real audio playback and waveform rendering instead of placeholders.

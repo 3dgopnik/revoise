@@ -24,6 +24,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Structured `tts` configuration block with per-engine settings and dataclass loader.
 - VibeVoice model weights and Silero locale packs registered in model registry.
 - `fetch_tts_models.py` subcommands for VibeVoice and Silero with progress bars and caching.
+- FastAPI backend serving a React-based SPA timeline.
+- WebSocket endpoints for progress updates and preview buffering.
+- PySide6 shell embedding the web SPA via a QWebEngine view.
+- Basic timeline with voice, music, SFX and marker tracks, zoom, snapping, region selection and draggable segments.
+- Segment inspector panel with rudimentary waveform rendering and speaker lanes.
 
 ### Changed
 - Install TTS dependencies into .venv using shared pkg_installer.

@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Revoice Timeline</title>
+    <style>
+      body { margin: 0; font-family: sans-serif; }
+      #timeline { height: 300px; border-top: 1px solid #ccc; border-bottom: 1px solid #ccc; position: relative; overflow: hidden; }
+      .track { height: 60px; border-bottom: 1px solid #eee; position: relative; }
+      .track:last-child { border-bottom: none; }
+      .segment { position: absolute; height: 40px; background: rgba(0, 123, 255, 0.5); border: 1px solid #007bff; cursor: grab; top: 10px; }
+      .selection { position: absolute; top: 0; bottom: 0; background: rgba(0, 255, 0, 0.2); pointer-events: none; }
+      #inspector { position: fixed; right: 0; top: 0; bottom: 0; width: 200px; border-left: 1px solid #ccc; padding: 10px; background: #fafafa; }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script type="module" src="/static/app.js"></script>
+  </body>
+</html>

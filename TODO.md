@@ -38,6 +38,7 @@
 - Package `run_ui` scripts as a Python entry point for unified CLI launch.
 - Make Silero TTS retry attempts configurable and add exponential backoff.
 - Document troubleshooting for SSL certificate errors during model downloads.
+- Provide a UI toggle for `NO_SSL_VERIFY` instead of relying on an environment variable.
 - Integrate VibeVoice TTS engine from Microsoft.
   - Verify compatibility with current architecture.
   - Prepare uv-based installation in a dedicated virtual environment.

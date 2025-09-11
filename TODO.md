@@ -8,7 +8,6 @@
 - Add unit tests for torch installation fallback logic in `ensure_tts_dependencies`.
 - Add unit tests for omegaconf retry and import spec checks in `ensure_tts_dependencies`.
 - Provide a UI warning banner when GPU acceleration is unavailable.
-- Add tests for skipping Silero when torch is missing in `fetch_tts_models`.
 - Add unit tests for `ensure_uv` helper.
 - Provide clearer feedback when `uv` installation fails in `ensure_uv`.
 - Provide offline installation support for `uv` in `ensure_uv`.
@@ -46,3 +45,4 @@
   - Consider using quantized weights to reduce resource usage.
   - Clarify how built-in watermarks impact usage.
 - Port remaining TTS engines to the new `TTSEngineBase` architecture.
+- Extend Silero registry to cover more languages and voices.

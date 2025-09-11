@@ -58,3 +58,4 @@
 - Add UI tests for VibeVoice speaker listing and binary warning.
 - Document offline STT model download steps.
 - Provide helper script to unpack Silero archive into torch hub cache.
+- Add UI controls for background music in the Settings dialog.

@@ -94,17 +94,17 @@ class MainWindow(QtWidgets.QMainWindow):
         self.tts_engine = "silero"
         self.voice_id = "baya"
         self.language = "ru"
+        self.whisper_model = "base"
 
         self.speed_pct = 100
         self.min_gap_ms = 350
-        self.speed_jitter = 0.03
         self.read_numbers = False
         self.spell_latin = False
 
         self.preset_rate: float | None = None
         self.preset_pitch: float | None = None
         self.preset_style: str | None = None
-        self.preset_name: str | None = None
+        self.preset_name: str = "None"
         self.presets: dict[str, dict] = {}
 
         self.music_path = ""
@@ -142,7 +142,17 @@ class MainWindow(QtWidgets.QMainWindow):
             self.chatgpt_key,
             self.allow_beep_fallback,
             self.auto_download_models,
+            self.out_dir,
+            self.language,
+            self.preset_name,
+            self.whisper_model,
+            self.speed_pct,
+            self.min_gap_ms,
+            self.read_numbers,
+            self.spell_latin,
         ) = load_config()
+        self.presets = load_presets(BASE_DIR / "presets")
+        self._on_preset_change(self.preset_name)
 
         log.info("UI start. Version=%s", APP_VER)
         self._build_ui()
@@ -189,7 +199,6 @@ class MainWindow(QtWidgets.QMainWindow):
         form = QtWidgets.QFormLayout()
         layout.addLayout(form)
 
-        # Видео и папка вывода
         self.inp_video = QtWidgets.QLineEdit()
         btn_vid = QtWidgets.QPushButton("Обзор…")
         btn_vid.clicked.connect(self.pick_video)
@@ -198,118 +207,26 @@ class MainWindow(QtWidgets.QMainWindow):
         h.addWidget(btn_vid)
         form.addRow("Видео (MP4):", h)
 
-        self.inp_out = QtWidgets.QLineEdit(self.out_dir)
-        btn_out = QtWidgets.QPushButton("Обзор…")
-        btn_out.clicked.connect(self.pick_outdir)
-        h2 = QtWidgets.QHBoxLayout()
-        h2.addWidget(self.inp_out)
-        h2.addWidget(btn_out)
-        form.addRow("Папка вывода:", h2)
-
-        # Блок TTS и Whisper
-        grid = QtWidgets.QGridLayout()
-        row = 0
-
         self.cmb_engine = QtWidgets.QComboBox()
-        # Include gTTS and VibeVoice among available engines
         self.cmb_engine.addItems(["silero", "yandex", "coqui_xtts", "gtts", "vibevoice"])
         self.cmb_engine.currentTextChanged.connect(self._on_engine_change)
-        grid.addWidget(QtWidgets.QLabel("Движок TTS:"), row, 0)
-        grid.addWidget(self.cmb_engine, row, 1)
+        form.addRow("Движок TTS:", self.cmb_engine)
 
-        self.lbl_voice = QtWidgets.QLabel("Голос:")
         self.cmb_voice = QtWidgets.QComboBox()
-        grid.addWidget(self.lbl_voice, row, 2)
-        grid.addWidget(self.cmb_voice, row, 3)
+        form.addRow("Голос:", self.cmb_voice)
 
-        row += 1
-        self.lbl_language = QtWidgets.QLabel("Язык:")
-        self.cmb_language = QtWidgets.QComboBox()
-        self.cmb_language.addItems(sorted(SILERO_VOICES))
-        self.cmb_language.setCurrentText(self.language)
-        self.cmb_language.currentTextChanged.connect(self._on_language_change)
-        grid.addWidget(self.lbl_language, row, 0)
-        grid.addWidget(self.cmb_language, row, 1)
-
-        row += 1
-        self.lbl_preset = QtWidgets.QLabel("Preset:")
-        self.cmb_preset = QtWidgets.QComboBox()
-        self.presets = load_presets(BASE_DIR / "presets")
-        self.cmb_preset.addItem("None")
-        for name in sorted(self.presets):
-            self.cmb_preset.addItem(name)
-        self.cmb_preset.currentTextChanged.connect(self._on_preset_change)
-        grid.addWidget(self.lbl_preset, row, 0)
-        grid.addWidget(self.cmb_preset, row, 1)
-
-        row += 1
-        self.cmb_whisper = QtWidgets.QComboBox()
-        self._populate_whisper_models()
-        grid.addWidget(QtWidgets.QLabel("Whisper:"), row, 0)
-        grid.addWidget(self.cmb_whisper, row, 1)
-        self.ed_speed = QtWidgets.QLineEdit(str(self.speed_pct))
-        grid.addWidget(QtWidgets.QLabel("Скорость, %:"), row, 2)
-        grid.addWidget(self.ed_speed, row, 3)
-
-        row += 1
-        self.ed_mingap = QtWidgets.QLineEdit(str(self.min_gap_ms))
-        grid.addWidget(QtWidgets.QLabel("Мин. пауза, мс:"), row, 0)
-        grid.addWidget(self.ed_mingap, row, 1)
-        self.ed_jitter = QtWidgets.QLineEdit(str(self.speed_jitter))
-        grid.addWidget(QtWidgets.QLabel("Speed jitter:"), row, 2)
-        grid.addWidget(self.ed_jitter, row, 3)
-
-        row += 1
-        self.chk_numbers = QtWidgets.QCheckBox("Числа словами")
-        self.chk_numbers.setChecked(self.read_numbers)
-        self.chk_latin = QtWidgets.QCheckBox("Латиница по буквам")
-        self.chk_latin.setChecked(self.spell_latin)
-        grid.addWidget(self.chk_numbers, row, 0)
-        grid.addWidget(self.chk_latin, row, 1)
-
-        self._on_preset_change(self.cmb_preset.currentText())
-        layout.addLayout(grid)
-
-        # Музыка
-        group = QtWidgets.QGroupBox("Музыка (опционально)")
-        g = QtWidgets.QGridLayout(group)
-        self.ed_music = QtWidgets.QLineEdit()
-        btn_ms = QtWidgets.QPushButton("Выбрать…")
-        btn_ms.clicked.connect(self.pick_music)
-        g.addWidget(QtWidgets.QLabel("Файл:"), 0, 0)
-        g.addWidget(self.ed_music, 0, 1)
-        g.addWidget(btn_ms, 0, 2)
-        self.ed_music_db = QtWidgets.QLineEdit(str(self.music_db))
-        self.ed_duck_ratio = QtWidgets.QLineEdit(str(self.duck_ratio))
-        self.ed_duck_thresh = QtWidgets.QLineEdit(str(self.duck_thresh))
-        g.addWidget(QtWidgets.QLabel("Громкость, dB:"), 1, 0)
-        g.addWidget(self.ed_music_db, 1, 1)
-        g.addWidget(QtWidgets.QLabel("Duck ratio:"), 1, 2)
-        g.addWidget(self.ed_duck_ratio, 1, 3)
-        g.addWidget(QtWidgets.QLabel("Thresh:"), 1, 4)
-        g.addWidget(self.ed_duck_thresh, 1, 5)
-        layout.addWidget(group)
-
-        # Кнопки
         hb = QtWidgets.QHBoxLayout()
         self.btn_rec = QtWidgets.QPushButton("1) Распознать")
         self.btn_edit = QtWidgets.QPushButton("2) Править (txt)")
         self.btn_run = QtWidgets.QPushButton("3) Озвучить")
-        self.btn_reset = QtWidgets.QPushButton("Сброс")
-        self.btn_open = QtWidgets.QPushButton("Открыть выход…")
-        self.btn_help = QtWidgets.QPushButton("Помощь")
         self.btn_settings = QtWidgets.QPushButton("Настройки")
         hb.addWidget(self.btn_rec)
         hb.addWidget(self.btn_edit)
         hb.addWidget(self.btn_run)
         hb.addStretch(1)
-        hb.addWidget(self.btn_help)
         hb.addWidget(self.btn_settings)
-        hb.addWidget(self.btn_reset)
-        hb.addWidget(self.btn_open)
         layout.addLayout(hb)
 
-        # Segments editor
         splitter = QtWidgets.QSplitter(self)
         layout.addWidget(splitter)
 
@@ -350,63 +267,30 @@ class MainWindow(QtWidgets.QMainWindow):
         self.btn_rec.clicked.connect(self.recognize_only)
         self.btn_edit.clicked.connect(self.open_editor)
         self.btn_run.clicked.connect(self.start_render)
-        self.btn_reset.clicked.connect(self.reset_state)
-        self.btn_open.clicked.connect(self.open_outdir)
-        self.btn_help.clicked.connect(self.show_help)
         self.btn_settings.clicked.connect(self.open_settings)
 
         self._on_engine_change(self.cmb_engine.currentText())
         self.log_print(f"Лог пишется в: {LOG_FILE}")
 
     # --- Логика переключения движков и загрузки голосов ---
-    def _populate_whisper_models(self) -> None:
-        models = list_models("stt")
-        self.cmb_whisper.clear()
-        for name, info in models.items():
-            size = info.get("size_mb")
-            desc = info.get("description", "")
-            label = f"{name} ({size} MB - {desc})" if size else f"{name} - {desc}"
-            self.cmb_whisper.addItem(label, userData=name)
-
     def _on_engine_change(self, engine: str):
         self._refresh_voices(engine)
 
     def _refresh_voices(self, engine: str):
         self.cmb_voice.blockSignals(True)
         self.cmb_voice.clear()
-        self.lbl_voice.show()
-        self.cmb_voice.show()
+        self.cmb_voice.setVisible(True)
         if engine == "silero":
-            self.lbl_voice.setText("Silero голос:")
             self.cmb_voice.setEditable(False)
-            self.lbl_language.show()
-            self.cmb_language.show()
-            self.lbl_preset.show()
-            self.cmb_preset.show()
-            self._on_language_change(self.cmb_language.currentText())
+            voices = SILERO_VOICES.get(self.language, [])
+            self.cmb_voice.addItems(voices)
         elif engine == "yandex":
-            self.lbl_voice.setText("Yandex голос:")
             self.cmb_voice.setEditable(False)
             self.cmb_voice.addItems(YANDEX_VOICES)
-            self.lbl_language.hide()
-            self.cmb_language.hide()
-            self.lbl_preset.hide()
-            self.cmb_preset.hide()
         elif engine == "coqui_xtts":
-            self.lbl_voice.setText("Coqui speaker:")
-            # Allow manual entry of speaker reference folder
             self.cmb_voice.setEditable(True)
-            self.lbl_language.hide()
-            self.cmb_language.hide()
-            self.lbl_preset.hide()
-            self.cmb_preset.hide()
         elif engine == "vibevoice":
-            self.lbl_voice.setText("VibeVoice voice:")
             self.cmb_voice.setEditable(False)
-            self.lbl_language.hide()
-            self.cmb_language.hide()
-            self.lbl_preset.hide()
-            self.cmb_preset.hide()
             try:
                 result = subprocess.run(
                     ["vibe-voice", "--list-speakers"],
@@ -424,29 +308,18 @@ class MainWindow(QtWidgets.QMainWindow):
                 voices = [line.strip() for line in result.stdout.splitlines() if line.strip()]
                 self.cmb_voice.addItems(voices)
         elif engine == "gtts":
-            # gTTS has no preset voices, so hide the selector
-            self.lbl_voice.hide()
-            self.cmb_voice.hide()
-            self.lbl_language.hide()
-            self.cmb_language.hide()
-            self.lbl_preset.hide()
-            self.cmb_preset.hide()
+            # gTTS has no preset voices
+            self.cmb_voice.setVisible(False)
         else:
-            self.lbl_voice.setText("Голос:")
             self.cmb_voice.setEditable(True)
-            self.lbl_language.hide()
-            self.cmb_language.hide()
-            self.lbl_preset.hide()
-            self.cmb_preset.hide()
         self.cmb_voice.blockSignals(False)
 
-    def _on_language_change(self, lang: str):
-        self.language = lang
-        voices = SILERO_VOICES.get(lang, [])
-        self.cmb_voice.blockSignals(True)
-        self.cmb_voice.clear()
-        self.cmb_voice.addItems(voices)
-        self.cmb_voice.blockSignals(False)
+    def _on_preset_change(self, name: str) -> None:
+        data = self.presets.get(name, {})
+        self.preset_rate = data.get("rate")
+        self.preset_pitch = data.get("pitch")
+        self.preset_style = data.get("style")
+        self.preset_name = name
 
     def _on_preset_change(self, name: str) -> None:
         data = self.presets.get(name, {})
@@ -473,28 +346,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self.reset_state()
             self.log_print(f"Выбрано видео: {p}")
 
-    def pick_outdir(self):
-        p = QtWidgets.QFileDialog.getExistingDirectory(
-            self, "Папка вывода", self.inp_out.text() or str(OUTPUT_DIR)
-        )
-        if p:
-            self.out_dir = p
-            self.inp_out.setText(p)
-            self.log_print(f"Папка вывода: {p}")
-
-    def pick_music(self):
-        p, _ = QtWidgets.QFileDialog.getOpenFileName(
-            self, "Файл музыки", "", "Audio (*.mp3 *.wav *.flac *.m4a *.ogg)"
-        )
-        if p:
-            self.music_path = p
-            self.ed_music.setText(p)
-            self.log_print(f"Музыка: {p}")
-
-    def open_outdir(self):
-        p = Path(self.inp_out.text() or ".").resolve()
-        if p.exists():
-            os.startfile(str(p))
 
     def reset_state(self):
         self.last_phrases = []
@@ -504,13 +355,25 @@ class MainWindow(QtWidgets.QMainWindow):
 
     # ---------- Действия ----------
     def open_settings(self):
-        """Open dialog to configure API keys and persist them."""
+        """Open dialog to configure advanced options and persist them."""
+        models = list_models("stt")
         dlg = SettingsDialog(
             self,
-            self.yandex_key,
-            self.chatgpt_key,
-            self.allow_beep_fallback,
-            self.auto_download_models,
+            yandex_key=self.yandex_key,
+            chatgpt_key=self.chatgpt_key,
+            allow_beep_fallback=self.allow_beep_fallback,
+            auto_download_models=self.auto_download_models,
+            out_dir=self.out_dir,
+            language=self.language,
+            languages=sorted(SILERO_VOICES.keys()),
+            preset=self.preset_name,
+            presets=sorted(self.presets.keys()),
+            whisper_model=self.whisper_model,
+            whisper_models=list(models.keys()),
+            speed_pct=self.speed_pct,
+            min_gap_ms=self.min_gap_ms,
+            read_numbers=self.read_numbers,
+            spell_latin=self.spell_latin,
         )
         if dlg.exec() == QtWidgets.QDialog.Accepted:
             (
@@ -518,13 +381,31 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.chatgpt_key,
                 self.allow_beep_fallback,
                 self.auto_download_models,
-            ) = dlg.get_keys()
+                self.out_dir,
+                self.language,
+                self.preset_name,
+                self.whisper_model,
+                self.speed_pct,
+                self.min_gap_ms,
+                self.read_numbers,
+                self.spell_latin,
+            ) = dlg.get_settings()
+            self._on_preset_change(self.preset_name)
             save_config(
                 self.yandex_key,
                 self.chatgpt_key,
                 self.allow_beep_fallback,
                 self.auto_download_models,
+                self.out_dir,
+                self.language,
+                self.preset_name,
+                self.whisper_model,
+                self.speed_pct,
+                self.min_gap_ms,
+                self.read_numbers,
+                self.spell_latin,
             )
+            self._refresh_voices(self.cmb_engine.currentText())
 
     def show_help(self):
         """Show instructions for connecting Yandex API."""
@@ -579,7 +460,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 log.debug("Extract WAV cmd: %s", " ".join(map(str, cmd)))
                 subprocess.run(cmd, check=True, capture_output=True, text=True)
                 segs = transcribe_whisper(
-                    wav, language="ru", model_size=self.cmb_whisper.currentData(), device="cuda"
+                    wav, language=self.language, model_size=self.whisper_model, device="cuda"
                 )
                 self.last_phrases = merge_into_phrases(segs)
             txt = " ".join(t for _, _, t in self.last_phrases)
@@ -639,38 +520,35 @@ class MainWindow(QtWidgets.QMainWindow):
                 return
             engine = self.cmb_engine.currentText()
             voice = self.cmb_voice.currentText()
-            language = self.cmb_language.currentText()
             self.log_print(f"Озвучиваю… (engine={engine}, voice={voice})")
-            # Forward engine choice (incl. coqui_xtts) to the synthesis pipeline
             out, fb_reason = revoice_video(
                 self.inp_video.text(),
-                self.inp_out.text(),
+                self.out_dir,
                 speaker=voice,
-                whisper_size=self.cmb_whisper.currentData(),
+                whisper_size=self.whisper_model,
                 device="cuda",
                 sr=48000,
-                min_gap_ms=int(self.ed_mingap.text() or "350"),
-                speed_pct=max(50, min(200, int(self.ed_speed.text() or "100"))),
+                min_gap_ms=self.min_gap_ms,
+                speed_pct=self.speed_pct,
                 edited_text=self.edited_text,
                 phrases_cache=self.last_phrases if self.last_phrases else None,
                 use_markers=self.use_markers,
-                read_numbers=self.chk_numbers.isChecked(),
-                spell_latin=self.chk_latin.isChecked(),
-                music_path=(self.ed_music.text().strip() or None),
-                music_db=float(self.ed_music_db.text() or "-18"),
-                duck_ratio=float(self.ed_duck_ratio.text() or "8.0"),
-                duck_thresh=float(self.ed_duck_thresh.text() or "0.05"),
+                read_numbers=self.read_numbers,
+                spell_latin=self.spell_latin,
+                music_path=(self.music_path or None),
+                music_db=self.music_db,
+                duck_ratio=self.duck_ratio,
+                duck_thresh=self.duck_thresh,
                 tts_engine=engine,
-                language=language,
+                language=self.language,
                 yandex_key=self.yandex_key,
                 yandex_voice=voice,
-                speed_jitter=float(self.ed_jitter.text() or "0.03"),
                 allow_beep_fallback=self.allow_beep_fallback,
                 auto_download_models=self.auto_download_models,
                 tts_rate=self.preset_rate,
                 tts_pitch=self.preset_pitch,
                 tts_style=self.preset_style,
-                tts_preset=self.preset_name,
+                tts_preset=self.preset_name if self.preset_name != "None" else None,
             )
             if fb_reason:
                 warn = f"Used beep fallback due to: {fb_reason}"

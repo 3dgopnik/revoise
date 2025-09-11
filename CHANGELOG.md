@@ -38,6 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Install TTS dependencies into .venv using shared pkg_installer.
 - Lazily import `llama-cpp` in `QwenEditor` and ensure required model files.
 - Replace `ensure_tts_dependencies` calls with direct `ensure_package` usage and lazy heavy imports.
+- Advanced TTS options moved to a dedicated Settings dialog and main UI simplified.
 - Model loading now routes through the new `ensure_model` helper.
 - Trim default `project.dependencies` to essential packages only.
 - Rename project package to `revoice`.
@@ -55,6 +56,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Removed `faster-whisper` and `omegaconf` from core dependencies.
 - Removed portable mode.
 - Removed lazy install support.
+- Deprecated `speed_jitter` parameter and related UI controls.
 
 ### Fixed
 - Tests mock package installs and model downloads, dropping portable bootstrap assumptions.
@@ -77,3 +79,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Document VibeVoice binary and model installation.
 - Documented troubleshooting with `SSL_CERT_FILE`, `HTTPS_PROXY`, and `NO_SSL_VERIFY`.
 - Explained manual Silero archive placement and proxy variables for corporate networks.
+- Added UI guide and described new Settings dialog.

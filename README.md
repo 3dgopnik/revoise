@@ -127,7 +127,7 @@ Missing Python packages are installed automatically into `.venv` for TTS engines
 
 ### TTS CLI
 Переменные окружения:
-- `TTS_ENGINE` — движок (по умолчанию `silero`)
+- `TTS_ENGINE` — движок (по умолчанию `silero`; доступны `vibevoice`, `beep`)
 - `SILERO_SPEAKER` — имя диктора
 
 ```bash

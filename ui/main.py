@@ -1,18 +1,22 @@
-# -*- coding: utf-8 -*-
 # PySide6 UI — Revoice alpha3
 # Voice auto-detection removed
 # Logs: BASE_DIR / logs / log_version_alpha3.txt
 
-from PySide6 import QtWidgets, QtGui, QtCore
-from PySide6.QtWidgets import QFileDialog, QMessageBox, QTableWidgetItem
-from pathlib import Path
 import argparse
 import json
-import os, subprocess, tempfile, traceback, logging, sys
-from datetime import datetime
+import logging
+import os
+import subprocess
+import sys
+import tempfile
+import traceback
+from pathlib import Path
 
-from .settings import SettingsDialog
+from PySide6 import QtCore, QtGui, QtWidgets
+from PySide6.QtWidgets import QFileDialog, QMessageBox, QTableWidgetItem
+
 from .config import load_config, save_config
+from .settings import SettingsDialog
 
 # Version and log file
 APP_VER = "alpha3"
@@ -45,15 +49,15 @@ def handle_exception(exc_type, exc, tb):
 sys.excepthook = handle_exception
 
 # Импорт пайплайна
-from core.pipeline import (
-    revoice_video,
-    phrases_to_marked_text,
-    transcribe_whisper,
-    merge_into_phrases,
+from core.model_manager import list_models  # noqa: E402
+from core.pipeline import (  # noqa: E402
     ensure_ffmpeg,
+    merge_into_phrases,
+    phrases_to_marked_text,
+    revoice_video,
+    transcribe_whisper,
 )
-from core.model_manager import list_models
-from core.tts_adapters import SILERO_VOICES
+from core.tts_adapters import SILERO_VOICES  # noqa: E402
 
 try:
     from core.qwen_editor import QwenEditor  # type: ignore
@@ -496,9 +500,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     str(wav),
                 ]
                 log.debug("Extract WAV cmd: %s", " ".join(map(str, cmd)))
-                subprocess.run(
-                    cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
-                )
+                subprocess.run(cmd, check=True, capture_output=True, text=True)
                 segs = transcribe_whisper(
                     wav, language="ru", model_size=self.cmb_whisper.currentData(), device="cuda"
                 )
@@ -706,20 +708,26 @@ def main():
     args = parser.parse_args()
 
     if args.say:
-        from core.tts_registry import get_engine, registry
+        import numpy as np
+        import soundfile as sf
         import torch
 
-        engine_fn = get_engine()
-        engine_name = next((k for k, v in registry.items() if v is engine_fn), "unknown")
+        from core.tts.registry import get_engine, registry
+
+        engine = get_engine()
+        engine_name = next((k for k, v in registry.items() if isinstance(engine, v)), "unknown")
         speaker = os.getenv("SILERO_SPEAKER") or "aidar"
         model_path = ""
         if engine_name == "silero":
             model_path = str(Path(torch.hub.get_dir()) / "snakers4_silero-models_master")
-        wav = engine_fn(args.say, speaker, 48000)
+        wav = engine.synthesize(args.say, speaker, 48000)
         out_path = OUTPUT_DIR / "tts_test.wav"
         out_path.parent.mkdir(exist_ok=True)
-        with open(out_path, "wb") as fh:
-            fh.write(wav)
+        if isinstance(wav, np.ndarray):
+            sf.write(out_path, wav, 48000)
+        else:
+            with open(out_path, "wb") as fh:
+                fh.write(wav)
         print(
             f"TTS: engine={engine_name} model={model_path} speaker={speaker} -> {out_path.relative_to(BASE_DIR)}"
         )

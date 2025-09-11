@@ -44,3 +44,4 @@
   - Account for high VRAM requirements (Large model ~9.5GB).
   - Consider using quantized weights to reduce resource usage.
   - Clarify how built-in watermarks impact usage.
+- Port remaining TTS engines to the new `TTSEngineBase` architecture.

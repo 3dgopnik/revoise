@@ -1,5 +1,4 @@
 # ruff: noqa: UP006,UP007,UP022,UP035,UP045
-import inspect
 import json
 import logging
 import re
@@ -17,8 +16,8 @@ from tqdm import tqdm
 from . import externals, model_service
 from .model_manager import DownloadError, QMessageBox
 from .pkg_installer import ensure_package
+from .tts.registry import get_engine
 from .tts_adapters import GTTSTTS, BeepTTS, CoquiXTTS, SileroTTS, YandexTTS
-from .tts_registry import get_engine
 
 logger = logging.getLogger(__name__)
 
@@ -365,24 +364,9 @@ def _synth_chunk_single(
                 voice = yandex_voice or speaker
                 wav = YandexTTS().tts(text, voice, sr=sr, key=yandex_key)
                 model_sr = sr
-            elif engine_name == "silero":
-                wav = SileroTTS(
-                    auto_download=auto_download_models,
-                    language=language,
-                ).tts(text, speaker, sr=sr)
-                model_sr = sr
-            elif engine_name == "beep":
-                wav = BeepTTS().tts(text, speaker, sr=sr)
-                model_sr = sr
             else:
-                engine_fn = get_engine(engine_name)
-                sig = inspect.signature(engine_fn)
-                kwargs = {}
-                if "sr" in sig.parameters:
-                    kwargs["sr"] = sr
-                elif "sample_rate" in sig.parameters:
-                    kwargs["sample_rate"] = sr
-                wav = engine_fn(text, speaker, **kwargs)
+                engine = get_engine(engine_name)
+                wav = engine.synthesize(text, speaker, sr)
                 model_sr = sr
         except (
             TypeError,

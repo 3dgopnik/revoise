@@ -5,7 +5,8 @@ import numpy as np
 import pytest
 
 from core import pipeline
-from core.tts_registry import registry
+from core.tts.engines import TTSEngineBase
+from core.tts.registry import registry
 
 
 def _copy_run(cmd):
@@ -15,15 +16,30 @@ def _copy_run(cmd):
 def test_signature_detection(tmp_path, monkeypatch):
     calls = {}
 
-    def dummy(text, speaker, sample_rate):
-        calls['sr'] = sample_rate
-        return np.zeros(10, dtype=np.float32)
+    class DummyEngine(TTSEngineBase):
+        def load(self) -> None:  # noqa: D401 - simple
+            pass
+
+        def synthesize(self, text, speaker, sample_rate):
+            calls['sr'] = sample_rate
+            return np.zeros(10, dtype=np.float32)
+
+        def unload(self) -> None:  # noqa: D401 - simple
+            pass
+
+        @classmethod
+        def supports_language(cls, lang: str) -> bool:  # noqa: D401 - simple
+            return True
+
+        @classmethod
+        def is_available(cls) -> bool:  # noqa: D401 - simple
+            return True
 
     monkeypatch.setattr(pipeline, 'run', _copy_run)
     monkeypatch.setattr(
         pipeline, 'check_engine_available', lambda name, auto_download_models=True: None
     )
-    monkeypatch.setitem(registry, 'dummy', dummy)
+    monkeypatch.setitem(registry, 'dummy', DummyEngine)
 
     wav, reason = pipeline.synth_chunk(
         ffmpeg='ff',

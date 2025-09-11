@@ -114,6 +114,8 @@ uv pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu1
 ```
 If these packages are missing, the pipeline falls back to BeepTTS with an audible beep.
 
+If `models/torch_hub/snakers4_silero-models_master` exists, Silero loads from the cache and sets `TORCH_HUB_DISABLE_AUTOFETCH=1` to prevent network access.
+
 ### Manual TTS model fetch
 Download models for offline use:
 ```bash

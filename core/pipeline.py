@@ -4,6 +4,7 @@ import json
 import logging
 import random
 import re
+import shutil
 import subprocess
 import tempfile
 import time
@@ -49,6 +50,9 @@ def check_engine_available(engine_name: str, auto_download_models: bool = True) 
             ensure_package("gTTS", "gTTS is required for gtts.")
         elif engine_name == "yandex":
             pass
+        elif engine_name == "vibevoice":
+            if shutil.which("vibe-voice") is None:
+                raise FileNotFoundError("vibe-voice binary not found. Install VibeVoice.")
         else:
             ensure_package(engine_name, f"{engine_name} is required.")
     except ModuleNotFoundError as e:
@@ -63,6 +67,7 @@ def check_engine_available(engine_name: str, auto_download_models: bool = True) 
         DownloadError,
         RuntimeError,
     ) as e:
+        QMessageBox.warning(None, "Missing dependency", str(e))
         raise TTSEngineError(str(e)) from e
 
 

@@ -140,8 +140,19 @@ Run fully offline by prefetching models and disabling automatic downloads:
 python tools/fetch_tts_models.py silero --language <code>
 ```
 
+Alternatively, download the Silero repository archive and unpack it into
+`models/torch_hub/snakers4_silero-models_master/` so that
+`src/silero/model/*.pt` resides inside that folder.
+
 Before launching, either set `TORCH_HUB_DISABLE_AUTOFETCH=1` or turn off
 "Auto-download models" in the settings.
+
+In corporate networks configure proxy and SSL variables before fetching:
+
+```bash
+export HTTPS_PROXY=http://proxy:port  # your corporate proxy
+export NO_SSL_VERIFY=1                # optional, skip TLS validation
+```
 
 ### TTS dependencies
 Missing Python packages are installed automatically into `.venv` for TTS engines:

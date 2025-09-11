@@ -51,3 +51,4 @@
 - Add CI coverage for VibeVoice GPU integration test.
 - Add screenshots or diagrams to timeline guide.
 - Automate VRAM usage benchmarking for VibeVoice models.
+- Add UI tests for VibeVoice speaker listing and binary warning.

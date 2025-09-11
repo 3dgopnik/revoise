@@ -194,8 +194,8 @@ class MainWindow(QtWidgets.QMainWindow):
         row = 0
 
         self.cmb_engine = QtWidgets.QComboBox()
-        # Include gTTS among available engines
-        self.cmb_engine.addItems(["silero", "yandex", "coqui_xtts", "gtts"])
+        # Include gTTS and VibeVoice among available engines
+        self.cmb_engine.addItems(["silero", "yandex", "coqui_xtts", "gtts", "vibevoice"])
         self.cmb_engine.currentTextChanged.connect(self._on_engine_change)
         grid.addWidget(QtWidgets.QLabel("Движок TTS:"), row, 0)
         grid.addWidget(self.cmb_engine, row, 1)
@@ -383,6 +383,27 @@ class MainWindow(QtWidgets.QMainWindow):
             self.cmb_language.hide()
             self.lbl_preset.hide()
             self.cmb_preset.hide()
+        elif engine == "vibevoice":
+            self.lbl_voice.setText("VibeVoice voice:")
+            self.cmb_voice.setEditable(False)
+            self.lbl_language.hide()
+            self.cmb_language.hide()
+            self.lbl_preset.hide()
+            self.cmb_preset.hide()
+            try:
+                result = subprocess.run(
+                    ["vibe-voice", "--list-speakers"],
+                    capture_output=True,
+                    text=True,
+                    check=True,
+                )
+            except FileNotFoundError:
+                QMessageBox.warning(self, "Missing binary", "vibe-voice executable not found. Install VibeVoice.")
+            except subprocess.CalledProcessError as e:
+                QMessageBox.warning(self, "vibe-voice error", str(e))
+            else:
+                voices = [line.strip() for line in result.stdout.splitlines() if line.strip()]
+                self.cmb_voice.addItems(voices)
         elif engine == "gtts":
             # gTTS has no preset voices, so hide the selector
             self.lbl_voice.hide()

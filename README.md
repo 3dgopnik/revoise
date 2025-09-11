@@ -141,6 +141,7 @@ Missing Python packages are installed automatically into `.venv` for TTS engines
 
 
 - gTTS: выберите движок `gtts` в UI. Сервис не предлагает голоса и требует интернет.
+- VibeVoice: выберите движок `vibevoice` в UI. Требует установленного бинаря `vibe-voice`.
 
 ### TTS CLI
 Переменные окружения:

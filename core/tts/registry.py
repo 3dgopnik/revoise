@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-import json
 import os
 
+from ..config import load_config
 from .engines import BeepEngine, SileroEngine, TTSEngineBase, VibeVoiceEngine
 
 registry: dict[str, type[TTSEngineBase]] = {
@@ -23,9 +23,8 @@ def get_engine(name: str | None = None) -> TTSEngineBase:
         name = os.getenv("TTS_ENGINE")
         if not name:
             try:
-                with open("config.json", encoding="utf-8") as fh:
-                    cfg = json.load(fh)
-                name = cfg.get("tts_engine") or cfg.get("tts", {}).get("engine")
+                cfg = load_config()
+                name = cfg.tts.default_engine
             except Exception:
                 name = None
         name = name or "silero"

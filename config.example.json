@@ -1,32 +1,41 @@
 {
-  "use_imageio_ffmpeg": false,
-  "externals": {
-    "ffmpeg": "bin/ffmpeg.exe"
-  },
-  "ffmpeg_version": "",
-  "auto_download_models": true,
-  "llm": {
-    "family": "qwen2.5",
-    "model_path": "models/llm/qwen2.5/qwen.bin",
-    "auto_download": true
-  },
-  "tts_engine": "silero",
-  "preferences": {
-    "pin_dependencies": false
-  },
-  "models": {
-    "whisper": "models/whisper",
+    "use_imageio_ffmpeg": false,
+    "externals": {"ffmpeg": "bin/ffmpeg.exe"},
+    "ffmpeg_version": "",
+    "auto_download_models": true,
+    "llm": {
+        "family": "qwen2.5",
+        "model_path": "models/llm/qwen2.5/qwen.bin",
+        "auto_download": true,
+    },
     "tts": {
-      "language": "ru",
-      "coqui_xtts_path": "models/tts/coqui_xtts",
-      "dia_path": "models/tts/dia",
-      "mars5_path": "models/tts/mars5",
-      "vibevoice_path": "models/tts/vibevoice",
-      "chatterbox_path": "models/tts/chatterbox"
-    }
-  },
-  "live_mode": {
-    "enabled": false,
-    "talk_llama_fast_path": ""
-  }
+        "default_engine": "silero",
+        "vibevoice": {
+            "model": "base",
+            "device": "cpu",
+            "attention_backend": "sdpa",
+            "quantization": "none",
+            "voices": ["vibevoice"],
+        },
+        "silero": {
+            "model": "v3_ru",
+            "device": "cpu",
+            "attention_backend": "sdpa",
+            "quantization": "none",
+            "voices": ["aidar", "baya", "kseniya"],
+        },
+    },
+    "preferences": {"pin_dependencies": false},
+    "models": {
+        "whisper": "models/whisper",
+        "tts": {
+            "language": "ru",
+            "coqui_xtts_path": "models/tts/coqui_xtts",
+            "dia_path": "models/tts/dia",
+            "mars5_path": "models/tts/mars5",
+            "vibevoice_path": "models/tts/vibevoice",
+            "chatterbox_path": "models/tts/chatterbox",
+        },
+    },
+    "live_mode": {"enabled": false, "talk_llama_fast_path": ""},
 }

@@ -68,7 +68,12 @@ uv run python tools/freeze_reqs.py
 - `llm.family` — семейство локальной LLM.
 - `llm.model_path` — путь к файлу модели, если она уже скачана.
 - `llm.auto_download` — автоматически загружать недостающую LLM.
-- `tts_engine` — движок TTS по умолчанию.
+- `tts.default_engine` — движок TTS по умолчанию.
+- `tts.<engine>.model` — имя модели TTS.
+- `tts.<engine>.device` — устройство (`cpu` или `cuda`).
+- `tts.<engine>.attention_backend` — бэкенд внимания (`sdpa`, `flash` и т.д.).
+- `tts.<engine>.quantization` — режим квантования.
+- `tts.<engine>.voices` — список доступных пресетов голосов.
 - `preferences.pin_dependencies` — предлагать фиксировать версии в `requirements.txt`.
 - `use_imageio_ffmpeg` — использовать пакет `imageio-ffmpeg` для автоматической установки FFmpeg.
 - `externals.ffmpeg` — путь к бинарю FFmpeg, если хотите использовать свой экземпляр.

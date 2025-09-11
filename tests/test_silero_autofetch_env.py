@@ -21,6 +21,8 @@ def test_env_restored(monkeypatch, tmp_path, original):
     hub_dir = tmp_path / "hub"
     cache_dir = hub_dir / "snakers4_silero-models_master"
     cache_dir.mkdir(parents=True, exist_ok=True)
+    (cache_dir / "src/silero/model").mkdir(parents=True, exist_ok=True)
+    (cache_dir / "src/silero/model/v4_ru.pt").touch()
 
     torch = types.SimpleNamespace(
         __version__="0.0",
@@ -53,6 +55,8 @@ def test_env_set_for_cached_autodownload_true(monkeypatch, tmp_path):
     hub_dir = tmp_path / "hub"
     cache_dir = hub_dir / "snakers4_silero-models_master"
     cache_dir.mkdir(parents=True, exist_ok=True)
+    (cache_dir / "src/silero/model").mkdir(parents=True, exist_ok=True)
+    (cache_dir / "src/silero/model/v4_ru.pt").touch()
 
     def load(*args, **kwargs):
         assert os.environ.get("TORCH_HUB_DISABLE_AUTOFETCH") == "1"

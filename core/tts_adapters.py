@@ -42,6 +42,12 @@ SILERO_VOICES = {
     "de": ["de_0", "de_1", "de_2"],
 }
 
+SILERO_PT_FILES = {
+    "ru": "v4_ru.pt",
+    "en": "v3_en.pt",
+    "de": "v3_de.pt",
+}
+
 __all__ = [
     "CoquiXTTS",
     "SileroTTS",
@@ -165,21 +171,24 @@ class SileroTTS:
             torch.hub.set_dir(str(torch_home))
             hub_dir = Path(torch.hub.get_dir())
             cache_dir = hub_dir / "snakers4_silero-models_master"
-            cached_before = cache_dir.exists()
+            pt_name = SILERO_PT_FILES.get(lang)
+            model_path = cache_dir / "src" / "silero" / "model" / pt_name if pt_name else None
+            cached_before = model_path.exists() if model_path else False
             old_autofetch = os.environ.get("TORCH_HUB_DISABLE_AUTOFETCH")
             if cached_before or not auto_download:
                 os.environ["TORCH_HUB_DISABLE_AUTOFETCH"] = "1"
             try:
                 if not auto_download and not cached_before:
                     raise RuntimeError(
-                        "Silero model cache not found. Enable 'Auto-download models' in Settings or prefetch via CLI."
+                        "Silero model files not found. Enable 'Auto-download models' in Settings or prefetch via CLI."
                     )
                 logging.info("Using torch %s for Silero TTS", torch.__version__)
                 attempts = 3
                 for attempt in range(1, attempts + 1):
                     try:
+                        repo = str(cache_dir) if cached_before else "snakers4/silero-models"
                         model, _ = torch.hub.load(
-                            repo_or_dir="snakers4/silero-models",
+                            repo_or_dir=repo,
                             model="silero_tts",
                             language=lang,
                             speaker=SILERO_LANG_MODELS.get(lang, "v4_ru"),

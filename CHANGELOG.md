@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `run_ui.sh` and `run_ui.bat` helper scripts for launching the UI with uv.
 - Pluggable TTS engine framework with Silero and VibeVoice engines.
 - Silero engine parameters for rate, pitch, style and preset with `.rvpreset` presets and UI selection.
+- Structured `tts` configuration block with per-engine settings and dataclass loader.
 
 ### Changed
 - Install TTS dependencies into .venv using shared pkg_installer.
@@ -33,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `tts_registry` now reads `tts_engine` from the top level of `config.json`.
 - TTS registry moved to `core.tts.registry` and all imports updated.
 - Silero engine now checks for `torchaudio` alongside `torch`.
+- Configuration now uses `tts.default_engine` instead of top-level `tts_engine`.
 
 ### Removed
 - Removed legacy bootstrap and launcher scripts.
@@ -54,3 +56,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Explain manual Silero model fetch.
 - Track VibeVoice TTS integration in TODO.
 - Explain `.rvpreset` preset loading and selection.
+- Document structured TTS configuration keys.

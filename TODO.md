@@ -22,7 +22,7 @@
 - Format remaining source files with `ruff format`.
 - Add a pre-commit config to streamline linting and formatting.
 - Provide a one-shot script to install dev dependencies and run quality checks.
-- Add validation for `llm` and `tts_engine` configuration blocks.
+- Add validation for `llm` and `tts` configuration blocks.
 - Support optional indices for package mirrors.
 - Add advanced cache cleanup options.
 - Add unit tests for error handling in `model_manager.ensure_model`.

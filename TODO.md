@@ -54,3 +54,4 @@
 - Add screenshots or diagrams to timeline guide.
 - Automate VRAM usage benchmarking for VibeVoice models.
 - Add UI tests for VibeVoice speaker listing and binary warning.
+- Document offline STT model download steps.

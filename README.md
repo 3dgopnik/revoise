@@ -132,6 +132,16 @@ Downloads use local cache and show progress bars. If a fetch fails with SSL
 errors, ensure your system certificates are installed or set `SSL_CERT_FILE` to a
 valid bundle.
 
+### Offline use
+Run fully offline by prefetching models and disabling automatic downloads:
+
+```bash
+python tools/fetch_tts_models.py silero --language <code>
+```
+
+Before launching, either set `TORCH_HUB_DISABLE_AUTOFETCH=1` or turn off
+"Auto-download models" in the settings.
+
 ### TTS dependencies
 Missing Python packages are installed automatically into `.venv` for TTS engines:
 

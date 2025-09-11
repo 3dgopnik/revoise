@@ -65,3 +65,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Explain `.rvpreset` preset loading and selection.
 - Document structured TTS configuration keys.
 - Mention script parser, autosave and offload options in README.
+- Added VibeVoice and timeline guides; expanded README with uv quick start, model fetch commands, and engine toggle examples.

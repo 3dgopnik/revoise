@@ -32,6 +32,7 @@ def check_engine_available(engine_name: str, auto_download_models: bool = True) 
     try:
         if engine_name == "silero":
             ensure_package("torch", "torch is required for silero.")
+            ensure_package("torchaudio", "torchaudio is required for silero.")
             ensure_package("omegaconf", "omegaconf is required for silero.")
             SileroTTS(auto_download=auto_download_models)._ensure_model(
                 auto_download=auto_download_models
@@ -150,7 +151,9 @@ def transcribe_whisper(
         logger.debug("Finished transcribe_whisper with %d segments", len(result))
         return result
     except ModuleNotFoundError as exc:  # pragma: no cover - user interaction
-        QMessageBox.warning(parent, "Missing dependency", "faster-whisper is required for transcription.")
+        QMessageBox.warning(
+            parent, "Missing dependency", "faster-whisper is required for transcription."
+        )
         logger.exception("Whisper transcription failed")
         raise RuntimeError("faster-whisper is required") from exc
     except Exception:
@@ -333,6 +336,10 @@ def _synth_chunk_single(
     yandex_voice: str | None = None,
     allow_beep_fallback: bool = False,
     auto_download_models: bool = True,
+    tts_rate: float | None = None,
+    tts_pitch: float | None = None,
+    tts_style: str | None = None,
+    tts_preset: str | None = None,
 ) -> tuple[np.ndarray, str | None]:
     """Internal helper that synthesizes a single phrase."""
 
@@ -366,7 +373,15 @@ def _synth_chunk_single(
                 model_sr = sr
             else:
                 engine = get_engine(engine_name)
-                wav = engine.synthesize(text, speaker, sr)
+                wav = engine.synthesize(
+                    text,
+                    speaker,
+                    sr,
+                    rate=tts_rate,
+                    pitch=tts_pitch,
+                    style=tts_style,
+                    preset=tts_preset,
+                )
                 model_sr = sr
         except (
             TypeError,
@@ -426,6 +441,10 @@ def synth_chunk(
     yandex_voice: str | None = None,
     allow_beep_fallback: bool = False,
     auto_download_models: bool = True,
+    tts_rate: float | None = None,
+    tts_pitch: float | None = None,
+    tts_style: str | None = None,
+    tts_preset: str | None = None,
 ) -> tuple[Any, str | None]:
     """Generate audio for one or multiple language variants."""
     global torch_unavailable
@@ -458,6 +477,10 @@ def synth_chunk(
                     yandex_voice=yandex_voice,
                     allow_beep_fallback=allow_beep_fallback,
                     auto_download_models=auto_download_models,
+                    tts_rate=tts_rate,
+                    tts_pitch=tts_pitch,
+                    tts_style=tts_style,
+                    tts_preset=tts_preset,
                 )
                 wavs[lang] = wav
                 if reason and not fallback_reason:
@@ -478,6 +501,10 @@ def synth_chunk(
             yandex_voice=yandex_voice,
             allow_beep_fallback=allow_beep_fallback,
             auto_download_models=auto_download_models,
+            tts_rate=tts_rate,
+            tts_pitch=tts_pitch,
+            tts_style=tts_style,
+            tts_preset=tts_preset,
         )
     except TTSEngineError as e:
         if torch_unavailable:
@@ -503,6 +530,10 @@ def synth_natural(
     speed_jitter: float = 0.03,
     allow_beep_fallback: bool = False,
     auto_download_models: bool = True,
+    tts_rate: float | None = None,
+    tts_pitch: float | None = None,
+    tts_style: str | None = None,
+    tts_preset: str | None = None,
 ) -> tuple[Path, str | None]:
     """
     Simple synthesis: calls synth_chunk for each phrase.
@@ -532,6 +563,10 @@ def synth_natural(
                     yandex_voice=yandex_voice,
                     allow_beep_fallback=allow_beep_fallback,
                     auto_download_models=auto_download_models,
+                    tts_rate=tts_rate,
+                    tts_pitch=tts_pitch,
+                    tts_style=tts_style,
+                    tts_preset=tts_preset,
                 )
                 if reason and not fallback_reason:
                     fallback_reason = reason
@@ -579,6 +614,10 @@ def revoice_video(
     speed_jitter: float = 0.03,
     allow_beep_fallback: bool = False,
     auto_download_models: bool = True,
+    tts_rate: float | None = None,
+    tts_pitch: float | None = None,
+    tts_style: str | None = None,
+    tts_preset: str | None = None,
 ) -> tuple[str, str | None]:
     """Main revoicing function: transcribes, synthesizes speech, and mixes."""
     logger.info("Starting revoice_video for %s", video)
@@ -651,6 +690,10 @@ def revoice_video(
                 speed_jitter=speed_jitter,
                 allow_beep_fallback=allow_beep_fallback,
                 auto_download_models=auto_download_models,
+                tts_rate=tts_rate,
+                tts_pitch=tts_pitch,
+                tts_style=tts_style,
+                tts_preset=tts_preset,
             )
         except Exception:
             logger.exception("synth_natural failed in revoice_video")

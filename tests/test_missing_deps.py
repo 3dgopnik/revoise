@@ -19,6 +19,7 @@ from core.tts_dependencies import ensure_tts_dependencies
 def test_silero_ensure_model_missing_torch(monkeypatch):
     monkeypatch.delitem(sys.modules, "torch", raising=False)
     monkeypatch.setitem(sys.modules, "omegaconf", types.ModuleType("omegaconf"))
+    monkeypatch.setitem(sys.modules, "torchaudio", types.ModuleType("torchaudio"))
     original_import = importlib.import_module
 
     def fake_import(name, *args, **kwargs):
@@ -47,6 +48,7 @@ def test_silero_ensure_model_missing_torch(monkeypatch):
 def test_silero_missing_omegaconf(monkeypatch):
     monkeypatch.delitem(sys.modules, "omegaconf", raising=False)
     monkeypatch.setitem(sys.modules, "torch", types.ModuleType("torch"))
+    monkeypatch.setitem(sys.modules, "torchaudio", types.ModuleType("torchaudio"))
     original_import = importlib.import_module
 
     def fake_import(name, *args, **kwargs):

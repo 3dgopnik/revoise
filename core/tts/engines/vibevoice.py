@@ -4,6 +4,7 @@ import shutil
 import subprocess
 from dataclasses import dataclass
 from io import BytesIO
+from typing import Any
 
 import numpy as np
 import soundfile as sf
@@ -28,7 +29,7 @@ class VibeVoiceEngine(TTSEngineBase):
     def load(self) -> None:  # noqa: D401 - simple
         pass
 
-    def synthesize(self, text: str, speaker: str, sample_rate: int) -> np.ndarray:
+    def synthesize(self, text: str, speaker: str, sample_rate: int, **kwargs: Any) -> np.ndarray:
         cmd = [
             self.options.executable,
             "--text",

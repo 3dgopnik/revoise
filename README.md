@@ -167,6 +167,7 @@ uv run python -m ui.main --say "text"
 - По умолчанию: speed 0.98–1.02, pause 350–450 ms, `speed_jitter=0.03–0.05`
 - Стили: Нейтральный, Объясняющий, Рекламный, Дружелюбный
 - Кнопка «Сохранить мой пресет» → `.rvpreset`
+- `.rvpreset` из папки `presets/` загружаются при старте и дают быстрый выбор rate/pitch/style/preset
 
 ---
 

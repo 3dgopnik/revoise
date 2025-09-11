@@ -31,6 +31,7 @@
 - Regenerate `uv.lock` to capture optional dependencies like `imageio-ffmpeg`.
 - Enable automated import sorting via Ruff to avoid manual fixes.
 - Consider using `uv pip sync` for reproducibility.
+- Add preset editor and saving UI for `.rvpreset` files.
 
 - Package `run_ui` scripts as a Python entry point for unified CLI launch.
 - Make Silero TTS retry attempts configurable and add exponential backoff.

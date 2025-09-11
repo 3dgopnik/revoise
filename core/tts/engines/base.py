@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from typing import Any
 
 import numpy as np
 
@@ -13,7 +14,7 @@ class TTSEngineBase(ABC):
         """Load engine resources."""
 
     @abstractmethod
-    def synthesize(self, text: str, speaker: str, sample_rate: int) -> np.ndarray:
+    def synthesize(self, text: str, speaker: str, sample_rate: int, **kwargs: Any) -> np.ndarray:
         """Synthesize *text* with *speaker* at *sample_rate* and return waveform."""
 
     @abstractmethod

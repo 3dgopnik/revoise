@@ -149,6 +149,7 @@ class SileroTTS:
         if lang not in SileroTTS._models:
             try:
                 ensure_package("torch", "torch is required for Silero TTS.")
+                ensure_package("torchaudio", "torchaudio is required for Silero TTS.")
                 ensure_package("omegaconf", "omegaconf is required for Silero TTS.")
                 import torch
             except ModuleNotFoundError as exc:  # pragma: no cover - user interaction
@@ -224,12 +225,34 @@ class SileroTTS:
         return (model, status) if return_status else model
 
     def tts(
-        self, text: str, speaker: str, sr: int = 48000, *, parent: Any | None = None
+        self,
+        text: str,
+        speaker: str,
+        sr: int = 48000,
+        *,
+        parent: Any | None = None,
+        rate: float | None = None,
+        pitch: float | None = None,
+        style: str | None = None,
+        preset: str | None = None,
     ) -> np.ndarray:
         model = self._ensure_model(auto_download=self.auto_download, parent=parent)
         default_voice = SILERO_VOICES.get(self.language, ["baya"])[0]
         voice = speaker or default_voice
-        wav = model.apply_tts(text=text or "", speaker=voice, sample_rate=sr)
+        kwargs: dict[str, Any] = {
+            "text": text or "",
+            "speaker": voice,
+            "sample_rate": sr,
+        }
+        if rate is not None:
+            kwargs["rate"] = rate
+        if pitch is not None:
+            kwargs["pitch"] = pitch
+        if style is not None:
+            kwargs["style_wav"] = style
+        if preset is not None:
+            kwargs["preset"] = preset
+        wav = model.apply_tts(**kwargs)
         if isinstance(wav, np.ndarray):
             arr = wav
         else:

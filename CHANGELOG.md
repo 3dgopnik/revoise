@@ -22,6 +22,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pluggable TTS engine framework with Silero and VibeVoice engines.
 - Silero engine parameters for rate, pitch, style and preset with `.rvpreset` presets and UI selection.
 - Structured `tts` configuration block with per-engine settings and dataclass loader.
+- VibeVoice model weights and Silero locale packs registered in model registry.
+- `fetch_tts_models.py` subcommands for VibeVoice and Silero with progress bars and caching.
 
 ### Changed
 - Install TTS dependencies into .venv using shared pkg_installer.

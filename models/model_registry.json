@@ -1,6 +1,18 @@
 {
     "tts": {
-        "coqui_xtts": ["https://huggingface.co/coqui/XTTS-v2/resolve/main/model.pth"]
+        "coqui_xtts": ["https://huggingface.co/coqui/XTTS-v2/resolve/main/model.pth"],
+        "vibevoice-1.5b": {
+            "urls": ["https://huggingface.co/vibe-voice/vibevoice-1_5b/resolve/main/model.bin"]
+        },
+        "vibevoice-large": {
+            "urls": ["https://huggingface.co/vibe-voice/vibevoice-large/resolve/main/model.bin"]
+        },
+        "silero-ru-v4": {
+            "urls": ["https://models.silero.ai/models/tts/ru/v4_ru.pt"]
+        },
+        "silero-en-v3": {
+            "urls": ["https://models.silero.ai/models/tts/en/v3_en.pt"]
+        }
     },
     "stt": {
         "small": {

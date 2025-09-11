@@ -11,3 +11,5 @@ imageio-ffmpeg==0.5.1  # optional: provides automatic ffmpeg downloads
 rich==14.1.0
 soundfile==0.13.1
 tqdm==4.67.1
+fastapi==0.111.0
+uvicorn==0.30.1

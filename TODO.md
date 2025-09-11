@@ -1,6 +1,6 @@
 # TODO
 
-- Hook `AiEditDialog` into the main text editor workflow.
+- Add unit tests for VibeEditor API error handling and editor selection UI.
 - Add guidance for installing optional 'torch' dependency for Silero engine.
 - Add shfmt configuration to enforce shell script style.
 - Notify users in the UI when `QwenEditor` is unavailable.

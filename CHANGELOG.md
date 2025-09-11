@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- VibeEditor for text editing via VibeVoice API.
+- AI Edit dialog can invoke Qwen or VibeVoice editors.
 - AI edit dialog for custom instructions and language selection.
 - Initial changelog.
 - Interactive package installer with optional requirements pinning.
@@ -67,3 +69,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Document structured TTS configuration keys.
 - Mention script parser, autosave and offload options in README.
 - Added VibeVoice and timeline guides; expanded README with uv quick start, model fetch commands, and engine toggle examples.
+- Document VibeVoice binary and model installation.

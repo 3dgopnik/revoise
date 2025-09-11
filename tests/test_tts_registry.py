@@ -1,9 +1,8 @@
 import importlib
 
-import pytest
+from core.tts.engines import BeepEngine, SileroEngine, VibeVoiceEngine
 
 tts_registry = importlib.import_module("core.tts.registry")
-from core.tts.engines import BeepEngine, SileroEngine, VibeVoiceEngine
 
 
 def _reset_loaded():

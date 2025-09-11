@@ -96,6 +96,7 @@ uv run python tools/freeze_reqs.py
 - Импорт/экспорт JSON/CSV/SRT, вставка из буфера, сброс правок
 - Ритм-якоря, автопунктуация, VAD-паузы (350–450 ms), `speed_jitter`
 - Парсер сценариев проверяет строки вида `Speaker N:` (до 4 дикторов) и разбивает текст на чанки 30–120 с
+- AI правка текста: кнопка **AI Edit** с выбором редактора Qwen или VibeVoice
 
 ---
 
@@ -141,7 +142,7 @@ Missing Python packages are installed automatically into `.venv` for TTS engines
 
 
 - gTTS: выберите движок `gtts` в UI. Сервис не предлагает голоса и требует интернет.
-- VibeVoice: выберите движок `vibevoice` в UI. Требует установленного бинаря `vibe-voice`.
+- VibeVoice: выберите движок `vibevoice` в UI. Требует установленного бинаря `vibe-voice` (см. [docs/tts_vibevoice.md](docs/tts_vibevoice.md)).
 
 ### TTS CLI
 Переменные окружения:

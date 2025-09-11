@@ -3,6 +3,7 @@
 # Logs: BASE_DIR / logs / log_version_alpha3.txt
 
 import argparse
+import asyncio
 import json
 import logging
 import os
@@ -17,6 +18,7 @@ from PySide6.QtWidgets import QFileDialog, QMessageBox, QTableWidgetItem
 
 from core.presets import load_presets
 
+from .ai_edit_dialog import AiEditDialog, AiEditResult
 from .config import load_config, save_config
 from .settings import SettingsDialog
 
@@ -69,6 +71,14 @@ except Exception as e:  # pragma: no cover - optional dependency
 else:
     _QWEN_IMPORT_ERROR = None
 
+try:
+    from core.vibe_editor import VibeEditor  # type: ignore
+except Exception as e:  # pragma: no cover - optional dependency
+    VibeEditor = None  # type: ignore[assignment]
+    _VIBE_IMPORT_ERROR = e
+else:
+    _VIBE_IMPORT_ERROR = None
+
 YANDEX_VOICES = ["ermil", "filipp", "alena", "jane", "oksana", "zahar", "omazh", "madirus"]
 
 
@@ -115,6 +125,13 @@ class MainWindow(QtWidgets.QMainWindow):
             except Exception as err:
                 log.warning("QwenEditor init failed: %s", err)
 
+        self.vibe_editor = None
+        if VibeEditor is not None:
+            try:
+                self.vibe_editor = VibeEditor()
+            except Exception as err:
+                log.warning("VibeEditor init failed: %s", err)
+
         # API keys for external services
         self.yandex_key = ""
         self.chatgpt_key = ""
@@ -130,7 +147,7 @@ class MainWindow(QtWidgets.QMainWindow):
         log.info("UI start. Version=%s", APP_VER)
         self._build_ui()
 
-        if self.qwen_editor is None:
+        if self.qwen_editor is None and self.vibe_editor is None:
             self.ai_edit_btn.setEnabled(False)
 
         self.status = self.statusBar()
@@ -398,7 +415,9 @@ class MainWindow(QtWidgets.QMainWindow):
                     check=True,
                 )
             except FileNotFoundError:
-                QMessageBox.warning(self, "Missing binary", "vibe-voice executable not found. Install VibeVoice.")
+                QMessageBox.warning(
+                    self, "Missing binary", "vibe-voice executable not found. Install VibeVoice."
+                )
             except subprocess.CalledProcessError as e:
                 QMessageBox.warning(self, "vibe-voice error", str(e))
             else:
@@ -726,14 +745,34 @@ class MainWindow(QtWidgets.QMainWindow):
         text = self.editor.toPlainText().strip()
         if not text:
             return
-        langs = [item.text() for item in self.lang_list.selectedItems()] or ["ru"]
-        result = self.qwen_editor.edit_text(text, langs)
-        new_text = result.get("source", "")
-        self.table.setItem(row, 3, QTableWidgetItem(new_text))
-        self.editor.setPlainText(new_text)
-        self.segments[row]["edited_text"] = new_text
-        for lang in langs:
-            self.segments[row][lang] = result.get(lang, "")
+        available_langs = [self.lang_list.item(i).text() for i in range(self.lang_list.count())]
+        selected = {item.text() for item in self.lang_list.selectedItems()}
+
+        editors = []
+        if self.qwen_editor is not None:
+            editors.append("qwen")
+        if self.vibe_editor is not None:
+            editors.append("vibevoice")
+        if not editors:
+            return
+
+        async def run_ai(res: AiEditResult) -> None:
+            editor_obj = self.qwen_editor if res.editor == "qwen" else self.vibe_editor
+            if editor_obj is None:
+                raise RuntimeError(f"Editor '{res.editor}' unavailable")
+            data = await asyncio.to_thread(editor_obj.edit_text, text, res.languages)
+            new_text = data.get("source", "")
+            self.table.setItem(row, 3, QTableWidgetItem(new_text))
+            self.editor.setPlainText(new_text)
+            self.segments[row]["edited_text"] = new_text
+            for lang in res.languages:
+                self.segments[row][lang] = data.get(lang, "")
+
+        dlg = AiEditDialog(self, languages=available_langs, editors=editors, runner=run_ai)
+        for i in range(dlg.lang_list.count()):
+            item = dlg.lang_list.item(i)
+            item.setSelected(item.text() in selected)
+        dlg.exec()
 
     def show_table_menu(self, pos):
         menu = QtWidgets.QMenu(self)

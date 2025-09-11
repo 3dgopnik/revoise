@@ -1,5 +1,16 @@
 # VibeVoice TTS Guide
 
+## Installation
+1. Download the `vibe-voice` binary from the official releases and place it in your `PATH`.
+2. Fetch model weights:
+   ```bash
+   uv run python tools/fetch_tts_models.py vibevoice --model 1.5b
+   ```
+3. Verify the setup:
+   ```bash
+   vibe-voice --help
+   ```
+
 ## Model variants
 - **300M** – light variant for CPU or low VRAM GPUs.
 - **1.5B** – full quality model (~9.5 GB VRAM in fp16).

@@ -11,6 +11,7 @@ from PySide6 import QtWidgets
 class AiEditResult:
     """Result returned by :class:`AiEditDialog`."""
 
+    editor: str
     instruction: str
     languages: list[str]
     fix_grammar: bool
@@ -25,6 +26,7 @@ class AiEditDialog(QtWidgets.QDialog):
         self,
         parent: QtWidgets.QWidget | None = None,
         languages: list[str] | None = None,
+        editors: list[str] | None = None,
         runner: Callable[[AiEditResult], Awaitable[None]] | None = None,
     ) -> None:
         super().__init__(parent)
@@ -34,6 +36,16 @@ class AiEditDialog(QtWidgets.QDialog):
         self._result: AiEditResult | None = None
 
         main = QtWidgets.QVBoxLayout(self)
+
+        editor_row = QtWidgets.QHBoxLayout()
+        editor_row.addWidget(QtWidgets.QLabel("Editor:"))
+        self.editor_combo = QtWidgets.QComboBox()
+        for name in editors or ["qwen"]:
+            self.editor_combo.addItem(name)
+        editor_row.addWidget(self.editor_combo)
+        editor_row.addStretch(1)
+        main.addLayout(editor_row)
+
         main.addWidget(QtWidgets.QLabel("Инструкция:"))
         self.instruction_edit = QtWidgets.QTextEdit()
         main.addWidget(self.instruction_edit)
@@ -112,6 +124,7 @@ class AiEditDialog(QtWidgets.QDialog):
     def _collect(self) -> AiEditResult:
         langs = [i.text() for i in self.lang_list.selectedItems()]
         return AiEditResult(
+            editor=self.editor_combo.currentText(),
             instruction=self.instruction_edit.toPlainText().strip(),
             languages=langs,
             fix_grammar=self.chk_grammar.isChecked(),

@@ -163,13 +163,13 @@ class SileroTTS:
             torch_home = Path("models") / "torch_hub"
             torch_home.mkdir(parents=True, exist_ok=True)
             torch.hub.set_dir(str(torch_home))
+            hub_dir = Path(torch.hub.get_dir())
+            cache_dir = hub_dir / "snakers4_silero-models_master"
+            cached_before = cache_dir.exists()
             old_autofetch = os.environ.get("TORCH_HUB_DISABLE_AUTOFETCH")
-            if not auto_download:
+            if cached_before or not auto_download:
                 os.environ["TORCH_HUB_DISABLE_AUTOFETCH"] = "1"
             try:
-                hub_dir = Path(torch.hub.get_dir())
-                cache_dir = hub_dir / "snakers4_silero-models_master"
-                cached_before = cache_dir.exists()
                 if not auto_download and not cached_before:
                     raise RuntimeError(
                         "Silero model cache not found. Enable 'Auto-download models' in Settings or prefetch via CLI."

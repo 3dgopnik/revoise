@@ -49,7 +49,7 @@ def test_silero_download_and_cache(monkeypatch, tmp_path, caplog):
         return DummyModel(), "hi"
 
     torch.hub.load = online_load
-    SileroTTS._model = None
+    SileroTTS._models = {}
     with caplog.at_level(logging.INFO):
         _, status = SileroTTS(auto_download=True)._ensure_model(return_status=True)
     assert calls["online"] == 1
@@ -63,8 +63,10 @@ def test_silero_download_and_cache(monkeypatch, tmp_path, caplog):
         return DummyModel(), "hi"
 
     torch.hub.load = offline_load
-    SileroTTS._model = None
-    _, status = SileroTTS(auto_download=False)._ensure_model(return_status=True)
+    SileroTTS._models = {}
+    _, status = SileroTTS(auto_download=False)._ensure_model(
+        auto_download=False, return_status=True
+    )
     assert calls["offline"] == 1
     assert status == "cached"
 
@@ -78,7 +80,7 @@ def test_silero_no_cache(monkeypatch, tmp_path):
 
     torch.hub.load = fake_load
 
-    SileroTTS._model = None
+    SileroTTS._models = {}
     tts = SileroTTS(auto_download=False)
     with pytest.raises(RuntimeError, match="Auto-download models"):
         tts.tts("hi", "baya", sr=16000)
@@ -93,7 +95,8 @@ def test_check_engine_available_no_cache(monkeypatch, tmp_path):
 
     torch.hub.load = fake_load
     monkeypatch.setattr(pkg_installer, "ensure_package", lambda *a, **k: None)
+    monkeypatch.setattr(pipeline.QMessageBox, "warning", lambda *a, **k: None)
 
-    SileroTTS._model = None
+    SileroTTS._models = {}
     with pytest.raises(pipeline.TTSEngineError, match="Auto-download models"):
         pipeline.check_engine_available("silero", auto_download_models=False)

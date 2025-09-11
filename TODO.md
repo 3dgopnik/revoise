@@ -48,3 +48,4 @@
 - Extend Silero registry to cover more languages and voices.
 - Support more than four speakers in script parser.
 - Persist checkpoints per project instead of single file.
+- Add CI coverage for VibeVoice GPU integration test.

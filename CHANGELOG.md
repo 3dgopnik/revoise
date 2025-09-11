@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Deterministic per-speaker seeding and optional `silence_gap_ms` insertion.
 - Autosave checkpoints with crash/OOM resume support.
 - Optional GPU offload with peak VRAM/time logging.
+- Tests for dialogue parsing, Russian text segmentation, and TTS engine registry with GPU VibeVoice integration test.
 
 ### Changed
 - Install TTS dependencies into .venv using shared pkg_installer.

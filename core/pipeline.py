@@ -1,9 +1,13 @@
 # ruff: noqa: UP006,UP007,UP022,UP035,UP045
+import gc
 import json
 import logging
+import random
 import re
 import subprocess
 import tempfile
+import time
+from hashlib import sha256
 from itertools import zip_longest
 from pathlib import Path
 from typing import Any, List, Mapping, Optional, Tuple
@@ -340,12 +344,25 @@ def _synth_chunk_single(
     tts_pitch: float | None = None,
     tts_style: str | None = None,
     tts_preset: str | None = None,
+    *,
+    silence_gap_ms: int = 0,
 ) -> tuple[np.ndarray, str | None]:
     """Internal helper that synthesizes a single phrase."""
 
     text = normalize_text(text, read_numbers=read_numbers, spell_latin=spell_latin)
     engine_name = (tts_engine or "silero").lower()
     logger.debug("Synthesizing chunk with engine=%s", engine_name)
+
+    # Deterministic per-speaker seeding for consistent timbre
+    seed = int(sha256(speaker.encode("utf-8")).hexdigest(), 16) % (2**32)
+    random.seed(seed)
+    np.random.seed(seed)
+    try:  # pragma: no cover - torch may be unavailable
+        import torch
+
+        torch.manual_seed(seed)
+    except Exception:
+        pass
     fallback_reason: str | None = None
     try:
         check_engine_available(engine_name, auto_download_models=auto_download_models)
@@ -419,6 +436,9 @@ def _synth_chunk_single(
         ]
     )
     wav_out, _ = sf.read(out, dtype=np.float32)
+    if silence_gap_ms > 0:
+        gap = np.zeros(int(sr * silence_gap_ms / 1000), dtype=np.float32)
+        wav_out = np.concatenate([wav_out, gap])
     if not fallback_reason:
         peak = float(np.max(np.abs(wav_out)))
         rms = float(np.sqrt(np.mean(np.square(wav_out))))
@@ -445,6 +465,8 @@ def synth_chunk(
     tts_pitch: float | None = None,
     tts_style: str | None = None,
     tts_preset: str | None = None,
+    *,
+    silence_gap_ms: int = 0,
 ) -> tuple[Any, str | None]:
     """Generate audio for one or multiple language variants."""
     global torch_unavailable
@@ -481,6 +503,7 @@ def synth_chunk(
                     tts_pitch=tts_pitch,
                     tts_style=tts_style,
                     tts_preset=tts_preset,
+                    silence_gap_ms=silence_gap_ms,
                 )
                 wavs[lang] = wav
                 if reason and not fallback_reason:
@@ -505,6 +528,7 @@ def synth_chunk(
             tts_pitch=tts_pitch,
             tts_style=tts_style,
             tts_preset=tts_preset,
+            silence_gap_ms=silence_gap_ms,
         )
     except TTSEngineError as e:
         if torch_unavailable:
@@ -534,6 +558,11 @@ def synth_natural(
     tts_pitch: float | None = None,
     tts_style: str | None = None,
     tts_preset: str | None = None,
+    *,
+    silence_gap_ms: int = 0,
+    autosave_minutes: float | None = None,
+    checkpoint_path: Path | None = None,
+    force_offload: bool = False,
 ) -> tuple[Path, str | None]:
     """
     Simple synthesis: calls synth_chunk for each phrase.
@@ -542,12 +571,39 @@ def synth_natural(
         raise ValueError("No phrases to synthesize")
     logger.info("Starting synth_natural for %d phrases", len(phrases))
     total_dur = max(p[1] for p in phrases) + 3.0
-    master: np.ndarray = np.zeros(int(total_dur * sr), dtype=np.float32)
+    checkpoint = checkpoint_path or (tmpdir / "tts_autosave.npz")
+    start_idx = 0
     cur_tail = 0.0
+    if checkpoint.exists():
+        try:
+            data = np.load(checkpoint, allow_pickle=True)
+            master = data["master"]
+            cur_tail = float(data["cur_tail"])
+            start_idx = int(data["index"])
+            logger.info("Resuming from checkpoint %s at phrase %d", checkpoint, start_idx)
+        except Exception:
+            master = np.zeros(int(total_dur * sr), dtype=np.float32)
+            logger.warning("Failed to load checkpoint, starting from scratch")
+    else:
+        master = np.zeros(int(total_dur * sr), dtype=np.float32)
+
+    start_time = time.perf_counter()
     try:
+        if "torch" in globals():  # pragma: no cover - torch may be absent
+            try:
+                import torch
+
+                if torch.cuda.is_available():
+                    torch.cuda.reset_peak_memory_stats()
+            except Exception:
+                pass
+
         fallback_reason: str | None = None
-        for i, (start, _end, txt) in enumerate(tqdm(phrases, desc="TTS", unit="phr"), start=1):
-            logger.debug("Synthesizing phrase %d", i)
+        save_interval = (autosave_minutes or 0) * 60
+        last_save = time.perf_counter()
+        for idx in tqdm(range(start_idx, len(phrases)), desc="TTS", unit="phr", initial=start_idx, total=len(phrases)):
+            start, _end, txt = phrases[idx]
+            logger.debug("Synthesizing phrase %d", idx + 1)
             try:
                 wav, reason = synth_chunk(
                     ffmpeg,
@@ -567,11 +623,12 @@ def synth_natural(
                     tts_pitch=tts_pitch,
                     tts_style=tts_style,
                     tts_preset=tts_preset,
+                    silence_gap_ms=silence_gap_ms,
                 )
                 if reason and not fallback_reason:
                     fallback_reason = reason
             except Exception:
-                logger.exception("synth_chunk failed for phrase %d", i)
+                logger.exception("synth_chunk failed for phrase %d", idx + 1)
                 raise
             place_t = max(start, cur_tail + min_gap_sec)
             s0 = int(place_t * sr)
@@ -579,6 +636,9 @@ def synth_natural(
             if s0 < len(master):
                 master[s0:s1] += wav[: (s1 - s0)]
             cur_tail = (s0 + len(wav)) / sr
+            if save_interval and time.perf_counter() - last_save >= save_interval:
+                np.savez(checkpoint, master=master, cur_tail=cur_tail, index=idx + 1)
+                last_save = time.perf_counter()
         out_wav = tmpdir / "voice_aligned.wav"
         sf.write(out_wav, master, sr)
         logger.info("Finished synth_natural: %s", out_wav)
@@ -586,6 +646,22 @@ def synth_natural(
     except Exception:
         logger.exception("synth_natural failed")
         raise
+    finally:
+        if checkpoint.exists():
+            checkpoint.unlink(missing_ok=True)  # type: ignore[attr-defined]
+        elapsed = time.perf_counter() - start_time
+        peak = 0.0
+        try:  # pragma: no cover - torch may be absent
+            import torch
+
+            if torch.cuda.is_available():
+                peak = torch.cuda.max_memory_allocated() / (1024**2)
+                if force_offload:
+                    torch.cuda.empty_cache()
+        except Exception:
+            pass
+        gc.collect()
+        logger.info("tts.performance peak_vram=%.1fMB elapsed=%.2fs", peak, elapsed)
 
 
 # ===================== Основной пайплайн =====================
@@ -618,6 +694,10 @@ def revoice_video(
     tts_pitch: float | None = None,
     tts_style: str | None = None,
     tts_preset: str | None = None,
+    *,
+    silence_gap_ms: int = 0,
+    autosave_minutes: float | None = None,
+    force_offload: bool = False,
 ) -> tuple[str, str | None]:
     """Main revoicing function: transcribes, synthesizes speech, and mixes."""
     logger.info("Starting revoice_video for %s", video)
@@ -694,6 +774,10 @@ def revoice_video(
                 tts_pitch=tts_pitch,
                 tts_style=tts_style,
                 tts_preset=tts_preset,
+                silence_gap_ms=silence_gap_ms,
+                autosave_minutes=autosave_minutes,
+                checkpoint_path=out_dirp / "tts_autosave.npz",
+                force_offload=force_offload,
             )
         except Exception:
             logger.exception("synth_natural failed in revoice_video")

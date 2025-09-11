@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 from PySide6 import QtWidgets
+
 
 class SettingsDialog(QtWidgets.QDialog):
     """Dialog to configure API keys and options."""

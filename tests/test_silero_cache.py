@@ -23,6 +23,7 @@ sys.modules["torch"] = torch
 sys.modules["torch.hub"] = hub
 sys.modules["torch.package"] = pkg
 sys.modules["omegaconf"] = types.ModuleType("omegaconf")
+sys.modules["torchaudio"] = types.ModuleType("torchaudio")
 
 from core import pipeline, pkg_installer  # noqa: E402
 from core.tts_adapters import SileroTTS  # noqa: E402

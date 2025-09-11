@@ -20,6 +20,7 @@ def test_silero_logs_torch_version(monkeypatch):
         ),
     )
     monkeypatch.setitem(sys.modules, "torch", dummy_torch)
+    monkeypatch.setitem(sys.modules, "torchaudio", types.ModuleType("torchaudio"))
 
     messages: list[str] = []
 

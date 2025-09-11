@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 import numpy as np
 
 from ...tts_adapters import BeepTTS
@@ -15,7 +17,7 @@ class BeepEngine(TTSEngineBase):
     def load(self) -> None:
         self._impl = BeepTTS()
 
-    def synthesize(self, text: str, speaker: str, sample_rate: int) -> np.ndarray:
+    def synthesize(self, text: str, speaker: str, sample_rate: int, **kwargs: Any) -> np.ndarray:
         if self._impl is None:
             self.load()
         assert self._impl is not None

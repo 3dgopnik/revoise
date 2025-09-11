@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Optional `imageio-ffmpeg` integration via `use_imageio_ffmpeg` and `externals.ffmpeg` settings for automatic FFmpeg setup.
 - `run_ui.sh` and `run_ui.bat` helper scripts for launching the UI with uv.
 - Pluggable TTS engine framework with Silero and VibeVoice engines.
+- Silero engine parameters for rate, pitch, style and preset with `.rvpreset` presets and UI selection.
 
 ### Changed
 - Install TTS dependencies into .venv using shared pkg_installer.
@@ -31,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CI installs dependencies with `uv pip install -r requirements.txt` and runs Ruff on `core`, `ui`, and `tests`.
 - `tts_registry` now reads `tts_engine` from the top level of `config.json`.
 - TTS registry moved to `core.tts.registry` and all imports updated.
+- Silero engine now checks for `torchaudio` alongside `torch`.
 
 ### Removed
 - Removed legacy bootstrap and launcher scripts.
@@ -51,3 +53,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Clarified dev dependency installation for quality checks.
 - Explain manual Silero model fetch.
 - Track VibeVoice TTS integration in TODO.
+- Explain `.rvpreset` preset loading and selection.

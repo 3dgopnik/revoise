@@ -32,6 +32,7 @@ def test_env_restored(monkeypatch, tmp_path, original):
         device=lambda *a, **k: None,
     )
     monkeypatch.setitem(sys.modules, "torch", torch)
+    monkeypatch.setitem(sys.modules, "torchaudio", types.ModuleType("torchaudio"))
 
     if original is None:
         monkeypatch.delenv("TORCH_HUB_DISABLE_AUTOFETCH", raising=False)

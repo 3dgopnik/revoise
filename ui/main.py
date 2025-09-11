@@ -15,6 +15,8 @@ from pathlib import Path
 from PySide6 import QtCore, QtGui, QtWidgets
 from PySide6.QtWidgets import QFileDialog, QMessageBox, QTableWidgetItem
 
+from core.presets import load_presets
+
 from .config import load_config, save_config
 from .settings import SettingsDialog
 
@@ -88,6 +90,12 @@ class MainWindow(QtWidgets.QMainWindow):
         self.speed_jitter = 0.03
         self.read_numbers = False
         self.spell_latin = False
+
+        self.preset_rate: float | None = None
+        self.preset_pitch: float | None = None
+        self.preset_style: str | None = None
+        self.preset_name: str | None = None
+        self.presets: dict[str, dict] = {}
 
         self.music_path = ""
         self.music_db = -18.0
@@ -207,6 +215,17 @@ class MainWindow(QtWidgets.QMainWindow):
         grid.addWidget(self.cmb_language, row, 1)
 
         row += 1
+        self.lbl_preset = QtWidgets.QLabel("Preset:")
+        self.cmb_preset = QtWidgets.QComboBox()
+        self.presets = load_presets(BASE_DIR / "presets")
+        self.cmb_preset.addItem("None")
+        for name in sorted(self.presets):
+            self.cmb_preset.addItem(name)
+        self.cmb_preset.currentTextChanged.connect(self._on_preset_change)
+        grid.addWidget(self.lbl_preset, row, 0)
+        grid.addWidget(self.cmb_preset, row, 1)
+
+        row += 1
         self.cmb_whisper = QtWidgets.QComboBox()
         self._populate_whisper_models()
         grid.addWidget(QtWidgets.QLabel("Whisper:"), row, 0)
@@ -231,6 +250,7 @@ class MainWindow(QtWidgets.QMainWindow):
         grid.addWidget(self.chk_numbers, row, 0)
         grid.addWidget(self.chk_latin, row, 1)
 
+        self._on_preset_change(self.cmb_preset.currentText())
         layout.addLayout(grid)
 
         # Музыка
@@ -344,6 +364,8 @@ class MainWindow(QtWidgets.QMainWindow):
             self.cmb_voice.setEditable(False)
             self.lbl_language.show()
             self.cmb_language.show()
+            self.lbl_preset.show()
+            self.cmb_preset.show()
             self._on_language_change(self.cmb_language.currentText())
         elif engine == "yandex":
             self.lbl_voice.setText("Yandex голос:")
@@ -351,23 +373,31 @@ class MainWindow(QtWidgets.QMainWindow):
             self.cmb_voice.addItems(YANDEX_VOICES)
             self.lbl_language.hide()
             self.cmb_language.hide()
+            self.lbl_preset.hide()
+            self.cmb_preset.hide()
         elif engine == "coqui_xtts":
             self.lbl_voice.setText("Coqui speaker:")
             # Allow manual entry of speaker reference folder
             self.cmb_voice.setEditable(True)
             self.lbl_language.hide()
             self.cmb_language.hide()
+            self.lbl_preset.hide()
+            self.cmb_preset.hide()
         elif engine == "gtts":
             # gTTS has no preset voices, so hide the selector
             self.lbl_voice.hide()
             self.cmb_voice.hide()
             self.lbl_language.hide()
             self.cmb_language.hide()
+            self.lbl_preset.hide()
+            self.cmb_preset.hide()
         else:
             self.lbl_voice.setText("Голос:")
             self.cmb_voice.setEditable(True)
             self.lbl_language.hide()
             self.cmb_language.hide()
+            self.lbl_preset.hide()
+            self.cmb_preset.hide()
         self.cmb_voice.blockSignals(False)
 
     def _on_language_change(self, lang: str):
@@ -377,6 +407,13 @@ class MainWindow(QtWidgets.QMainWindow):
         self.cmb_voice.clear()
         self.cmb_voice.addItems(voices)
         self.cmb_voice.blockSignals(False)
+
+    def _on_preset_change(self, name: str) -> None:
+        data = self.presets.get(name, {})
+        self.preset_rate = data.get("rate")
+        self.preset_pitch = data.get("pitch")
+        self.preset_style = data.get("style")
+        self.preset_name = data.get("preset")
 
     # ---------- Хелперы ----------
     def log_print(self, *args):
@@ -590,6 +627,10 @@ class MainWindow(QtWidgets.QMainWindow):
                 speed_jitter=float(self.ed_jitter.text() or "0.03"),
                 allow_beep_fallback=self.allow_beep_fallback,
                 auto_download_models=self.auto_download_models,
+                tts_rate=self.preset_rate,
+                tts_pitch=self.preset_pitch,
+                tts_style=self.preset_style,
+                tts_preset=self.preset_name,
             )
             if fb_reason:
                 warn = f"Used beep fallback due to: {fb_reason}"

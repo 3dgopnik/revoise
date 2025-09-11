@@ -5,8 +5,8 @@ import os
 import tarfile
 import tempfile
 import zipfile
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Mapping
 
 from PySide6 import QtCore, QtWidgets
 

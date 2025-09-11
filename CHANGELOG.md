@@ -24,6 +24,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Structured `tts` configuration block with per-engine settings and dataclass loader.
 - VibeVoice model weights and Silero locale packs registered in model registry.
 - `fetch_tts_models.py` subcommands for VibeVoice and Silero with progress bars and caching.
+- Script parser validating `Speaker N:` lines and chunking text.
+- Deterministic per-speaker seeding and optional `silence_gap_ms` insertion.
+- Autosave checkpoints with crash/OOM resume support.
+- Optional GPU offload with peak VRAM/time logging.
 
 ### Changed
 - Install TTS dependencies into .venv using shared pkg_installer.
@@ -59,3 +63,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Track VibeVoice TTS integration in TODO.
 - Explain `.rvpreset` preset loading and selection.
 - Document structured TTS configuration keys.
+- Mention script parser, autosave and offload options in README.

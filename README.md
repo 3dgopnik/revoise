@@ -74,6 +74,9 @@ uv run python tools/freeze_reqs.py
 - `tts.<engine>.attention_backend` — бэкенд внимания (`sdpa`, `flash` и т.д.).
 - `tts.<engine>.quantization` — режим квантования.
 - `tts.<engine>.voices` — список доступных пресетов голосов.
+- `tts.silence_gap_ms` — вставка паузы между фразами (мс).
+- `tts.autosave_minutes` — как часто сохранять чекпоинты синтеза.
+- `tts.force_offload` — освобождать VRAM по завершении и логировать пик.
 - `preferences.pin_dependencies` — предлагать фиксировать версии в `requirements.txt`.
 - `use_imageio_ffmpeg` — использовать пакет `imageio-ffmpeg` для автоматической установки FFmpeg.
 - `externals.ffmpeg` — путь к бинарю FFmpeg, если хотите использовать свой экземпляр.
@@ -92,6 +95,7 @@ uv run python tools/freeze_reqs.py
 ## Редактор текста и таймингов
 - Импорт/экспорт JSON/CSV/SRT, вставка из буфера, сброс правок
 - Ритм-якоря, автопунктуация, VAD-паузы (350–450 ms), `speed_jitter`
+- Парсер сценариев проверяет строки вида `Speaker N:` (до 4 дикторов) и разбивает текст на чанки 30–120 с
 
 ---
 

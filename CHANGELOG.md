@@ -80,3 +80,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Documented troubleshooting with `SSL_CERT_FILE`, `HTTPS_PROXY`, and `NO_SSL_VERIFY`.
 - Explained manual Silero archive placement and proxy variables for corporate networks.
 - Added UI guide and described new Settings dialog.
+- Added Borealis ASR integration roadmap.

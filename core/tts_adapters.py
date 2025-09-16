@@ -48,6 +48,51 @@ SILERO_PT_FILES = {
     "de": "v3_de.pt",
 }
 
+_SSL_VERIFY_DOWNLOADS = True
+
+
+def _initial_ssl_flag() -> bool:
+    verify = True
+    config_path = Path(__file__).resolve().parent.parent / "config.json"
+    try:
+        if config_path.exists():
+            data = json.loads(config_path.read_text(encoding="utf-8"))
+            raw = data.get("verify_ssl_downloads")
+            if isinstance(raw, bool):
+                verify = raw
+            elif isinstance(raw, str):
+                verify = raw.strip().lower() not in {"0", "false", "no"}
+    except Exception:
+        verify = True
+    if os.environ.get("NO_SSL_VERIFY") == "1":
+        verify = False
+    if not verify:
+        os.environ["NO_SSL_VERIFY"] = "1"
+    return verify
+
+
+_SSL_VERIFY_DOWNLOADS = _initial_ssl_flag()
+
+
+def set_ssl_verification(enabled: bool) -> None:
+    """Globally enable or disable SSL verification for model downloads."""
+
+    global _SSL_VERIFY_DOWNLOADS
+    _SSL_VERIFY_DOWNLOADS = bool(enabled)
+    if enabled:
+        os.environ.pop("NO_SSL_VERIFY", None)
+    else:
+        os.environ["NO_SSL_VERIFY"] = "1"
+
+
+def ssl_verification_enabled() -> bool:
+    """Return the current SSL verification preference."""
+
+    if os.environ.get("NO_SSL_VERIFY") == "1":
+        return False
+    return _SSL_VERIFY_DOWNLOADS
+
+
 __all__ = [
     "CoquiXTTS",
     "SileroTTS",
@@ -56,6 +101,8 @@ __all__ = [
     "GTTSTTS",
     "synthesize_beep",
     "SILERO_VOICES",
+    "set_ssl_verification",
+    "ssl_verification_enabled",
 ]
 
 
@@ -140,9 +187,15 @@ class SileroTTS:
     _speakers: dict[str, list[str]] = {}
     _mode = None
 
-    def __init__(self, auto_download: bool = True, language: str = "ru"):
+    def __init__(
+        self,
+        auto_download: bool = True,
+        language: str = "ru",
+        verify_ssl: bool | None = None,
+    ):
         self.auto_download = auto_download
         self.language = language
+        self._verify_ssl = verify_ssl
 
     def _ensure_model(
         self,
@@ -171,7 +224,10 @@ class SileroTTS:
             torch.hub.set_dir(str(torch_home))
             hub_dir = Path(torch.hub.get_dir())
             original_https_context = None
+            verify_ssl = self._verify_ssl if self._verify_ssl is not None else ssl_verification_enabled()
             if os.environ.get("NO_SSL_VERIFY") == "1":
+                verify_ssl = False
+            if not verify_ssl:
                 original_https_context = ssl._create_default_https_context
                 ssl._create_default_https_context = ssl._create_unverified_context
             try:

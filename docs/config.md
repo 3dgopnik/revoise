@@ -35,6 +35,11 @@
   (логическое значение, `false` по умолчанию).
 - `auto_download_models` — разрешить автоматическую загрузку моделей и ресурсов
   (логическое значение, `true` по умолчанию).
+- `verify_ssl_downloads` — проверять SSL-сертификаты при загрузке моделей (`true`
+  по умолчанию; снимите галочку, если трафик проходит через прокси с подменой
+  сертификатов). — `verify_ssl_downloads` — verify SSL certificates when
+  downloading models (`true` by default; uncheck this option when a corporate
+  proxy injects custom certificates).
 - `auto_install_packages` — разрешить автоматически устанавливать недостающие
   Python-пакеты (`true` по умолчанию).
 - `out_dir` — абсолютный путь к папке для сохранения результатов (`output`
@@ -47,6 +52,13 @@
 - `read_numbers` — произносить числа полностью вместо цифр (`false`).
 - `spell_latin` — произносить латиницу посимвольно (`false`).
 
+В диалоге настроек UI появилась опция «Проверять SSL-сертификаты при загрузке
+моделей»: оставляйте её включённой для стандартных сетей, а при проблемах с
+прокси отключайте, чтобы загрузчик создавал небезопасное HTTPS-подключение.
+The UI settings dialog now exposes a "Verify SSL certificates" checkbox—keep it
+enabled for regular networks and disable it only when troubleshooting downloads
+behind a TLS-inspecting proxy.
+
 Пример файла с настройками по умолчанию:
 
 ```json
@@ -55,6 +67,7 @@
   "chatgpt_key": "",
   "allow_beep_fallback": false,
   "auto_download_models": true,
+  "verify_ssl_downloads": true,
   "auto_install_packages": true,
   "out_dir": "/абсолютный/путь/к/output",
   "language": "ru",

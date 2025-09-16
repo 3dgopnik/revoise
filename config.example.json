@@ -5,6 +5,7 @@
   },
   "ffmpeg_version": "",
   "auto_download_models": true,
+  "verify_ssl_downloads": true,
   "whisper_model": "base",
   "llm": {
     "family": "qwen2.5",

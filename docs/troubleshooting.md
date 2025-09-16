@@ -14,11 +14,16 @@ uv pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu1
 Иначе движок заменится на BeepTTS.
 
 ## Ошибки SSL или прокси
-Перед загрузкой моделей задайте:
+Отключите опцию «Проверять SSL-сертификаты при загрузке моделей» в настройках UI
+и повторите попытку. Если используете CLI или предпочтителен ручной запуск,
+можно временно задать переменные окружения:
 ```bash
 export HTTPS_PROXY=http://proxy:port
 export NO_SSL_VERIFY=1
 ```
+Disable the "Verify SSL certificates" checkbox in the Settings dialog when a
+corporate proxy replaces certificates; for CLI workflows fall back to the
+environment variables above.
 
 ## Qt: libGL.so.1 not found
 Установите системную библиотеку `libgl1` (или аналог) перед запуском UI.

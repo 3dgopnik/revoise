@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 from urllib.request import urlopen
@@ -63,10 +64,25 @@ class DownloadError(Exception):
     """Raised when a model download fails."""
 
 
-def download_model(url: str, target: Path) -> None:
+def download_model(
+    url: str,
+    target: Path,
+    *,
+    progress_callback: Callable[[int, int], None] | None = None,
+) -> None:
     """Download a model from ``url`` to ``target``.
 
     The function logs progress information and writes the file to ``target``.
+
+    Parameters
+    ----------
+    url:
+        Source URL of the file.
+    target:
+        Destination path on disk.
+    progress_callback:
+        Optional callable invoked with ``(downloaded_bytes, total_bytes)`` during
+        the download. When omitted, progress is emitted through debug logging.
     """
     logging.info("Downloading model from %s to %s", url, target)
     target.parent.mkdir(parents=True, exist_ok=True)
@@ -74,6 +90,8 @@ def download_model(url: str, target: Path) -> None:
         with urlopen(url) as response:
             total = int(response.headers.get("Content-Length", 0))
             downloaded = 0
+            last_percent_reported = -1
+            last_logged_bytes = 0
             with open(target, "wb") as file:
                 while True:
                     chunk = response.read(8192)
@@ -81,11 +99,26 @@ def download_model(url: str, target: Path) -> None:
                         break
                     file.write(chunk)
                     downloaded += len(chunk)
-                    if total:
-                        percent = downloaded / total * 100
-                        print(f"\r{percent:6.2f}% downloaded", end="")
-        if total:
-            print()
+                    if progress_callback:
+                        progress_callback(downloaded, total)
+                    elif total:
+                        percent = int(downloaded / total * 100)
+                        if percent != last_percent_reported:
+                            logging.debug(
+                                "Download progress for %s: %d%% (%d/%d bytes)",
+                                target.name,
+                                percent,
+                                downloaded,
+                                total,
+                            )
+                            last_percent_reported = percent
+                    elif downloaded - last_logged_bytes >= 1 << 20:
+                        logging.debug(
+                            "Download progress for %s: %d bytes downloaded",
+                            target.name,
+                            downloaded,
+                        )
+                        last_logged_bytes = downloaded
         logging.info("Model downloaded to %s", target)
     except Exception as exc:  # pragma: no cover - safety net
         logging.info("Download failed: %s", exc)

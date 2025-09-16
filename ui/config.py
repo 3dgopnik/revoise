@@ -45,7 +45,7 @@ def load_config() -> tuple[
     """Load API keys and user preferences from the config file."""
     default_out = str((BASE_DIR / "output").resolve())
     if not CONFIG_FILE.exists():
-        return "", "", False, True, default_out, "ru", "base", 100, 350, False, False
+        return "", "", False, True, default_out, "ru", "None", "base", 100, 350, False, False
     data = json.loads(CONFIG_FILE.read_text(encoding="utf-8"))
     cipher = _get_cipher()
     yandex_enc = data.get("yandex_key", "")

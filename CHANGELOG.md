@@ -33,6 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Tests for dialogue parsing, Russian text segmentation, and TTS engine registry with GPU VibeVoice integration test.
 - VibeVoice engine selectable in UI with dynamic speaker listing and missing binary warning.
 - Support for `NO_SSL_VERIFY=1` to disable SSL certificate verification during Silero downloads.
+- Regression test covering UI config defaults when `config.json` is absent.
 
 ### Changed
 - Install TTS dependencies into .venv using shared pkg_installer.
@@ -64,6 +65,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Sorted standard library imports in `tests/test_edited_text.py`.
 - CI now sets up a uv virtual environment before installing dependencies.
 - Added retry loop for Silero TTS model download to handle transient network errors.
+- UI config loader now returns the complete default tuple (including preset) when `config.json` is missing.
 
 ### Docs
 - Documented installation with `uv pip`, lazy dependency/model downloads,

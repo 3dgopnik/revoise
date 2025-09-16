@@ -37,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Tests for dialogue parsing, Russian text segmentation, and TTS engine registry with GPU VibeVoice integration test.
 - VibeVoice engine selectable in UI with dynamic speaker listing and missing binary warning.
 - Support for `NO_SSL_VERIFY=1` to disable SSL certificate verification during Silero downloads.
+- Settings dialog toggle to enable or disable SSL certificate verification for model downloads, persisted in `config.json` and applied during TTS initialization.
 - Regression test covering UI config defaults when `config.json` is absent.
 
 ### Changed
@@ -89,6 +90,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added VibeVoice and timeline guides; expanded README with uv quick start, model fetch commands, and engine toggle examples.
 - Document VibeVoice binary and model installation.
 - Documented troubleshooting with `SSL_CERT_FILE`, `HTTPS_PROXY`, and `NO_SSL_VERIFY`.
+- Documented the SSL verification toggle in configuration and troubleshooting guides.
 - Explained manual Silero archive placement and proxy variables for corporate networks.
 - Added UI guide and described new Settings dialog.
 - Documented automatic package installation preference in configuration guide.

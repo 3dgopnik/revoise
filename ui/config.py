@@ -27,6 +27,7 @@ class ConfigValues(NamedTuple):
     chatgpt_key: str
     allow_beep_fallback: bool
     auto_download_models: bool
+    verify_ssl_downloads: bool
     auto_install_packages: bool
     out_dir: str
     language: str
@@ -47,6 +48,7 @@ DEFAULT_CONFIG = ConfigValues(
     False,
     True,
     True,
+    True,
     DEFAULT_OUT_DIR,
     "ru",
     "None",
@@ -56,6 +58,12 @@ DEFAULT_CONFIG = ConfigValues(
     False,
     False,
 )
+
+
+def _default_out_dir() -> str:
+    """Compute the default output directory based on the current base path."""
+
+    return str((BASE_DIR / "output").resolve())
 
 
 def _get_str_option(data: dict[str, Any], key: str, default: str) -> str:
@@ -87,15 +95,19 @@ def _get_cipher() -> Fernet | None:
 
 def load_config() -> ConfigValues:
     """Load API keys and user preferences from the config file."""
-    default_out = DEFAULT_OUT_DIR
+    default_out = _default_out_dir()
     if not CONFIG_FILE.exists():
-        return DEFAULT_CONFIG
+        defaults = DEFAULT_CONFIG
+        if defaults.out_dir != default_out:
+            defaults = defaults._replace(out_dir=default_out)
+        return defaults
     data = json.loads(CONFIG_FILE.read_text(encoding="utf-8"))
     cipher = _get_cipher()
     yandex_enc = data.get("yandex_key", "")
     chatgpt_enc = data.get("chatgpt_key", "")
     allow_beep = bool(data.get("allow_beep_fallback", DEFAULT_CONFIG.allow_beep_fallback))
     auto_download = bool(data.get("auto_download_models", DEFAULT_CONFIG.auto_download_models))
+    verify_ssl = bool(data.get("verify_ssl_downloads", DEFAULT_CONFIG.verify_ssl_downloads))
     auto_install = bool(data.get("auto_install_packages", DEFAULT_CONFIG.auto_install_packages))
     out_dir = _get_str_option(data, "out_dir", default_out)
     language = _get_str_option(data, "language", DEFAULT_CONFIG.language)
@@ -116,6 +128,7 @@ def load_config() -> ConfigValues:
         chatgpt_key,
         allow_beep,
         auto_download,
+        verify_ssl,
         auto_install,
         out_dir,
         language,
@@ -133,6 +146,7 @@ def save_config(
     chatgpt_key: str,
     allow_beep_fallback: bool,
     auto_download_models: bool,
+    verify_ssl_downloads: bool,
     auto_install_packages: bool,
     out_dir: str,
     language: str,
@@ -151,6 +165,7 @@ def save_config(
             "chatgpt_key": cipher.encrypt(chatgpt_key.encode()).decode() if chatgpt_key else "",
             "allow_beep_fallback": allow_beep_fallback,
             "auto_download_models": auto_download_models,
+            "verify_ssl_downloads": verify_ssl_downloads,
             "auto_install_packages": auto_install_packages,
             "out_dir": out_dir,
             "language": language,
@@ -167,6 +182,7 @@ def save_config(
             "chatgpt_key": base64.b64encode(chatgpt_key.encode()).decode() if chatgpt_key else "",
             "allow_beep_fallback": allow_beep_fallback,
             "auto_download_models": auto_download_models,
+            "verify_ssl_downloads": verify_ssl_downloads,
             "auto_install_packages": auto_install_packages,
             "out_dir": out_dir,
             "language": language,

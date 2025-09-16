@@ -63,7 +63,7 @@ from core.pipeline import (  # noqa: E402
     revoice_video,
     transcribe_whisper,
 )
-from core.tts_adapters import SILERO_VOICES  # noqa: E402
+from core.tts_adapters import SILERO_VOICES, set_ssl_verification  # noqa: E402
 from core.tts_dependencies import TTS_DEPENDENCIES, ensure_tts_dependencies  # noqa: E402
 
 try:
@@ -190,12 +190,14 @@ class MainWindow(QtWidgets.QMainWindow):
         self.chatgpt_key = ""
         self.allow_beep_fallback = False
         self.auto_download_models = True
+        self.verify_ssl_downloads = True
         self.auto_install_packages = True
         (
             self.yandex_key,
             self.chatgpt_key,
             self.allow_beep_fallback,
             self.auto_download_models,
+            self.verify_ssl_downloads,
             self.auto_install_packages,
             self.out_dir,
             self.language,
@@ -206,6 +208,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.read_numbers,
             self.spell_latin,
         ) = load_config()
+        set_ssl_verification(self.verify_ssl_downloads)
         self.presets = load_presets(BASE_DIR / "presets")
         self._on_preset_change(self.preset_name)
 
@@ -418,6 +421,7 @@ class MainWindow(QtWidgets.QMainWindow):
             chatgpt_key=self.chatgpt_key,
             allow_beep_fallback=self.allow_beep_fallback,
             auto_download_models=self.auto_download_models,
+            verify_ssl_downloads=self.verify_ssl_downloads,
             auto_install_packages=self.auto_install_packages,
             out_dir=self.out_dir,
             language=self.language,
@@ -437,6 +441,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.chatgpt_key,
                 self.allow_beep_fallback,
                 self.auto_download_models,
+                self.verify_ssl_downloads,
                 self.auto_install_packages,
                 self.out_dir,
                 self.language,
@@ -453,6 +458,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.chatgpt_key,
                 self.allow_beep_fallback,
                 self.auto_download_models,
+                self.verify_ssl_downloads,
                 self.auto_install_packages,
                 self.out_dir,
                 self.language,
@@ -463,6 +469,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.read_numbers,
                 self.spell_latin,
             )
+            set_ssl_verification(self.verify_ssl_downloads)
             self._refresh_voices(self.cmb_engine.currentText())
 
     def show_help(self):

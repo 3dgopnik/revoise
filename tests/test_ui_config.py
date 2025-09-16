@@ -23,6 +23,7 @@ def test_load_config_applies_string_defaults_for_missing_keys(tmp_path, monkeypa
     config_data = {
         "allow_beep_fallback": True,
         "auto_download_models": False,
+        "verify_ssl_downloads": False,
         "out_dir": "custom/out",
         "language": "en",
         "speed_pct": 110,
@@ -44,6 +45,7 @@ def test_load_config_applies_string_defaults_for_missing_keys(tmp_path, monkeypa
     assert result.language == "en"
     assert result.allow_beep_fallback is True
     assert result.auto_download_models is False
+    assert result.verify_ssl_downloads is False
     assert result.auto_install_packages is config.DEFAULT_CONFIG.auto_install_packages
     assert result.speed_pct == 110
     assert result.min_gap_ms == 250

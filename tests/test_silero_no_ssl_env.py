@@ -1,4 +1,5 @@
 import ssl
+import ssl
 import sys
 import types
 from typing import Any
@@ -6,7 +7,7 @@ from typing import Any
 import numpy as np
 import pytest
 
-from core.tts_adapters import SileroTTS
+from core.tts_adapters import SileroTTS, set_ssl_verification
 
 
 class DummyModel:
@@ -17,8 +18,15 @@ class DummyModel:
         return self
 
 
-@pytest.mark.parametrize("flag", [None, "1"])
-def test_no_ssl_verify(monkeypatch, tmp_path, flag):
+@pytest.mark.parametrize(
+    "mode, expected_unverified",
+    [
+        ("default", False),
+        ("env_off", True),
+        ("toggle_off", True),
+    ],
+)
+def test_no_ssl_verify(monkeypatch, tmp_path, mode, expected_unverified):
     hub_dir = tmp_path / "hub"
     cache_dir = hub_dir / "snakers4_silero-models_master"
     cache_dir.mkdir(parents=True, exist_ok=True)
@@ -44,10 +52,13 @@ def test_no_ssl_verify(monkeypatch, tmp_path, flag):
     monkeypatch.setitem(sys.modules, "torch", torch)
     monkeypatch.setitem(sys.modules, "torchaudio", types.ModuleType("torchaudio"))
 
-    if flag is None:
-        monkeypatch.delenv("NO_SSL_VERIFY", raising=False)
+    set_ssl_verification(True)
+    if mode == "env_off":
+        monkeypatch.setenv("NO_SSL_VERIFY", "1")
     else:
-        monkeypatch.setenv("NO_SSL_VERIFY", flag)
+        monkeypatch.delenv("NO_SSL_VERIFY", raising=False)
+    if mode == "toggle_off":
+        set_ssl_verification(False)
 
     original_ctx = ssl._create_default_https_context
     monkeypatch.setattr(ssl, "_create_default_https_context", original_ctx, raising=False)
@@ -60,7 +71,8 @@ def test_no_ssl_verify(monkeypatch, tmp_path, flag):
 
     assert "value" in context_during_load
     expected_context = (
-        ssl._create_unverified_context if flag == "1" else original_ctx
+        ssl._create_unverified_context if expected_unverified else original_ctx
     )
     assert context_during_load["value"] is expected_context
     assert ssl._create_default_https_context is original_ctx
+    set_ssl_verification(True)

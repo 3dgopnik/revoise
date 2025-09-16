@@ -64,7 +64,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Sorted standard library imports in `tests/test_coqui_no_qmessagebox.py`.
 - Sorted standard library imports in `tests/test_edited_text.py`.
 - CI now sets up a uv virtual environment before installing dependencies.
-- Added retry loop for Silero TTS model download to handle transient network errors.
+- `ui.config.load_config` now always returns preset and Whisper defaults even without `config.json`.
 - UI config loader now returns the complete default tuple (including preset) when `config.json` is missing.
 
 ### Docs

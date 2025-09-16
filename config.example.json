@@ -35,7 +35,8 @@
     }
   },
   "preferences": {
-    "pin_dependencies": false
+    "pin_dependencies": false,
+    "auto_install_packages": true
   },
   "models": {
     "whisper": "models/whisper",

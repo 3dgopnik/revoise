@@ -15,6 +15,7 @@
    - `tts.autosave_minutes` — автосохранение чекпоинтов.
    - `tts.force_offload` — выгружать модель и логировать пик VRAM.
    - `preferences.pin_dependencies` — предлагать фиксировать зависимости.
+   - `preferences.auto_install_packages` — автоматически устанавливать недостающие Python-пакеты без подтверждения.
    - `use_imageio_ffmpeg` — автоматически установить `imageio-ffmpeg`.
    - `externals.ffmpeg` — путь к собственному бинарю FFmpeg.
 
@@ -34,6 +35,8 @@
   (логическое значение, `false` по умолчанию).
 - `auto_download_models` — разрешить автоматическую загрузку моделей и ресурсов
   (логическое значение, `true` по умолчанию).
+- `auto_install_packages` — разрешить автоматически устанавливать недостающие
+  Python-пакеты (`true` по умолчанию).
 - `out_dir` — абсолютный путь к папке для сохранения результатов (`output`
   внутри репозитория по умолчанию).
 - `language` — язык интерфейса и подсказок, код ISO (`ru` по умолчанию).
@@ -52,6 +55,7 @@
   "chatgpt_key": "",
   "allow_beep_fallback": false,
   "auto_download_models": true,
+  "auto_install_packages": true,
   "out_dir": "/абсолютный/путь/к/output",
   "language": "ru",
   "preset": "None",

@@ -27,6 +27,7 @@ class ConfigValues(NamedTuple):
     chatgpt_key: str
     allow_beep_fallback: bool
     auto_download_models: bool
+    auto_install_packages: bool
     out_dir: str
     language: str
     preset: str
@@ -44,6 +45,7 @@ DEFAULT_CONFIG = ConfigValues(
     "",
     "",
     False,
+    True,
     True,
     DEFAULT_OUT_DIR,
     "ru",
@@ -94,6 +96,7 @@ def load_config() -> ConfigValues:
     chatgpt_enc = data.get("chatgpt_key", "")
     allow_beep = bool(data.get("allow_beep_fallback", DEFAULT_CONFIG.allow_beep_fallback))
     auto_download = bool(data.get("auto_download_models", DEFAULT_CONFIG.auto_download_models))
+    auto_install = bool(data.get("auto_install_packages", DEFAULT_CONFIG.auto_install_packages))
     out_dir = _get_str_option(data, "out_dir", default_out)
     language = _get_str_option(data, "language", DEFAULT_CONFIG.language)
     preset = _get_str_option(data, "preset", DEFAULT_CONFIG.preset)
@@ -113,6 +116,7 @@ def load_config() -> ConfigValues:
         chatgpt_key,
         allow_beep,
         auto_download,
+        auto_install,
         out_dir,
         language,
         preset,
@@ -129,6 +133,7 @@ def save_config(
     chatgpt_key: str,
     allow_beep_fallback: bool,
     auto_download_models: bool,
+    auto_install_packages: bool,
     out_dir: str,
     language: str,
     preset: str,
@@ -146,6 +151,7 @@ def save_config(
             "chatgpt_key": cipher.encrypt(chatgpt_key.encode()).decode() if chatgpt_key else "",
             "allow_beep_fallback": allow_beep_fallback,
             "auto_download_models": auto_download_models,
+            "auto_install_packages": auto_install_packages,
             "out_dir": out_dir,
             "language": language,
             "preset": preset,
@@ -161,6 +167,7 @@ def save_config(
             "chatgpt_key": base64.b64encode(chatgpt_key.encode()).decode() if chatgpt_key else "",
             "allow_beep_fallback": allow_beep_fallback,
             "auto_download_models": auto_download_models,
+            "auto_install_packages": auto_install_packages,
             "out_dir": out_dir,
             "language": language,
             "preset": preset,

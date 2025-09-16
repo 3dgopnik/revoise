@@ -20,6 +20,7 @@ class SettingsDialog(QtWidgets.QDialog):
         chatgpt_key: str = "",
         allow_beep_fallback: bool = False,
         auto_download_models: bool = True,
+        auto_install_packages: bool = True,
         out_dir: str = str(OUTPUT_DIR),
         language: str = "ru",
         languages: list[str] | None = None,
@@ -34,6 +35,7 @@ class SettingsDialog(QtWidgets.QDialog):
     ):
         super().__init__(parent)
         self.setWindowTitle("Настройки")
+        self._auto_install_packages = auto_install_packages
 
         form = QtWidgets.QFormLayout(self)
 
@@ -114,6 +116,7 @@ class SettingsDialog(QtWidgets.QDialog):
         str,
         bool,
         bool,
+        bool,
         str,
         str,
         str,
@@ -129,6 +132,7 @@ class SettingsDialog(QtWidgets.QDialog):
             self.ed_chatgpt.text().strip(),
             self.chk_beep.isChecked(),
             self.chk_auto.isChecked(),
+            self._auto_install_packages,
             self.ed_out.text().strip(),
             self.cmb_language.currentText(),
             self.cmb_preset.currentText(),

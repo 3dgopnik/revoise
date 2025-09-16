@@ -10,10 +10,61 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from core import pipeline, pkg_installer
+from core import model_manager, pipeline, pkg_installer
+import core.tts_adapters as tts_adapters
 from core.pipeline import synth_chunk
 from core.tts_adapters import BeepTTS, CoquiXTTS, SileroTTS
+import core.tts_dependencies as tts_deps
 from core.tts_dependencies import ensure_tts_dependencies
+
+
+_PKG_INSTALLER_SPEC = importlib.util.spec_from_file_location(
+    "_pkg_installer_real",
+    Path(__file__).resolve().parents[1] / "core" / "pkg_installer.py",
+)
+assert _PKG_INSTALLER_SPEC.loader is not None
+_REAL_PKG_INSTALLER = importlib.util.module_from_spec(_PKG_INSTALLER_SPEC)
+_PKG_INSTALLER_SPEC.loader.exec_module(_REAL_PKG_INSTALLER)
+
+
+def test_ensure_package_auto_installs_without_prompt(monkeypatch):
+    real_installer = _REAL_PKG_INSTALLER
+    pkg_spec = "example-pkg"
+    module_name = real_installer._module_from_spec(pkg_spec)
+    original_import = importlib.import_module
+    state = {"installed": False}
+
+    def fake_import(name, *args, **kwargs):
+        if name == module_name:
+            if state["installed"]:
+                return types.ModuleType(module_name)
+            raise ModuleNotFoundError(name)
+        return original_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(real_installer.importlib, "import_module", fake_import)
+    monkeypatch.setattr(real_installer, "ensure_uv", lambda: None)
+    monkeypatch.setattr(real_installer, "_auto_install_preference", lambda: True)
+    monkeypatch.setattr(real_installer, "_pin_preference", lambda: False)
+    monkeypatch.setattr(real_installer, "_CONFIG_CACHE", None)
+
+    calls: list[list[str]] = []
+
+    def fake_run(cmd, *args, **kwargs):
+        calls.append(cmd)
+        state["installed"] = True
+        return subprocess.CompletedProcess(cmd, 0)
+
+    def fail_input(*_args, **_kwargs):  # pragma: no cover - defensive, should not trigger
+        raise AssertionError("input should not be called when auto-installing")
+
+    monkeypatch.setattr(real_installer.subprocess, "run", fake_run)
+    monkeypatch.setattr(builtins, "input", fail_input)
+
+    real_installer.ensure_package(pkg_spec, "Need example package")
+
+    assert calls == [[sys.executable, "-m", "uv", "pip", "install", pkg_spec]]
+    imported = real_installer.importlib.import_module(module_name)
+    assert isinstance(imported, types.ModuleType)
 
 
 def test_silero_ensure_model_missing_torch(monkeypatch):
@@ -28,20 +79,25 @@ def test_silero_ensure_model_missing_torch(monkeypatch):
         return original_import(name, *args, **kwargs)
 
     monkeypatch.setattr(importlib, "import_module", fake_import)
+    real_installer = _REAL_PKG_INSTALLER
+    monkeypatch.setattr(pkg_installer, "ensure_package", real_installer.ensure_package)
+    monkeypatch.setattr(tts_adapters, "ensure_package", real_installer.ensure_package)
+    monkeypatch.setattr(real_installer, "ensure_uv", lambda: None)
+    monkeypatch.setattr(real_installer, "_auto_install_preference", lambda: True)
+    monkeypatch.setattr(real_installer, "_CONFIG_CACHE", None)
+
     calls: list[list[str]] = []
 
     def fake_run(cmd, *args, **kwargs):
         calls.append(cmd)
         raise subprocess.CalledProcessError(1, cmd)
 
-    monkeypatch.setattr(subprocess, "run", fake_run)
+    monkeypatch.setattr(real_installer.subprocess, "run", fake_run)
 
     SileroTTS._model = None
-    with pytest.raises(RuntimeError) as excinfo:
+    with pytest.raises(subprocess.CalledProcessError) as excinfo:
         SileroTTS()._ensure_model()
-    assert "uv pip install torch --index-url https://download.pytorch.org/whl/cpu" in str(
-        excinfo.value
-    )
+    assert "uv pip install torch" in " ".join(map(str, excinfo.value.cmd))
     assert calls and "torch" in " ".join(calls[0])
 
 
@@ -57,16 +113,25 @@ def test_silero_missing_omegaconf(monkeypatch):
         return original_import(name, *args, **kwargs)
 
     monkeypatch.setattr(importlib, "import_module", fake_import)
+    real_installer = _REAL_PKG_INSTALLER
+    monkeypatch.setattr(pkg_installer, "ensure_package", real_installer.ensure_package)
+    monkeypatch.setattr(tts_adapters, "ensure_package", real_installer.ensure_package)
+    monkeypatch.setattr(tts_deps, "ensure_package", real_installer.ensure_package)
+    monkeypatch.setattr(real_installer, "ensure_uv", lambda: None)
+    monkeypatch.setattr(real_installer, "_auto_install_preference", lambda: True)
+    monkeypatch.setattr(real_installer, "_CONFIG_CACHE", None)
+
     calls: list[list[str]] = []
 
     def fake_run(cmd, *args, **kwargs):
         calls.append(cmd)
         raise subprocess.CalledProcessError(1, cmd)
 
-    monkeypatch.setattr(subprocess, "run", fake_run)
+    monkeypatch.setattr(real_installer.subprocess, "run", fake_run)
 
-    with pytest.raises(RuntimeError, match="uv pip install omegaconf"):
+    with pytest.raises(subprocess.CalledProcessError) as excinfo:
         ensure_tts_dependencies("silero")
+    assert "uv pip install omegaconf" in " ".join(map(str, excinfo.value.cmd))
     assert calls and "omegaconf" in " ".join(calls[0])
 
 
@@ -81,16 +146,24 @@ def test_coqui_ensure_model_missing_tts(monkeypatch):
         return original_import(name, *args, **kwargs)
 
     monkeypatch.setattr(importlib, "import_module", fake_import)
+    real_installer = _REAL_PKG_INSTALLER
+    monkeypatch.setattr(pkg_installer, "ensure_package", real_installer.ensure_package)
+    monkeypatch.setattr(tts_adapters, "ensure_package", real_installer.ensure_package)
+    monkeypatch.setattr(real_installer, "ensure_uv", lambda: None)
+    monkeypatch.setattr(real_installer, "_auto_install_preference", lambda: True)
+    monkeypatch.setattr(real_installer, "_CONFIG_CACHE", None)
+
     calls: list[list[str]] = []
 
     def fake_run(cmd, *args, **kwargs):
         calls.append(cmd)
         raise subprocess.CalledProcessError(1, cmd)
 
-    monkeypatch.setattr(subprocess, "run", fake_run)
+    monkeypatch.setattr(real_installer.subprocess, "run", fake_run)
 
-    with pytest.raises(RuntimeError, match="uv pip install TTS"):
+    with pytest.raises(subprocess.CalledProcessError) as excinfo:
         CoquiXTTS(Path("."))._ensure_model()
+    assert "uv pip install TTS" in " ".join(map(str, excinfo.value.cmd))
     assert calls and "TTS" in calls[0]
 
 
@@ -124,6 +197,9 @@ def test_synth_chunk_fallback_silero(monkeypatch, tmp_path):
         raise ModuleNotFoundError("torch")
 
     monkeypatch.setattr(pkg_installer, "ensure_package", fake_ensure)
+    stub_msg = type("Msg", (), {"warning": staticmethod(lambda *args, **kwargs: None)})
+    monkeypatch.setattr(model_manager, "QMessageBox", stub_msg)
+    monkeypatch.setattr(pipeline, "QMessageBox", stub_msg)
 
     expected = np.array([0.1, -0.1], dtype=np.float32)
     _setup_synth(monkeypatch, expected)
@@ -148,6 +224,9 @@ def test_synth_chunk_fallback_silero_warns(monkeypatch, tmp_path, caplog):
         raise ModuleNotFoundError("torch")
 
     monkeypatch.setattr(pkg_installer, "ensure_package", fake_ensure)
+    stub_msg = type("Msg", (), {"warning": staticmethod(lambda *args, **kwargs: None)})
+    monkeypatch.setattr(model_manager, "QMessageBox", stub_msg)
+    monkeypatch.setattr(pipeline, "QMessageBox", stub_msg)
 
     _setup_synth(monkeypatch, np.array([0.1, -0.1], dtype=np.float32))
     with caplog.at_level(logging.INFO):
@@ -169,6 +248,9 @@ def test_synth_chunk_fallback_coqui(monkeypatch, tmp_path):
         raise ModuleNotFoundError("TTS")
 
     monkeypatch.setattr(pkg_installer, "ensure_package", fake_ensure)
+    stub_msg = type("Msg", (), {"warning": staticmethod(lambda *args, **kwargs: None)})
+    monkeypatch.setattr(model_manager, "QMessageBox", stub_msg)
+    monkeypatch.setattr(pipeline, "QMessageBox", stub_msg)
 
     expected = np.array([0.2, -0.2], dtype=np.float32)
     _setup_synth(monkeypatch, expected)

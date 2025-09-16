@@ -39,16 +39,32 @@ def _module_from_spec(pkg_spec: str) -> str:
     return name.replace("-", "_").replace(".", "_").lower()
 
 
-def _pin_preference() -> bool:
+def _load_preferences() -> None:
     global _CONFIG_CACHE
-    if _CONFIG_CACHE is None:
-        try:
-            with open("config.json", encoding="utf-8") as fh:
-                data = json.load(fh)
-            _CONFIG_CACHE = {"pin": bool(data.get("preferences", {}).get("pin_dependencies", False))}
-        except Exception:
-            _CONFIG_CACHE = {"pin": False}
-    return _CONFIG_CACHE["pin"]
+    if isinstance(_CONFIG_CACHE, dict) and {"pin", "auto_install"}.issubset(_CONFIG_CACHE):
+        return
+    try:
+        with open("config.json", encoding="utf-8") as fh:
+            data = json.load(fh)
+        prefs = data.get("preferences", {}) if isinstance(data, dict) else {}
+        _CONFIG_CACHE = {
+            "pin": bool(prefs.get("pin_dependencies", False)),
+            "auto_install": bool(prefs.get("auto_install_packages", True)),
+        }
+    except Exception:
+        _CONFIG_CACHE = {"pin": False, "auto_install": True}
+
+
+def _pin_preference() -> bool:
+    _load_preferences()
+    assert _CONFIG_CACHE is not None
+    return bool(_CONFIG_CACHE.get("pin", False))
+
+
+def _auto_install_preference() -> bool:
+    _load_preferences()
+    assert _CONFIG_CACHE is not None
+    return bool(_CONFIG_CACHE.get("auto_install", True))
 
 
 def ensure_package(pkg_spec: str, message: str, ask_to_pin: bool | None = None) -> None:
@@ -69,9 +85,11 @@ def ensure_package(pkg_spec: str, message: str, ask_to_pin: bool | None = None) 
         pass
 
     print(message)
-    install = input(f"Install {pkg_spec}? [Y/n]: ").strip().lower()
-    if install not in {"", "y", "yes"}:
-        raise ModuleNotFoundError(module_name)
+    auto_install = _auto_install_preference()
+    if not auto_install:
+        install = input(f"Install {pkg_spec}? [Y/n]: ").strip().lower()
+        if install not in {"", "y", "yes"}:
+            raise ModuleNotFoundError(module_name)
 
     ensure_uv()
     subprocess.run([sys.executable, "-m", "uv", "pip", "install", pkg_spec], check=True)

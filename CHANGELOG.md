@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `tools/freeze_reqs.py` script to regenerate pinned requirements.
 - Configurable LLM block (`llm.family`, `llm.model_path`, `llm.auto_download`).
 - Top-level `tts_engine` and `preferences.pin_dependencies` settings.
+- `preferences.auto_install_packages` toggle to skip interactive dependency installation prompts.
 - Manifest-driven FFmpeg downloader storing path and version in config.
 - GUI dialog for external binary downloads with cancelable progress bar.
 - Optional `imageio-ffmpeg` integration via `use_imageio_ffmpeg` and `externals.ffmpeg` settings for automatic FFmpeg setup.
@@ -87,5 +88,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Documented troubleshooting with `SSL_CERT_FILE`, `HTTPS_PROXY`, and `NO_SSL_VERIFY`.
 - Explained manual Silero archive placement and proxy variables for corporate networks.
 - Added UI guide and described new Settings dialog.
+- Documented automatic package installation preference in configuration guide.
 - Added Borealis ASR integration roadmap.
 - Added quickstart, CLI, configuration, troubleshooting, and development plan guides.

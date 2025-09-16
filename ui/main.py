@@ -137,11 +137,13 @@ class MainWindow(QtWidgets.QMainWindow):
         self.chatgpt_key = ""
         self.allow_beep_fallback = False
         self.auto_download_models = True
+        self.auto_install_packages = True
         (
             self.yandex_key,
             self.chatgpt_key,
             self.allow_beep_fallback,
             self.auto_download_models,
+            self.auto_install_packages,
             self.out_dir,
             self.language,
             self.preset_name,
@@ -363,6 +365,7 @@ class MainWindow(QtWidgets.QMainWindow):
             chatgpt_key=self.chatgpt_key,
             allow_beep_fallback=self.allow_beep_fallback,
             auto_download_models=self.auto_download_models,
+            auto_install_packages=self.auto_install_packages,
             out_dir=self.out_dir,
             language=self.language,
             languages=sorted(SILERO_VOICES.keys()),
@@ -381,6 +384,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.chatgpt_key,
                 self.allow_beep_fallback,
                 self.auto_download_models,
+                self.auto_install_packages,
                 self.out_dir,
                 self.language,
                 self.preset_name,
@@ -396,6 +400,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.chatgpt_key,
                 self.allow_beep_fallback,
                 self.auto_download_models,
+                self.auto_install_packages,
                 self.out_dir,
                 self.language,
                 self.preset_name,

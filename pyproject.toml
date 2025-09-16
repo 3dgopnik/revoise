@@ -22,6 +22,9 @@ dependencies = [
 [project.optional-dependencies]
 dev = ["pytest>=8.0", "ruff>=0.5", "mypy>=1.10"]
 
+[project.scripts]
+revoice-check = "tools.qa_runner:main"
+
 [tool.uv]
 # При желании можно зафиксировать индекс/кэши
 

@@ -39,6 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Support for `NO_SSL_VERIFY=1` to disable SSL certificate verification during Silero downloads.
 - Settings dialog toggle to enable or disable SSL certificate verification for model downloads, persisted in `config.json` and applied during TTS initialization.
 - Regression test covering UI config defaults when `config.json` is absent.
+- `revoice-check` QA runner CLI to execute uv-based installation, Ruff, MyPy, and pytest with aggregated reporting.
 
 ### Changed
 - Install TTS dependencies into .venv using shared pkg_installer.
@@ -96,3 +97,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Documented automatic package installation preference in configuration guide.
 - Added Borealis ASR integration roadmap.
 - Added quickstart, CLI, configuration, troubleshooting, and development plan guides.
+- Documented the `revoice-check` workflow in README and CLI guide, including report formats and storage options.

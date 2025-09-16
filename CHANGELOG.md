@@ -81,3 +81,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Explained manual Silero archive placement and proxy variables for corporate networks.
 - Added UI guide and described new Settings dialog.
 - Added Borealis ASR integration roadmap.
+- Added quickstart, CLI, configuration, troubleshooting, and development plan guides.

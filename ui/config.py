@@ -37,6 +37,9 @@ class ConfigValues(NamedTuple):
     spell_latin: bool
 
 
+DEFAULT_WHISPER_MODEL = "base"
+
+
 DEFAULT_CONFIG = ConfigValues(
     "",
     "",
@@ -45,7 +48,7 @@ DEFAULT_CONFIG = ConfigValues(
     DEFAULT_OUT_DIR,
     "ru",
     "None",
-    "base",
+    DEFAULT_WHISPER_MODEL,
     100,
     350,
     False,

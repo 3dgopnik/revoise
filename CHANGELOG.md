@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- Whisper `base` speech-to-text model registered alongside existing downloads and documented default configuration.
 - VibeEditor for text editing via VibeVoice API.
 - AI Edit dialog can invoke Qwen or VibeVoice editors.
 - AI edit dialog for custom instructions and language selection.

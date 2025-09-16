@@ -4,6 +4,8 @@ from pathlib import Path
 
 from PySide6 import QtWidgets
 
+from .config import DEFAULT_WHISPER_MODEL
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 OUTPUT_DIR = BASE_DIR / "output"
 
@@ -23,7 +25,7 @@ class SettingsDialog(QtWidgets.QDialog):
         languages: list[str] | None = None,
         preset: str = "None",
         presets: list[str] | None = None,
-        whisper_model: str = "base",
+        whisper_model: str = DEFAULT_WHISPER_MODEL,
         whisper_models: list[str] | None = None,
         speed_pct: int = 100,
         min_gap_ms: int = 350,

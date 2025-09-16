@@ -170,70 +170,76 @@ class SileroTTS:
             torch_home.mkdir(parents=True, exist_ok=True)
             torch.hub.set_dir(str(torch_home))
             hub_dir = Path(torch.hub.get_dir())
+            original_https_context = None
             if os.environ.get("NO_SSL_VERIFY") == "1":
+                original_https_context = ssl._create_default_https_context
                 ssl._create_default_https_context = ssl._create_unverified_context
-            cache_dir = hub_dir / "snakers4_silero-models_master"
-            pt_name = SILERO_PT_FILES.get(lang)
-            model_path = cache_dir / "src" / "silero" / "model" / pt_name if pt_name else None
-            cached_before = model_path.exists() if model_path else False
-            old_autofetch = os.environ.get("TORCH_HUB_DISABLE_AUTOFETCH")
-            if cached_before or not auto_download:
-                os.environ["TORCH_HUB_DISABLE_AUTOFETCH"] = "1"
             try:
-                if not auto_download and not cached_before:
-                    raise RuntimeError(
-                        "Silero model files not found. Enable 'Auto-download models' in Settings or prefetch via CLI."
-                    )
-                logging.info("Using torch %s for Silero TTS", torch.__version__)
-                attempts = 3
-                for attempt in range(1, attempts + 1):
-                    try:
-                        repo = str(cache_dir) if cached_before else "snakers4/silero-models"
-                        model, _ = torch.hub.load(
-                            repo_or_dir=repo,
-                            model="silero_tts",
-                            language=lang,
-                            speaker=SILERO_LANG_MODELS.get(lang, "v4_ru"),
-                            trust_repo=True,
-                            force_reload=False,
+                cache_dir = hub_dir / "snakers4_silero-models_master"
+                pt_name = SILERO_PT_FILES.get(lang)
+                model_path = cache_dir / "src" / "silero" / "model" / pt_name if pt_name else None
+                cached_before = model_path.exists() if model_path else False
+                old_autofetch = os.environ.get("TORCH_HUB_DISABLE_AUTOFETCH")
+                if cached_before or not auto_download:
+                    os.environ["TORCH_HUB_DISABLE_AUTOFETCH"] = "1"
+                try:
+                    if not auto_download and not cached_before:
+                        raise RuntimeError(
+                            "Silero model files not found. Enable 'Auto-download models' in Settings or prefetch via CLI."
                         )
-                        break
-                    except (URLError, ssl.SSLError) as e:
-                        logging.warning("torch.hub.load failed (%s/%s): %s", attempt, attempts, e)
-                        if attempt == attempts:
-                            msg = (
-                                "Silero download failed: Run `python tools/fetch_tts_models.py silero --language <code>` or check internet connection. "
-                                "Check SSL_CERT_FILE, HTTPS_PROXY, or set NO_SSL_VERIFY=1 to disable SSL verification."
+                    logging.info("Using torch %s for Silero TTS", torch.__version__)
+                    attempts = 3
+                    for attempt in range(1, attempts + 1):
+                        try:
+                            repo = str(cache_dir) if cached_before else "snakers4/silero-models"
+                            model, _ = torch.hub.load(
+                                repo_or_dir=repo,
+                                model="silero_tts",
+                                language=lang,
+                                speaker=SILERO_LANG_MODELS.get(lang, "v4_ru"),
+                                trust_repo=True,
+                                force_reload=False,
                             )
+                            break
+                        except (URLError, ssl.SSLError) as e:
+                            logging.warning("torch.hub.load failed (%s/%s): %s", attempt, attempts, e)
+                            if attempt == attempts:
+                                msg = (
+                                    "Silero download failed: Run `python tools/fetch_tts_models.py silero --language <code>` or check internet connection. "
+                                    "Check SSL_CERT_FILE, HTTPS_PROXY, or set NO_SSL_VERIFY=1 to disable SSL verification."
+                                )
+                                logging.debug("Silero download failed", exc_info=True)
+                                try:
+                                    from .pipeline import TTSEngineError  # type: ignore
+                                except Exception:
+                                    raise RuntimeError(msg) from e
+                                raise TTSEngineError(msg) from e
+                            time.sleep(1)
+                        except Exception as e:
+                            logging.info("torch.hub.load failed: %s", e)
                             logging.debug("Silero download failed", exc_info=True)
                             try:
                                 from .pipeline import TTSEngineError  # type: ignore
                             except Exception:
-                                raise RuntimeError(msg) from e
-                            raise TTSEngineError(msg) from e
-                        time.sleep(1)
-                    except Exception as e:
-                        logging.info("torch.hub.load failed: %s", e)
-                        logging.debug("Silero download failed", exc_info=True)
-                        try:
-                            from .pipeline import TTSEngineError  # type: ignore
-                        except Exception:
-                            raise RuntimeError(f"Silero download failed: {e}") from e
-                        raise TTSEngineError(f"Silero download failed: {e}") from e
-                else:  # pragma: no cover - defensive
-                    raise RuntimeError("Silero model load unexpectedly failed without exception")
-                model.to(torch.device("cpu"))
-                SileroTTS._models[lang] = model
-                SileroTTS._speakers[lang] = getattr(model, "speakers", [])
-                SileroTTS._mode = "offline"
-                status = "cached" if cached_before else "downloaded"
-                SileroTTS._statuses[lang] = status
-                logging.info("tts.silero ensure status=%s cache_dir=%s", status, cache_dir)
+                                raise RuntimeError(f"Silero download failed: {e}") from e
+                            raise TTSEngineError(f"Silero download failed: {e}") from e
+                    else:  # pragma: no cover - defensive
+                        raise RuntimeError("Silero model load unexpectedly failed without exception")
+                    model.to(torch.device("cpu"))
+                    SileroTTS._models[lang] = model
+                    SileroTTS._speakers[lang] = getattr(model, "speakers", [])
+                    SileroTTS._mode = "offline"
+                    status = "cached" if cached_before else "downloaded"
+                    SileroTTS._statuses[lang] = status
+                    logging.info("tts.silero ensure status=%s cache_dir=%s", status, cache_dir)
+                finally:
+                    if old_autofetch is None:
+                        os.environ.pop("TORCH_HUB_DISABLE_AUTOFETCH", None)
+                    else:
+                        os.environ["TORCH_HUB_DISABLE_AUTOFETCH"] = old_autofetch
             finally:
-                if old_autofetch is None:
-                    os.environ.pop("TORCH_HUB_DISABLE_AUTOFETCH", None)
-                else:
-                    os.environ["TORCH_HUB_DISABLE_AUTOFETCH"] = old_autofetch
+                if original_https_context is not None:
+                    ssl._create_default_https_context = original_https_context
         model = SileroTTS._models[lang]
         status = SileroTTS._statuses.get(lang)
         return (model, status) if return_status else model

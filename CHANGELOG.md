@@ -72,6 +72,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CI now sets up a uv virtual environment before installing dependencies.
 - `ui.config.load_config` now always returns preset and Whisper defaults even without `config.json`.
 - UI config loader now returns the complete default tuple (including preset) when `config.json` is missing.
+- Restored the default SSL context after Silero downloads when `NO_SSL_VERIFY=1` to avoid global side effects.
 
 ### Docs
 - Documented manual STT model download workflow in README and quickstart.

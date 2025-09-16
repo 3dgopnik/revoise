@@ -4,6 +4,7 @@
 
 import argparse
 import asyncio
+import importlib.util
 import json
 import logging
 import os
@@ -54,6 +55,7 @@ sys.excepthook = handle_exception
 
 # Импорт пайплайна
 from core.model_manager import list_models  # noqa: E402
+from core.pkg_installer import ensure_package  # noqa: E402
 from core.pipeline import (  # noqa: E402
     ensure_ffmpeg,
     merge_into_phrases,
@@ -62,6 +64,7 @@ from core.pipeline import (  # noqa: E402
     transcribe_whisper,
 )
 from core.tts_adapters import SILERO_VOICES  # noqa: E402
+from core.tts_dependencies import TTS_DEPENDENCIES, ensure_tts_dependencies  # noqa: E402
 
 try:
     from core.qwen_editor import QwenEditor  # type: ignore
@@ -80,6 +83,56 @@ else:
     _VIBE_IMPORT_ERROR = None
 
 YANDEX_VOICES = ["ermil", "filipp", "alena", "jane", "oksana", "zahar", "omazh", "madirus"]
+
+
+def preflight(parent: QtWidgets.QWidget | None = None) -> bool:
+    """Ensure required runtime dependencies are present before launching the UI."""
+
+    faster_module = "faster_whisper"
+    faster_missing = importlib.util.find_spec(faster_module) is None
+    silero_missing = sorted(
+        dep for dep in TTS_DEPENDENCIES.get("silero", ()) if importlib.util.find_spec(dep) is None
+    )
+
+    if faster_missing:
+        log.info("Installing dependency 'faster-whisper'.")
+    else:
+        log.info("Dependency 'faster-whisper' already installed.")
+
+    if silero_missing:
+        log.info("Installing Silero TTS dependencies: %s", ", ".join(silero_missing))
+    else:
+        log.info("Silero TTS dependencies already installed.")
+
+    try:
+        ensure_package(
+            "faster-whisper",
+            "faster-whisper is required for transcription and must be installed.",
+            ask_to_pin=False,
+        )
+        ensure_tts_dependencies("silero")
+    except Exception as exc:  # pragma: no cover - log failure and surface to UI
+        log.exception("Dependency preflight failed")
+        if QtWidgets.QApplication.instance() is not None:
+            QMessageBox.critical(
+                parent,
+                "Dependency installation failed",
+                "Revoice could not install required dependencies.\n\n"
+                f"{exc}",
+            )
+        return False
+
+    if faster_missing:
+        log.info("Dependency 'faster-whisper' installed successfully.")
+    else:
+        log.info("Dependency 'faster-whisper' was already present.")
+
+    if silero_missing:
+        log.info("Silero TTS dependencies installed successfully.")
+    else:
+        log.info("Silero TTS dependencies were already present.")
+
+    return True
 
 
 class MainWindow(QtWidgets.QMainWindow):
@@ -692,6 +745,9 @@ def main():
     args = parser.parse_args()
 
     if args.say:
+        if not preflight():
+            logging.shutdown()
+            return 1
         import numpy as np
         import soundfile as sf
         import torch
@@ -718,6 +774,9 @@ def main():
         return 0
 
     app = QtWidgets.QApplication([])
+    if not preflight():
+        logging.shutdown()
+        return 1
     w = MainWindow()
     w.show()
     exit_code = app.exec()

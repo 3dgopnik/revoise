@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - AI edit dialog for custom instructions and language selection.
 - Initial changelog.
 - Interactive package installer with optional requirements pinning.
+- UI preflight ensures `faster-whisper` and Silero dependencies before launch and surfaces failures via dialog.
 - Unified `ensure_model` downloader with progress, retries and optional SHA256 validation.
 - `requirements.txt` capturing essential runtime dependencies.
 - `tools/freeze_reqs.py` script to regenerate pinned requirements.

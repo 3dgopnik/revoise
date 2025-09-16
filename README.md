@@ -47,14 +47,19 @@ uv run python -m ui.main
 - Пропущенные Python-зависимости устанавливаются автоматически в `.venv`,
   а недостающие модели скачиваются в `models/` при первом использовании.
 - Проверки качества:
-  Перед запуском установите dev-зависимости (ruff, mypy, pytest):
-  ```bash
-  uv pip install --extra dev .
-  uv run ruff check .
-  uv run ruff format --check .
-  uv run mypy .
-  uv run pytest -q
-  ```
+  - Быстрый запуск всех проверок и генерация отчёта:
+    ```bash
+    uv run revoice-check --format markdown --output reports/qa_report.md
+    ```
+    Форматы `stdout`, `json` и `markdown` поддерживают сохранение отчёта через `--output`.
+  - При необходимости можно выполнить шаги вручную:
+    ```bash
+    uv pip install --extra dev .
+    uv run ruff check .
+    uv run ruff format --check .
+    uv run mypy .
+    uv run pytest -q
+    ```
 - Обновление списка зависимостей (после ленивой установки):
 ```bash
 uv run python tools/freeze_reqs.py

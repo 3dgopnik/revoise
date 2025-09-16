@@ -202,7 +202,7 @@ class SileroTTS:
                         logging.warning("torch.hub.load failed (%s/%s): %s", attempt, attempts, e)
                         if attempt == attempts:
                             msg = (
-                                "Silero download failed: Run `python tools/fetch_tts_models.py --engine silero` or check internet connection. "
+                                "Silero download failed: Run `python tools/fetch_tts_models.py silero --language <code>` or check internet connection. "
                                 "Check SSL_CERT_FILE, HTTPS_PROXY, or set NO_SSL_VERIFY=1 to disable SSL verification."
                             )
                             logging.debug("Silero download failed", exc_info=True)

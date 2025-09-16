@@ -16,3 +16,8 @@
    uv run python -m ui.main --say "Привет"
    ```
    Результат сохранится в `output/tts_test.wav`.
+5. (Опционально) заранее скачайте модели распознавания речи:
+   ```bash
+   uv run python tools/fetch_stt_models.py base small
+   ```
+   На Windows воспользуйтесь `tools\fetch_stt_models.bat base small`.

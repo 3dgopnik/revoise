@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- `tools/fetch_stt_models.py` script with Windows wrapper for prefetching Whisper models.
 - Whisper `base` speech-to-text model registered alongside existing downloads and documented default configuration.
 - VibeEditor for text editing via VibeVoice API.
 - AI Edit dialog can invoke Qwen or VibeVoice editors.
@@ -70,6 +71,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - UI config loader now returns the complete default tuple (including preset) when `config.json` is missing.
 
 ### Docs
+- Documented manual STT model download workflow in README and quickstart.
 - Documented UI `config.json` keys, defaults, and storage behaviour.
 - Documented installation with `uv pip`, lazy dependency/model downloads,
   launch via `uv run python -m ui.main`, and `tools/freeze_reqs.py`.

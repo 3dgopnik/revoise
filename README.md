@@ -134,6 +134,18 @@ errors, ensure your system certificates are installed or set `SSL_CERT_FILE` to 
 valid bundle. Behind a proxy, configure `HTTPS_PROXY`. As a last resort, set
 `NO_SSL_VERIFY=1` to skip certificate verification.
 
+### Manual STT model fetch
+Whisper STT weights are stored under `models/stt/<name>`. Prefetch them with:
+```bash
+uv run python tools/fetch_stt_models.py base small medium
+```
+On Windows use the batch helper:
+```bat
+tools\fetch_stt_models.bat base small medium
+```
+Available names follow the registry (`base`, `small`, `medium`, `large-v3`, ...).
+The script reuses the shared Hugging Face cache configured via `HF_HOME`.
+
 ### Offline use
 Run fully offline by prefetching models and disabling automatic downloads:
 

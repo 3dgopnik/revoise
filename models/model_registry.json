@@ -15,6 +15,21 @@
         }
     },
     "stt": {
+        "base": {
+            "base_urls": [
+                "https://huggingface.co/Systran/faster-whisper-base/resolve/main/",
+                "https://huggingface.co/guillaumekln/faster-whisper-base/resolve/main/"
+            ],
+            "files": [
+                "model.bin",
+                "config.json",
+                "tokenizer.json",
+                "vocabulary.txt"
+            ],
+            "optional_files": ["preprocessor_config.json", "tokenizer_config.json"],
+            "description": "Fast with improved accuracy over small",
+            "size_mb": 969
+        },
         "small": {
             "base_urls": [
                 "https://huggingface.co/Systran/faster-whisper-small/resolve/main/",

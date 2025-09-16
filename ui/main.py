@@ -19,7 +19,7 @@ from PySide6.QtWidgets import QFileDialog, QMessageBox, QTableWidgetItem
 from core.presets import load_presets
 
 from .ai_edit_dialog import AiEditDialog, AiEditResult
-from .config import load_config, save_config
+from .config import DEFAULT_WHISPER_MODEL, load_config, save_config
 from .settings import SettingsDialog
 
 # Version and log file
@@ -94,7 +94,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.tts_engine = "silero"
         self.voice_id = "baya"
         self.language = "ru"
-        self.whisper_model = "base"
+        self.whisper_model = DEFAULT_WHISPER_MODEL
 
         self.speed_pct = 100
         self.min_gap_ms = 350

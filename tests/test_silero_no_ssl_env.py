@@ -1,6 +1,7 @@
 import ssl
 import sys
 import types
+from typing import Any
 
 import numpy as np
 import pytest
@@ -24,13 +25,19 @@ def test_no_ssl_verify(monkeypatch, tmp_path, flag):
     (cache_dir / "src/silero/model").mkdir(parents=True, exist_ok=True)
     (cache_dir / "src/silero/model/v4_ru.pt").touch()
 
+    context_during_load: dict[str, Any] = {}
+
+    def fake_load(*args, **kwargs):
+        context_during_load["value"] = ssl._create_default_https_context
+        return DummyModel(), "ok"
+
     torch = types.SimpleNamespace(
         __version__="0.0",
         set_num_threads=lambda *a, **k: None,
         hub=types.SimpleNamespace(
             set_dir=lambda *a, **k: None,
             get_dir=lambda: str(hub_dir),
-            load=lambda *a, **k: (DummyModel(), "ok"),
+            load=fake_load,
         ),
         device=lambda *a, **k: None,
     )
@@ -46,9 +53,14 @@ def test_no_ssl_verify(monkeypatch, tmp_path, flag):
     monkeypatch.setattr(ssl, "_create_default_https_context", original_ctx, raising=False)
 
     SileroTTS._models = {}
+    SileroTTS._statuses = {}
+    SileroTTS._speakers = {}
+    SileroTTS._mode = None
     SileroTTS(auto_download=False)._ensure_model(auto_download=False)
 
-    if flag == "1":
-        assert ssl._create_default_https_context == ssl._create_unverified_context
-    else:
-        assert ssl._create_default_https_context is original_ctx
+    assert "value" in context_during_load
+    expected_context = (
+        ssl._create_unverified_context if flag == "1" else original_ctx
+    )
+    assert context_during_load["value"] is expected_context
+    assert ssl._create_default_https_context is original_ctx

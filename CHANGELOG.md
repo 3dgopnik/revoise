@@ -69,6 +69,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - UI config loader now returns the complete default tuple (including preset) when `config.json` is missing.
 
 ### Docs
+- Documented UI `config.json` keys, defaults, and storage behaviour.
 - Documented installation with `uv pip`, lazy dependency/model downloads,
   launch via `uv run python -m ui.main`, and `tools/freeze_reqs.py`.
 - Clarified dev dependency installation for quality checks.

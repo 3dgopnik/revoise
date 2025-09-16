@@ -25,3 +25,10 @@
 - Ожидания по качеству
 - Поддержка realtime/batch
 - Логирование и фиксация версий чекпоинта/feature_extractor
+
+## Sprints
+
+- Sprint 1 — Packaging & CI hardening — 📝 planned
+- Sprint 2 — TTS pool finalization — 📝 planned
+- Sprint 3 — Borealis ASR — 📝 planned
+- Sprint 4 — LLM connectors & live mode — 📝 planned

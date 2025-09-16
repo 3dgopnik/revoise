@@ -41,6 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Replace `ensure_tts_dependencies` calls with direct `ensure_package` usage and lazy heavy imports.
 - Advanced TTS options moved to a dedicated Settings dialog and main UI simplified.
 - Model loading now routes through the new `ensure_model` helper.
+- Model downloads now support optional progress callbacks and debug-level logging updates.
 - Trim default `project.dependencies` to essential packages only.
 - Rename project package to `revoice`.
 - CI installs dependencies with `uv pip install -r requirements.txt` and runs Ruff on `core`, `ui`, and `tests`.

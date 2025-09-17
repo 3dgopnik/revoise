@@ -59,6 +59,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Silero TTS now verifies cached `.pt` files and loads directly from the local cache, prompting for manual download when missing.
 - Silero download errors now reference `SSL_CERT_FILE`, `HTTPS_PROXY`, and `NO_SSL_VERIFY` for troubleshooting.
 - Silero download failure hint now points to `python tools/fetch_tts_models.py silero --language <code>`.
+- Silero TTS now marks cached loads as `source="local"` to keep torch hub on the offline path.
 
 ### Removed
 - Removed legacy bootstrap and launcher scripts.

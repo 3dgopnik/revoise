@@ -247,15 +247,19 @@ class SileroTTS:
                     attempts = 3
                     for attempt in range(1, attempts + 1):
                         try:
-                            repo = str(cache_dir) if cached_before else "snakers4/silero-models"
-                            model, _ = torch.hub.load(
-                                repo_or_dir=repo,
-                                model="silero_tts",
-                                language=lang,
-                                speaker=SILERO_LANG_MODELS.get(lang, "v4_ru"),
-                                trust_repo=True,
-                                force_reload=False,
-                            )
+                            load_kwargs = {
+                                "repo_or_dir": str(cache_dir)
+                                if cached_before
+                                else "snakers4/silero-models",
+                                "model": "silero_tts",
+                                "language": lang,
+                                "speaker": SILERO_LANG_MODELS.get(lang, "v4_ru"),
+                                "trust_repo": True,
+                                "force_reload": False,
+                            }
+                            if cached_before:
+                                load_kwargs["source"] = "local"
+                            model, _ = torch.hub.load(**load_kwargs)
                             break
                         except (URLError, ssl.SSLError) as e:
                             logging.warning("torch.hub.load failed (%s/%s): %s", attempt, attempts, e)
